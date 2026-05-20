@@ -6,45 +6,49 @@
 <domain>
 ## Phase Boundary
 
-Deliver a working Jupyter-based learning environment where users can: (1) install all dependencies in one command, (2) pull and clean PUDL electricity data, (3) train an XGBoost load forecasting model with proper temporal validation, and (4) run an end-to-end baseline pipeline (persistence forecast → simulation → P&L) proving all system layers connect. This is the "prove the skeleton" phase — get a full pipeline running before introducing domain-specific frameworks (OpenSTEF, ASSUME) in Phase 2.
+Deliver a working Jupyter-based learning environment where users can: (1) install all dependencies in one command, (2) fetch and clean Chinese electricity load data from local open data platforms (hourly granularity), (3) train an XGBoost load forecasting model with proper temporal validation, and (4) run an end-to-end baseline pipeline (persistence forecast → simulation → P&L) proving all system layers connect. This is the "prove the skeleton" phase — get a full pipeline running before introducing domain-specific frameworks (OpenSTEF, ASSUME) in Phase 2.
 </domain>
 
 <decisions>
 ## Implementation Decisions
 
 ### Data Source Selection
-- **D-01:** Use PJM Interconnection data via PUDL as the primary dataset — largest US RTO, most comprehensive data coverage, well-documented PUDL tables (hourly demand, generation mix, plant metadata). Default to full PJM region; individual zones optional.
-- **D-02:** Pin data version via Zenodo DOI for reproducibility. PUDL provides versioned data releases — learners must get identical results regardless of when they download.
+- **D-01:** Use **Chinese electricity load data** from local government open data platforms (e.g., 菏泽市公共数据开放网, 广东省公共数据开放平台). Target: **hourly load data** (小时级负荷数据). This aligns with the learning goal of replicating Beijing Tuji's (图迹) domestic electricity trading approach.
+- **D-02:** If hourly data is unavailable from open platforms, fall back to epftoolbox's built-in datasets (EPEX/PJM) to keep the pipeline runnable while continuing to search for Chinese data sources. The data loading layer must be abstracted so the source can be swapped without changing downstream code.
+- **D-03:** Build a data fetching module that handles the specific format/API of the chosen Chinese data platform. Expect manual download + parse workflow (not a pip-installable package like PUDL). Document the data acquisition steps clearly in the notebook.
 
 ### Data Storage & Format
-- **D-03:** Parquet as primary data format — portable, columnar, pandas-native, fast read/write without database server. No SQLite unless query complexity demands it later.
-- **D-04:** Standardized column schema documented inline: `timestamp` (datetime64[ns, UTC]), `load_mw` (float64), `temperature_f` (if weather available), plus metadata columns. All timestamps in UTC with timezone-aware pandas dtypes. Column name `timestamp` used for brevity while preserving full timezone awareness.
+- **D-04:** Parquet as primary data format — portable, columnar, pandas-native, fast read/write without database server.
+- **D-05:** Standardized column schema: `timestamp` (datetime64[ns, UTC]), `load_mw` (float64), plus metadata columns (region, data_source). All timestamps in UTC with timezone-aware pandas dtypes.
 
 ### Environment Setup
-- **D-05:** pip + venv with `requirements.txt` (pinned versions from STACK.md). One-command setup: `python3.11 -m venv .venv && pip install -r requirements.txt`. Target: <30 minutes on clean machine.
-- **D-06:** Docker Compose optional (for TimescaleDB + Grafana) — not required for Phase 1. Download YAML but mark as "Phase 2 dependency."
+- **D-06:** pip + venv with `requirements.txt` (pinned versions). One-command setup: `python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`. Target: <30 minutes on clean machine.
+- **D-07:** Docker Compose optional (for TimescaleDB + Grafana) — not required for Phase 1. Create skeleton YAML only, mark as "Phase 2 dependency."
 
 ### Feature Engineering Approach
-- **D-07:** Progressive feature design — start with 5 core features (hour, day-of-week, month, is_weekend, lag-24h), validate model works, then add holiday flags, lag-168h, rolling windows. Each feature addition should be its own notebook cell with before/after metric comparison.
-- **D-08:** CRITICAL: All scalers (StandardScaler, etc.) fit ONLY on training data using `TimeSeriesSplit`. NEVER call `fit()` on full dataset. This is the #1 pitfall identified in research and must be enforced by the notebook structure itself.
+- **D-08:** Progressive feature design — start with 3-5 core features (hour, day-of-week, month, is_weekend, lag-24h), validate model works, then add holiday flags, lag-168h, rolling windows. Each feature addition should be its own notebook cell with before/after metric comparison.
+- **D-09:** CRITICAL: All scalers (StandardScaler, etc.) fit ONLY on training data using `TimeSeriesSplit`. NEVER call `fit()` on full dataset. This is the #1 pitfall identified in research and must be enforced by the notebook structure itself.
 
 ### Notebook Architecture
-- **D-09:** Modular structure: thin Jupyter notebooks import from reusable `.py` modules (`pipeline/data_loader.py`, `pipeline/cleaner.py`, `pipeline/features.py`, `pipeline/forecaster.py`). Notebooks are for exploration and visualization; `.py` modules are for production logic. This prevents the monolithic-notebook anti-pattern.
-- **D-10:** Notebook naming convention: `01_data_ingestion.ipynb`, `02_data_cleaning.ipynb`, `03_feature_engineering.ipynb`, `04_load_forecasting.ipynb`, `05_end_to_end_baseline.ipynb`. Sequential, self-documenting.
+- **D-10:** Modular structure: thin Jupyter notebooks import from reusable `.py` modules (`pipeline/data_loader.py`, `pipeline/cleaner.py`, `pipeline/features.py`, `pipeline/forecaster.py`). Notebooks are for exploration and visualization; `.py` modules are for production logic.
+- **D-11:** Notebook naming convention: `01_data_ingestion.ipynb`, `02_data_cleaning.ipynb`, `03_feature_engineering.ipynb`, `04_load_forecasting.ipynb`, `05_end_to_end_baseline.ipynb`. Sequential, self-documenting.
 
 ### End-to-End Baseline
-- **D-11:** Baseline uses persistence forecast (yesterday's load = today's prediction) plus a minimal P&L calculation (assume flat price, buy at forecast, settle at actual). No ASSUME dependency — pure Python. Purpose: prove data → predict → trade pipeline works in <50 lines.
-- **D-12:** Baseline P&L chart verifies: (a) predictions flow into trading logic, (b) cumulative profit graph renders, (c) pipeline layers are connected. Numerical P&L need not be positive — the point is integration, not profitability.
+- **D-12:** Baseline uses persistence forecast (yesterday's load = today's prediction) plus a minimal P&L calculation (assume flat price, buy at forecast, settle at actual). No ASSUME dependency — pure Python. Purpose: prove data → predict → trade pipeline works in <50 lines.
+- **D-13:** Baseline P&L chart verifies: (a) predictions flow into trading logic, (b) cumulative profit graph renders, (c) pipeline layers are connected. Numerical P&L need not be positive — the point is integration, not profitability.
 
 ### Model Evaluation
-- **D-13:** Default metrics: MAE, RMSE, MAPE on temporal test split (last 20% of data). Add R² as supplementary. Report all metrics in a single comparison table.
-- **D-14:** Visualization minimum: (a) load-vs-prediction overlay plot for test period, (b) error distribution histogram, (c) residuals-over-time plot. Use matplotlib (pyplot) — no plotly dependency yet.
+- **D-14:** Primary metric: **MAE** (Mean Absolute Error) on temporal test split (last 20% of data). Keep it simple and interpretable for learning purposes.
+
+### Visualization
+- **D-15:** Use **plotly** for interactive visualizations — load-vs-prediction overlay (zoomable), error distribution, residuals-over-time. Plotly allows hovering to see exact values, which is valuable for learning.
 
 ### Claude's Discretion
 - Exact XGBoost hyperparameters (n_estimators, max_depth, learning_rate) — start with defaults, tune later
 - Error message wording for missing data or failed downloads
-- Color scheme and figure sizes for matplotlib plots
+- Color scheme and figure sizes for plotly plots
 - `requirements.txt` exact structure (flat vs grouped with comments)
+- Specific Chinese open data platform to prioritize (research and determine during implementation)
 </decisions>
 
 <canonical_refs>
@@ -57,7 +61,7 @@ Deliver a working Jupyter-based learning environment where users can: (1) instal
 - `.planning/REQUIREMENTS.md` — All 24 v1 requirements; Phase 1 covers ENV-01..03, DATA-01..04, PRED-01, VIZ-01
 
 ### Technology Stack
-- `.planning/research/STACK.md` — Version-pinned stack: Python 3.11, pandas 3.0.3, scikit-learn 1.8.0, XGBoost 3.2.0, enda 1.0.5, matplotlib 3.10.9
+- `.planning/research/STACK.md` — Version-pinned stack: Python 3.11, pandas 3.0.3, scikit-learn 1.8.0, XGBoost 3.2.0, plotly 6.7.0
 
 ### Pitfalls (CRITICAL reads)
 - `.planning/research/PITFALLS.md` — **Look-ahead bias** (scaler on full data, random splits), **spike-as-noise** (log-transforming prices destroys signal), and **no end-to-end early** trap. Phase 1 must actively prevent the first and third.
@@ -66,7 +70,7 @@ Deliver a working Jupyter-based learning environment where users can: (1) instal
 - `.planning/research/ARCHITECTURE.md` — Layered pipeline: Data Layer → Prediction Layer → Market Layer → Agent Layer. Phase 1 delivers Data Layer + manual Prediction Layer connector.
 
 ### Features
-- `.planning/research/FEATURES.md` — Table stakes feature list, dependency chain: Data → Forecasting → Simulation → RL → LLM. Phase 1 covers the first two nodes.
+- `.planning/research/FEATURES.md` — Table stakes feature list, dependency chain.
 
 ### Roadmap
 - `.planning/ROADMAP.md` § Phase 1 — 9 requirements, 5 success criteria, MVP mode
@@ -92,19 +96,18 @@ Deliver a working Jupyter-based learning environment where users can: (1) instal
 <specifics>
 ## Specific Ideas
 
-- "I want to be able to find data and make a prediction within 30 minutes of setup" — from the learning roadmap
-- Notebooks should feel like a guided tutorial, not a code dump — markdown explanations before each code block, reflection questions after each visualization
-- The end-to-end baseline should produce a cumulative profit chart even if the numbers are negative — the visual proof of integration is the goal
-- Follow the Beijing Tuji (GeekBidder) inspired pattern: data robot → prediction → trade — our open-source equivalent
+- 你想学图迹科技的实战技术，所以优先使用中国电力市场数据而非美国数据
+- 使用 plotly 做交互式可视化，方便学习中探索数据细节
+- 评估指标保持简单（仅MAE），降低学习门槛
 </specifics>
 
 <deferred>
 ## Deferred Ideas
 
-- Chinese electricity data (国家能源局, 菏泽市, EPS) — custom scraping, no ready-made Python package. Deferred to v2 (EXT-01). Focus Phase 1 on PUDL.
-- Weather data integration for prediction features — deferred to Phase 2 when OpenSTEF brings weather feature engineering
-- HAMLET local market simulation — research couldn't locate the repo (possible 404). ASSUME covers wholesale market needs.
-- Real-time data feeds and live trading — explicitly out of scope per PROJECT.md
+- 美国PJM数据 (PUDL) — 作为备用数据源，当中国数据不可用时降级使用
+- enda 能源时序数据处理工具 — 研究发现其H2O依赖与项目约束冲突，推迟到Phase 2评估
+- 天气数据集成 — 推迟到Phase 2（OpenSTEF自带天气特征工程）
+- HAMLET 本地市场仿真 — repo可能不可用（404），优先级低于ASSUME
 </deferred>
 
 ---

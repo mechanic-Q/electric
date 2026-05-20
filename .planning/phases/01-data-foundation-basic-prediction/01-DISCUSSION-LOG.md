@@ -1,34 +1,49 @@
 # Phase 1: Data Foundation + Basic Prediction - Discussion Log
 
 **Gathered:** 2026-05-20
-**Mode:** auto
+**Mode:** interactive
 
-## Areas Auto-Resolved
+## Areas Discussed
 
-### Data Source
-[auto] Q: "Which electricity market dataset to use?" → Selected: PJM (Recommended) — Largest US RTO, most data available via PUDL, well-documented
-
-### Data Storage Format
-[auto] Q: "Parquet vs SQLite for data storage?" → Selected: Parquet (Recommended) — Portable, columnar, pandas-native, no server needed
+### Data Source Selection
+Q: "你想用哪里的电力数据来学习？" → Selected: 中国电力数据（地方开放数据平台，小时级负荷）
+- 用户明确表示想学中国电力市场的技术，优先使用中国数据而非美国PJM
 
 ### Environment Setup
-[auto] Q: "pip+venv vs conda vs Docker?" → Selected: pip+venv with requirements.txt (Recommended) — Fastest path to <30min setup target
-
-### Feature Engineering
-[auto] Q: "Progressive vs all-at-once features?" → Selected: Progressive — start with 5 core features, add iteratively with before/after comparison
+Q: "环境搭建方式？" → Selected: pip + venv (Recommended)
+- 最简单直接，30分钟内跑起来
 
 ### Notebook Structure
-[auto] Q: "Monolithic vs modular notebooks?" → Selected: Modular .py modules + thin notebooks (Recommended) — Prevents the anti-pattern identified in research
+Q: "Notebook 结构怎么组织？" → Selected: 模块化（.py + notebook）
+- 核心逻辑放.py模块，notebook只做探索和可视化
 
 ### End-to-End Baseline
-[auto] Q: "Simple persistence forecast vs ASSUME-lite?" → Selected: Simple persistence + basic P&L (Recommended) — No framework dependency, proves pipeline in <50 lines
+Q: "端到端基线用什么方式？" → Selected: 持续法预测 + 简单P&L (Recommended)
+- 先用最简单的方式证明管道连通
+
+### Model Evaluation
+Q: "模型评估用哪些指标？" → Selected: MAE
+- 保持简单，只看平均绝对误差
+
+### Feature Engineering
+Q: "特征工程怎么组织？" → Selected: 渐进式（先少后多）(Recommended)
+- 先3-5个基础特征跑通，再逐步添加
+
+### Visualization
+Q: "可视化用什么库？" → Selected: plotly
+- 交互式图表，可以缩放/悬停查看数据点
+
+## Key Changes from Previous Auto-Run
+
+| Decision | Auto (之前的) | User (这次的) |
+|----------|--------------|--------------|
+| 数据源 | 美国PJM (PUDL) | 中国地方开放数据平台，小时级负荷 |
+| 评估指标 | MAE + RMSE + MAPE + R² | 仅 MAE |
+| 可视化 | matplotlib | plotly |
 
 ## Deferred Ideas
-
-- Chinese electricity data — v2 (EXT-01), custom scraping needed
-- Weather data — Phase 2 (OpenSTEF integration)
-- HAMLET — repo 404, lower priority
-- Real-time data — out of scope
+- 美国PJM作为备用数据源（降级方案）
+- 天气数据集成（Phase 2）
 
 ---
-*Discussion completed: 2026-05-20 (auto mode)*
+*Discussion completed: 2026-05-20 (interactive mode)*
