@@ -32,15 +32,15 @@ A hands-on learning journey through AI-driven electricity trading — from pulli
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Walking Skeleton: environment setup, PUDL data download, data cleaning, end-to-end persistence forecast → P&L chart
+- [x] 01-01-PLAN.md — Walking Skeleton: project scaffold (setup.sh, requirements.txt), OWID China data auto-fetch via OWIDChinaLoader, data cleaning (missing fill, IQR report-only, UTC timezone), persistence forecast + P&L chart (Notebooks 01 + 05)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02-PLAN.md — XGBoost load forecasting with TimeSeriesSplit, progressive feature engineering, evaluation metrics, all visualizations, DataLoader abstraction
+- [x] 01-02-PLAN.md — XGBoost load forecasting with TimeSeriesSplit(n_splits=5, gap=24), progressive feature engineering (Tiers 1-3 via FeatureEngineer), scaler fit-on-train-only enforcement, plotly visualizations (actual-vs-predicted overlay + error histogram), DataLoader full implementation (ChineseDataLoader + data versioning), Notebooks 02/03/04
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03-PLAN.md — Docker Compose skeleton, notebook polish (markdown + reflection questions), README data dictionary, data version pinning
+- [x] 01-03-PLAN.md — Docker Compose skeleton (commented-out TimescaleDB+Grafana for Phase 2), README data dictionary + project structure, Chinese data acquisition guide (docs/chinese-electricity-data-guide.md), notebook polish (思考题 reflection questions, error handling, learning objectives)
 
 ### Phase 2: Deep Prediction + Market Simulation
 
