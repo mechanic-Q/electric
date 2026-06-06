@@ -6,8 +6,8 @@ A hands-on learning journey through AI-driven electricity trading — from pulli
 
 ## Phases
 
-- [ ] **Phase 1: Data Foundation + Basic Prediction** — Working Jupyter environment, PUDL data pipeline, XGBoost load forecasting, end-to-end baseline run
-- [ ] **Phase 2: Deep Prediction + Market Simulation** — OpenSTEF automated forecasting, epftoolbox price prediction, ASSUME market simulation with Grafana dashboards
+- [x] **Phase 1: Data Foundation + Basic Prediction** — Working Jupyter environment, PUDL data pipeline, XGBoost load forecasting, end-to-end baseline run
+- [ ] **Phase 2: 中国电力市场预测与仿真** — sklearn LEAR 电价预测 + epftoolbox 基准对比 + ASSUME 中国省间现货仿真 + Grafana 仪表板
 - [ ] **Phase 3: Trading Agents + Backtesting** — RL agent training with custom reward functions, historical backtesting on stress periods, SHAP model explainability
 - [ ] **Phase 4: Integration + LLM Interface** — FastAPI REST API, CLI toolchain, LangChain + Ollama natural language trading assistant
 
@@ -44,17 +44,17 @@ Plans:
 
 ### Phase 2: Deep Prediction + Market Simulation
 
-**Goal:** Learners compare automated vs manual forecasting (OpenSTEF vs XGBoost), predict day-ahead electricity prices with benchmark models, configure and run ASSUME market simulations with variable generation mixes, and visualize market outcomes through interactive dashboards.
+**Goal:** 基于中国电价数据（ZionLuo/price data.xlsx），使用 sklearn Lasso 实现 LEAR 日前电价预测；用 epftoolbox 5 个基准数据集 + DM/GW 统计检验验证方法正确性；配置 ASSUME 中国省间现货仿真环境；通过 Grafana 可视化市场出清结果。
 **Mode:** mvp
 **Depends on:** Phase 1
-**Requirements:** PRED-02, PRED-03, PRED-04, SIM-01, SIM-02, SIM-03, SIM-04
+**Requirements:** DATA-05, PRED-02, PRED-03, PRED-04, SIM-01, SIM-02, SIM-03, SIM-04
 **Success Criteria** (what must be TRUE):
 
-  1. Learner runs OpenSTEF automated forecasting pipeline and sees a side-by-side comparison table: manual XGBoost (Phase 1) vs OpenSTEF — MAE, RMSE, MAPE — with a clear "which model won" summary
-  2. Learner generates day-ahead price forecasts using LEAR for at least one reference market (e.g., EPEX-DE) and views LEAR vs DNN vs naive baseline accuracy metrics
+  1. Learner runs OpenSTEF automated forecasting pipeline and sees a side-by-side comparison table: manual XGBoost (Phase 1) vs OpenSTEF — MAE — with model win summary
+  2. Learner trains sklearn Lasso-based LEAR model on Chinese day-ahead price data, achieving MAE comparable to epftoolbox LEAR baseline; DM/GW test confirms statistical validity
   3. Learner opens an interactive plotly dashboard showing multi-model comparison: error-by-hour heatmaps, forecast overlay for the past week, and model ranking by metric
-  4. Learner launches a 7-day ASSUME simulation with default agents, then opens Grafana to view merit order curves, clearing prices per hour, dispatch per unit, and cumulative profit per agent
-  5. Learner modifies the generation mix YAML (e.g., increasing wind to 30%, removing coal), re-runs the simulation, and observes how the merit order shifts and clearing prices change
+  4. Learner launches a 7-day ASSUME simulation using Chinese provincial market rules, then opens Grafana to view clearing prices per hour, dispatch per unit, and cumulative profit per agent
+  5. Learner modifies the generation mix YAML (e.g., increasing wind to 30%, removing coal), re-runs the simulation, and observes how clearing prices change under Chinese market constraints
 
 **Plans:** TBD
 **UI hint:** yes
@@ -96,7 +96,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation + Basic Prediction | 0/3 | Planned | - |
-| 2. Deep Prediction + Market Simulation | 0/TBD | Not started | - |
+| 1. Data Foundation + Basic Prediction | 3/3 | Shipped | 2026-06-06 |
+| 2. 中国电力市场预测与仿真 | 0/TBD | Planned | - |
 | 3. Trading Agents + Backtesting | 0/TBD | Not started | - |
 | 4. Integration + LLM Interface | 0/TBD | Not started | - |

@@ -194,3 +194,11 @@ sillyspec/阶段2-重规划  ← Phase 2 worktree（SillySpec 自动创建）
 - PR 标题和正文使用中文
 - 每个阶段独立 PR，merge 到 master
 - review 前确认所有 notebook JSON 有效、py 编译通过
+
+### 文档语言规范
+
+- 所有计划文档（`.planning/`）使用中文，技术术语保留英文
+- commit message 使用中文
+- PR 标题和正文使用中文
+- 代码注释使用中文
+- 技术术语保留英文：XGBoost, MAE, TimeSeriesSplit, RL, LLM, API, CLI

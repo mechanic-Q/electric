@@ -1,65 +1,65 @@
-# Architecture Research
+# 架构调研
 
-**Domain:** AI-driven electricity trading learning platform
-**Researched:** 2026-05-20
-**Confidence:** HIGH
+**领域:** AI驱动的电力交易学习平台
+**调研日期:** 2026-05-20
+**置信度:** HIGH
 
-## Standard Architecture
+## 标准架构
 
-### System Overview
+### 系统总览
 
-The system follows a **layered pipeline architecture** with clean data-contract boundaries between layers. Each layer is independently learnable, testable, and replaceable — matching the four-stage learning roadmap in PROJECT.md.
+系统遵循**分层管道架构**，各层之间有清晰的数据契约边界。每一层均可独立学习、测试和替换——与 PROJECT.md 中的四个学习阶段路线图相匹配。
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                     LAYER 5: INTERFACE LAYER                              │
+│                     第5层：接口层                                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────────────┐  │
-│  │  FastAPI      │  │  CLI         │  │  LLM Chatbot                  │  │
+│  │  FastAPI      │  │  CLI         │  │  LLM 聊天机器人                │  │
 │  │  (REST API)   │  │  (assume +   │  │  (LangChain + OpenAI/Ollama)  │  │
 │  │               │  │   custom)    │  │                               │  │
 │  └──────┬───────┘  └──────┬───────┘  └───────────────┬───────────────┘  │
 │         │                 │                           │                  │
 ├─────────┴─────────────────┴───────────────────────────┴──────────────────┤
-│                     LAYER 4: AGENT / TRADING LAYER                         │
+│                     第4层：智能体/交易层                                    │
 │  ┌──────────────────────────────────────────────────────────────────┐    │
-│  │                    Trading Orchestrator                            │    │
+│  │                    交易编排器                                      │    │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐    │    │
 │  │  │ RL Agent      │  │ Rule-Based   │  │ Backtesting Engine   │    │    │
 │  │  │ (TD3/SAC/PPO) │  │ Strategies   │  │ (hist replay)        │    │    │
 │  │  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────┘    │    │
 │  │         │                 │                      │                │    │
 │  │         └─────────┬───────┴──────────────────────┘                │    │
-│  │                   │  Bid decisions (price, volume, time)          │    │
+│  │                   │  投标决策 (价格, 量, 时间)                      │    │
 │  └───────────────────┼──────────────────────────────────────────────┘    │
 │                      │                                                    │
 ├──────────────────────┼────────────────────────────────────────────────────┤
 │                      ↓                                                    │
-│               LAYER 3: MARKET SIMULATION LAYER (ASSUME)                   │
+│               第3层：市场仿真层 (ASSUME)                                    │
 │  ┌──────────────────────────────────────────────────────────────────┐    │
-│  │                    World (Orchestrator)                            │    │
+│  │                    World (编排器)                                   │    │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐    │    │
 │  │  │ Market Op.   │  │ Day-Ahead    │  │ Real-Time Market     │    │    │
 │  │  │ (coordinator)│  │ Market       │  │ (balancing)          │    │    │
 │  │  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────┘    │    │
 │  │         │                 │                      │                │    │
 │  │         └─────────┬───────┴──────────────────────┘                │    │
-│  │                   ↓  Clearing (uniform / pay-as-bid / nodal)      │    │
+│  │                   ↓  出清 (uniform / pay-as-bid / nodal)          │    │
 │  │  ┌──────────────────────────────────────────────────────────┐    │    │
-│  │  │  Unit Operators (manage portfolios)                       │    │    │
+│  │  │  Unit Operators (管理投资组合)                              │    │    │
 │  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │    │    │
 │  │  │  │PowerPlant│  │ Storage  │  │ Demand   │  │ Renewable│ │    │    │
 │  │  │  │ Unit     │  │ Unit     │  │ Unit     │  │ Unit     │ │    │    │
 │  │  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘ │    │    │
 │  │  └──────────────────────────────────────────────────────────┘    │    │
-│  │  Output: cleared prices, dispatch, profits, market metrics        │    │
+│  │  输出: 出清价格, 调度, 利润, 市场指标                               │    │
 │  └───────────────────────────┬──────────────────────────────────────┘    │
-│                              │  Needs: load forecast, price forecast,     │
-│                              │  renewable forecast, marginal costs        │
+│                              │  需要: 负荷预测, 电价预测,                  │
+│                              │  可再生能源预测, 边际成本                    │
 ├──────────────────────────────┼────────────────────────────────────────────┤
 │                              ↑                                            │
-│                  LAYER 2: PREDICTION LAYER                                 │
+│                  第2层：预测层                                              │
 │  ┌──────────────────────────────────────────────────────────────────┐    │
-│  │                    Prediction Pipeline                             │    │
+│  │                    预测管道                                        │    │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐    │    │
 │  │  │ Load Forecast │  │ Price Forecast│  │ Renewable Gen.      │    │    │
 │  │  │ (XGBoost/     │  │ (LEAR/DNN/   │  │ Forecast            │    │    │
@@ -67,140 +67,140 @@ The system follows a **layered pipeline architecture** with clean data-contract 
 │  │  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────┘    │    │
 │  │         │                 │                      │                │    │
 │  │         └─────────┬───────┴──────────────────────┘                │    │
-│  │                   ↓  Feature engineering + Model training         │    │
+│  │                   ↓  特征工程 + 模型训练                            │    │
 │  │  ┌──────────────────────────────────────────────────────────┐    │    │
-│  │  │  Feature Store (calendar, weather, lag features)          │    │    │
+│  │  │  Feature Store (日历, 天气, 滞后特征)                       │    │    │
 │  │  └──────────────────────────────────────────────────────────┘    │    │
 │  └───────────────────────────┬──────────────────────────────────────┘    │
-│                              │  Needs: cleaned time-series data           │
+│                              │  需要: 清洗后的时序数据                     │
 ├──────────────────────────────┼────────────────────────────────────────────┤
 │                              ↑                                            │
-│                    LAYER 1: DATA LAYER                                     │
+│                    第1层：数据层                                            │
 │  ┌──────────────────────────────────────────────────────────────────┐    │
-│  │                    Data Pipeline                                   │    │
+│  │                    数据管道                                        │    │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐    │    │
 │  │  │ Data Ingest  │  │ Data Clean   │  │ Feature Engineering  │    │    │
-│  │  │ (PUDL/IEA/   │  │ (enda/       │  │ (time/calendar/      │    │    │
-│  │  │  CSV/API)    │  │  pandas)     │  │  weather features)   │    │    │
+│  │  │ (PUDL/IEA/   │  │ (enda/       │  │ (时间/日历/           │    │    │
+│  │  │  CSV/API)    │  │  pandas)     │  │  天气特征)            │    │    │
 │  │  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────┘    │    │
 │  │         │                 │                      │                │    │
 │  │         └─────────┬───────┴──────────────────────┘                │    │
 │  │                   ↓                                               │    │
 │  │  ┌──────────────────────────────────────────────────────────┐    │    │
-│  │  │  Data Store (SQLite/Parquet files, DuckDB for query)      │    │    │
-│  │  │  Tables: load, price, generation, weather, plant_metadata │    │    │
+│  │  │  Data Store (SQLite/Parquet 文件, DuckDB 查询)             │    │    │
+│  │  │  表: load, price, generation, weather, plant_metadata     │    │    │
 │  │  └──────────────────────────────────────────────────────────┘    │    │
 │  └──────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+### 组件职责
 
-| Component | Responsibility | Typical Implementation | Learning Stage |
+| 组件 | 职责 | 典型实现 | 学习阶段 |
 |-----------|----------------|------------------------|----------------|
-| **Data Ingest** | Fetch raw data from PUDL, IEA, public APIs; store locally | Python scripts, `pudl` package, `pandas` | Stage 1 |
-| **Data Cleaner** | Handle missing values, resample to uniform frequency, validate quality | `enda` (timeseries), `pandas` | Stage 1 |
-| **Feature Store** | Engineer datetime features (hour, day-of-week, holidays), weather features, lag features | `enda` feature engineering, `pandas` | Stage 1-2 |
-| **Data Store** | Persist cleaned time-series data in queryable format | SQLite (via PUDL pattern) or DuckDB + Parquet | Stage 1 |
-| **Load Forecaster** | Predict future electricity demand (MW) at 15min/1hr resolution | XGBoost (Stage 1), OpenSTEF (Stage 2) | Stage 1-2 |
-| **Price Forecaster** | Predict day-ahead electricity prices for bid optimization | LEAR model, epftoolbox DNN | Stage 2 |
-| **Renewable Forecaster** | Predict wind/solar generation from weather forecasts | Physical model (wind speed→power) or ML | Stage 2 |
-| **World (ASSUME)** | Orchestrate simulation: manage clock, coordinate markets + agents | `assume.World` with mango agent framework | Stage 2-3 |
-| **Market Operator** | Operate one or more markets, handle post-clearing (redispatch) | `assume.markets.MarketRole` | Stage 2 |
-| **Day-Ahead Market** | Collect bids, run clearing algorithm, publish prices/dispatch | `assume.markets` clearing algorithms | Stage 2 |
-| **Real-Time Market** | Handle imbalances, balancing energy pricing | ASSUME balancing market (in development) | Stage 3 |
-| **Unit Operator** | Manage portfolio: aggregate unit constraints, place coordinated bids | `assume.UnitOperator` | Stage 3 |
-| **Power Plant Unit** | Represent thermal generator with technical constraints (ramp, min/max, efficiency) | `assume.units.PowerPlant` | Stage 2 |
-| **Storage Unit** | Represent battery/pumped hydro with SoC, charge/discharge limits | `assume.units.Storage` | Stage 3 |
-| **Renewable Unit** | Represent wind/solar with weather-dependent availability | `assume.units` + custom forecaster | Stage 3 |
-| **Demand Unit** | Represent fixed or flexible load | `assume.units.Demand`, `DSMFlex` | Stage 2 |
-| **Bidding Strategy** | Map state → bid (price, volume). Pluggable: rule-based, optimization, or RL | `assume.strategies.*` | Stage 2-3 |
-| **RL Agent** | Learn bidding policy via DRL (TD3, SAC, PPO) | `assume.strategies.learning_strategies` | Stage 3 |
-| **Backtesting Engine** | Replay historical data, evaluate strategy against past markets | Custom wrapper around ASSUME or standalone | Stage 3 |
-| **Trading Orchestrator** | Combine predictions + simulation → execute backtest → report metrics | Custom Python module | Stage 3-4 |
-| **FastAPI Server** | Expose REST API: run predictions, trigger simulations, query results | FastAPI + Pydantic schemas | Stage 4 |
-| **CLI** | Command-line interface: run pipelines, backtests, inspect data | `assume` CLI + custom Click/Typer commands | All stages |
-| **LLM Chatbot** | Natural language interface: "predict tomorrow's load" → runs pipeline | LangChain + OpenAI/Ollama + function calling | Stage 4 |
+| **Data Ingest** | 从 PUDL、IEA、公开 API 拉取原始数据；本地存储 | Python 脚本, `pudl` 包, `pandas` | 阶段 1 |
+| **Data Cleaner** | 处理缺失值，重采样到统一频率，验证数据质量 | `enda` (时序), `pandas` | 阶段 1 |
+| **Feature Store** | 构造日期时间特征 (小时, 星期几, 节假日), 天气特征, 滞后特征 | `enda` 特征工程, `pandas` | 阶段 1-2 |
+| **Data Store** | 以可查询格式持久化清洗后的时序数据 | SQLite (遵循 PUDL 模式) 或 DuckDB + Parquet | 阶段 1 |
+| **Load Forecaster** | 以15分钟/1小时分辨率预测未来电力需求 (MW) | XGBoost (阶段 1), OpenSTEF (阶段 2) | 阶段 1-2 |
+| **Price Forecaster** | 预测日前电价以优化投标 | LEAR 模型, epftoolbox DNN | 阶段 2 |
+| **Renewable Forecaster** | 从气象预报预测风电/光伏发电 | 物理模型 (风速→功率) 或 ML | 阶段 2 |
+| **World (ASSUME)** | 编排仿真：管理时钟，协调市场 + 智能体 | `assume.World` 配合 mango agent 框架 | 阶段 2-3 |
+| **Market Operator** | 运营一个或多个市场，处理出清后 (再调度) | `assume.markets.MarketRole` | 阶段 2 |
+| **Day-Ahead Market** | 收集投标，运行出清算法的出清算法，发布价格/调度 | `assume.markets` 出清算法 | 阶段 2 |
+| **Real-Time Market** | 处理不平衡，平衡能量定价 | ASSUME balancing market (开发中) | 阶段 3 |
+| **Unit Operator** | 管理投资组合：聚合机组约束，提交协调投标 | `assume.UnitOperator` | 阶段 3 |
+| **Power Plant Unit** | 带技术约束的火电机组 (爬坡、最小/最大、效率) | `assume.units.PowerPlant` | 阶段 2 |
+| **Storage Unit** | 带 SoC、充放电限制的储能/抽水蓄能 | `assume.units.Storage` | 阶段 3 |
+| **Renewable Unit** | 带天气依赖可用性的风电/光伏 | `assume.units` + 自定义预测器 | 阶段 3 |
+| **Demand Unit** | 固定或柔性负荷 | `assume.units.Demand`, `DSMFlex` | 阶段 2 |
+| **Bidding Strategy** | 映射状态 → 投标 (价格, 量)。可插拔: 规则型、优化型或 RL | `assume.strategies.*` | 阶段 2-3 |
+| **RL Agent** | 通过 DRL 学习投标策略 (TD3, SAC, PPO) | `assume.strategies.learning_strategies` | 阶段 3 |
+| **Backtesting Engine** | 重放历史数据，对照历史市场评估策略 | 围绕 ASSUME 的自定义包装器或独立模块 | 阶段 3 |
+| **Trading Orchestrator** | 组合预测 + 仿真 → 执行回测 → 报告指标 | 自定义 Python 模块 | 阶段 3-4 |
+| **FastAPI Server** | 暴露 REST API：运行预测，触发仿真，查询结果 | FastAPI + Pydantic schemas | 阶段 4 |
+| **CLI** | 命令行界面：运行管道、回测、查看数据 | `assume` CLI + 自定义 Click/Typer 命令 | 所有阶段 |
+| **LLM Chatbot** | 自然语言界面："预测明天的负荷" → 运行管道 | LangChain + OpenAI/Ollama + function calling | 阶段 4 |
 
-## Recommended Project Structure
+## 推荐的项目结构
 
 ```
 ellectric/
-├── data/                          # Data layer (Stage 1)
-│   ├── raw/                       # Downloaded raw data (PUDL SQLite, IEA CSV)
-│   ├── processed/                 # Cleaned Parquet files
-│   ├── external/                  # Weather data, holiday calendars
-│   └── README.md                  # Data dictionary
+├── data/                          # 数据层 (阶段 1)
+│   ├── raw/                       # 下载的原始数据 (PUDL SQLite, IEA CSV)
+│   ├── processed/                 # 清洗后的 Parquet 文件
+│   ├── external/                  # 天气数据, 节假日日历
+│   └── README.md                  # 数据字典
 │
 ├── src/
-│   ├── data_pipeline/             # LAYER 1: Data ingestion & preprocessing
+│   ├── data_pipeline/             # 第1层: 数据接入与预处理
 │   │   ├── __init__.py
-│   │   ├── ingest.py             # Fetch from PUDL, IEA, local CSV
-│   │   ├── clean.py              # Missing values, resampling, validation
-│   │   ├── features.py           # Calendar features, lag features, weather
-│   │   └── store.py              # Write to Parquet, read utilities
+│   │   ├── ingest.py             # 从 PUDL, IEA, 本地 CSV 拉取
+│   │   ├── clean.py              # 缺失值, 重采样, 验证
+│   │   ├── features.py           # 日历特征, 滞后特征, 天气
+│   │   └── store.py              # 写入 Parquet, 读取工具
 │   │
-│   ├── prediction/                # LAYER 2: Forecasting models
+│   ├── prediction/                # 第2层: 预测模型
 │   │   ├── __init__.py
-│   │   ├── load_forecast.py      # XGBoost baseline + OpenSTEF integration
-│   │   ├── price_forecast.py     # LEAR model via epftoolbox
-│   │   ├── renewable_forecast.py # Wind/solar generation prediction
-│   │   └── evaluation.py         # MAE, RMSE, sMAPE, MASE metrics
+│   │   ├── load_forecast.py      # XGBoost 基线 + OpenSTEF 集成
+│   │   ├── price_forecast.py     # 通过 epftoolbox 的 LEAR 模型
+│   │   ├── renewable_forecast.py # 风电/光伏发电预测
+│   │   └── evaluation.py         # MAE, RMSE, sMAPE, MASE 指标
 │   │
-│   ├── simulation/                # LAYER 3: Market simulation (ASSUME wrapper)
+│   ├── simulation/                # 第3层: 市场仿真 (ASSUME 包装器)
 │   │   ├── __init__.py
-│   │   ├── config/                # ASSUME scenario YAML/CSV configs
+│   │   ├── config/                # ASSUME 场景 YAML/CSV 配置
 │   │   │   ├── market_config.yaml
 │   │   │   ├── power_plants.csv
 │   │   │   ├── demand_units.csv
 │   │   │   └── renewables.csv
-│   │   ├── scenarios/             # Pre-built learning scenarios
-│   │   │   ├── basic_2unit/       # 2-unit market (warmup)
-│   │   │   ├── multi_agent/       # Multiple generators + storage
-│   │   │   └── renewable_pen/     # High renewable penetration
-│   │   ├── runner.py             # Launch ASSUME simulations
-│   │   └── results.py            # Parse simulation outputs
+│   │   ├── scenarios/             # 预构建的学习场景
+│   │   │   ├── basic_2unit/       # 2机组市场 (热身)
+│   │   │   ├── multi_agent/       # 多个发电机 + 储能
+│   │   │   └── renewable_pen/     # 高可再生能源渗透率
+│   │   ├── runner.py             # 启动 ASSUME 仿真
+│   │   └── results.py            # 解析仿真输出
 │   │
-│   ├── agents/                    # LAYER 4: Trading strategies & RL
+│   ├── agents/                    # 第4层: 交易策略与 RL
 │   │   ├── __init__.py
-│   │   ├── strategies/            # Custom bidding strategies
+│   │   ├── strategies/            # 自定义投标策略
 │   │   │   ├── base.py
-│   │   │   ├── marginal_cost.py   # Bid at marginal cost
-│   │   │   ├── markup.py          # Cost + markup
-│   │   │   └── prediction_based.py # Use layer-2 forecasts
-│   │   ├── rl/                    # RL agent wrappers
-│   │   │   ├── env.py            # Gym-compatible trading environment
+│   │   │   ├── marginal_cost.py   # 按边际成本投标
+│   │   │   ├── markup.py          # 成本 + 加成
+│   │   │   └── prediction_based.py # 使用第2层预测
+│   │   ├── rl/                    # RL agent 包装器
+│   │   │   ├── env.py            # 兼容 Gym 的交易环境
 │   │   │   ├── agent.py          # DRL agent (TD3/SAC via stable-baselines3)
-│   │   │   └── reward.py         # Custom reward functions
-│   │   └── backtest.py           # Historical backtesting engine
+│   │   │   └── reward.py         # 自定义奖励函数
+│   │   └── backtest.py           # 历史回测引擎
 │   │
-│   ├── interface/                 # LAYER 5: API, CLI, Chatbot
+│   ├── interface/                 # 第5层: API, CLI, 聊天机器人
 │   │   ├── __init__.py
-│   │   ├── api/                   # FastAPI application
-│   │   │   ├── main.py           # App entry point
-│   │   │   ├── routes/            # API endpoints
-│   │   │   │   ├── data.py       # /data/* endpoints
-│   │   │   │   ├── prediction.py  # /predict/* endpoints
-│   │   │   │   ├── simulation.py # /simulate/* endpoints
-│   │   │   │   └── backtest.py   # /backtest/* endpoints
-│   │   │   └── schemas.py        # Pydantic models
-│   │   ├── cli/                   # CLI commands
-│   │   │   ├── main.py           # Typer/Click CLI entry
+│   │   ├── api/                   # FastAPI 应用
+│   │   │   ├── main.py           # 应用入口
+│   │   │   ├── routes/            # API 端点
+│   │   │   │   ├── data.py       # /data/* 端点
+│   │   │   │   ├── prediction.py  # /predict/* 端点
+│   │   │   │   ├── simulation.py # /simulate/* 端点
+│   │   │   │   └── backtest.py   # /backtest/* 端点
+│   │   │   └── schemas.py        # Pydantic 模型
+│   │   ├── cli/                   # CLI 命令
+│   │   │   ├── main.py           # Typer/Click CLI 入口
 │   │   │   ├── data_cmd.py
 │   │   │   ├── predict_cmd.py
 │   │   │   └── simulate_cmd.py
-│   │   └── chatbot/               # LLM chatbot
-│   │       ├── agent.py          # LangChain agent with tools
-│   │       ├── tools.py          # Function tools (predict, simulate, query)
-│   │       └── prompts.py        # System prompts
+│   │   └── chatbot/               # LLM 聊天机器人
+│   │       ├── agent.py          # LangChain agent 带工具
+│   │       ├── tools.py          # 功能工具 (预测, 仿真, 查询)
+│   │       └── prompts.py        # 系统提示词
 │   │
-│   └── shared/                    # Shared utilities
+│   └── shared/                    # 共享工具
 │       ├── __init__.py
-│       ├── config.py             # Project-wide configuration (paths, params)
-│       ├── types.py              # Shared data types/dataclasses
-│       └── visualization.py      # Plotting utilities (matplotlib/plotly)
+│       ├── config.py             # 项目配置 (路径, 参数)
+│       ├── types.py              # 共享数据类型/dataclasses
+│       └── visualization.py      # 绘图工具 (matplotlib/plotly)
 │
-├── notebooks/                     # Jupyter notebooks for learning
+├── notebooks/                     # Jupyter notebooks 用于学习
 │   ├── 01_data_exploration.ipynb
 │   ├── 02_load_forecasting_xgboost.ipynb
 │   ├── 03_price_forecasting.ipynb
@@ -215,77 +215,77 @@ ellectric/
 │   ├── test_agents/
 │   └── test_interface/
 │
-├── requirements.txt               # Core dependencies
-├── requirements-dev.txt           # Dev dependencies (pytest, black, etc.)
+├── requirements.txt               # 核心依赖
+├── requirements-dev.txt           # 开发依赖 (pytest, black 等)
 └── README.md
 ```
 
-### Structure Rationale
+### 结构理由
 
-- **`data/`:** Separate from `src/` — large binary files (SQLite, Parquet) not tracked in git. `.gitignore` excludes `data/raw/` and `data/processed/` beyond small samples.
-- **`src/data_pipeline/`:** Isolated ingestion → clean → features pipeline. Can run independently before other layers exist. Produces Parquet files consumed by downstream layers via file paths.
-- **`src/prediction/`:** Each forecaster is a standalone module. Can be trained/evaluated independently. Produces CSV/Parquet forecast outputs. Forecasters share a common `predict(horizon) → pd.DataFrame` interface.
-- **`src/simulation/`:** Wraps ASSUME (not reinvents it). Configuration-driven — YAML/CSV files define the world. `runner.py` is a thin launcher. Scenario folders are self-contained (portable between learners).
-- **`src/agents/`:** Strategy code separate from simulation engine. Strategies consume prediction outputs and produce bids. RL agents use a Gym-compatible environment wrapper that can use either ASSUME or a lightweight simulator.
-- **`src/interface/`:** Three access modes (API, CLI, Chatbot) — all call the same underlying service layer. Chatbot tools are function-calling wrappers around CLI/API services.
-- **`notebooks/`:** The primary learning surface. Each notebook walks through one concept end-to-end with explanatory text and executable code.
-- **`src/shared/`:** Avoid circular dependencies. All layers import shared types and config from here.
+- **`data/`:** 与 `src/` 分离 —— 大型二进制文件 (SQLite, Parquet) 不纳入 git 跟踪。`.gitignore` 排除 `data/raw/` 和 `data/processed/`，仅保留小样本。
+- **`src/data_pipeline/`:** 隔离的接入 → 清洗 → 特征管道。可在其他层存在之前独立运行。通过文件路径产出下游层消费的 Parquet 文件。
+- **`src/prediction/`:** 每个预测器是独立模块。可独立训练/评估。产出 CSV/Parquet 预测输出。预测器共享 `predict(horizon) → pd.DataFrame` 通用接口。
+- **`src/simulation/`:** 包装 ASSUME (不重新发明)。配置驱动 —— YAML/CSV 文件定义世界。`runner.py` 是薄启动器。场景文件夹自包含 (可在学习者之间移植)。
+- **`src/agents/`:** 策略代码与仿真引擎分离。策略消费预测输出并产出投标。RL agent 使用兼容 Gym 的环境包装器，可使用 ASSUME 或轻量仿真器。
+- **`src/interface/`:** 三种访问模式 (API, CLI, Chatbot) —— 都调用相同的底层服务层。Chatbot 工具是 CLI/API 服务的 function-calling 包装器。
+- **`notebooks/`:** 主要学习界面。每个 notebook 端到端地讲解一个概念，带有说明文字和可执行代码。
+- **`src/shared/`:** 避免循环依赖。所有层从此处导入共享类型和配置。
 
-## Architectural Patterns
+## 架构模式
 
-### Pattern 1: Data Contract via DataFrame
+### 模式 1: 基于 DataFrame 的数据契约
 
-**What:** Each layer communicates with the next through Pandas DataFrames (or file-based Parquet) with well-defined column schemas. No direct function calls between layers — data is materialized and passed.
+**是什么:** 每层通过具有明确定义列 schema 的 Pandas DataFrame (或基于文件的 Parquet) 与下一层通信。层之间没有直接函数调用 —— 数据被物化并传递。
 
-**When to use:** Every inter-layer boundary.
+**何时使用:** 每个层间边界。
 
-**Trade-offs:**
-- **Pro:** Each layer is independently debuggable — inspect intermediate DataFrames.
-- **Pro:** Learners can replace one layer without touching others (e.g., swap XGBoost for LSTM).
-- **Con:** File I/O overhead. Mitigated by using Parquet (fast, compressed) and in-memory DataFrame passing in notebooks.
+**权衡:**
+- **优点:** 每层可独立调试 —— 检查中间 DataFrame。
+- **优点:** 学习者可以在不触及其他层的情况下替换某一层 (例如，将 XGBoost 换成 LSTM)。
+- **缺点:** 文件 I/O 开销。通过使用 Parquet (快速、压缩) 和在 notebook 中使用内存 DataFrame 传递来缓解。
 
-**Example:**
+**示例:**
 ```python
-# Layer 1 → Layer 2 contract: cleaned_load.csv
-# Columns: timestamp (UTC), load_mw (float), region (str)
-# Frequency: hourly
+# 第1层 → 第2层 契约: cleaned_load.csv
+# 列: timestamp (UTC), load_mw (float), region (str)
+# 频率: 每小时
 
-# Layer 2 → Layer 3 contract: forecast_24h.csv
-# Columns: timestamp, predicted_load_mw, predicted_price_eur_mwh, 
+# 第2层 → 第3层 契约: forecast_24h.csv
+# 列: timestamp, predicted_load_mw, predicted_price_eur_mwh, 
 #           predicted_wind_mw, predicted_solar_mw
-# Frequency: hourly, horizon: 24h
+# 频率: 每小时, 预测期: 24h
 
-# Layer 3 → Layer 4 contract: market_results.csv
-# Columns: timestamp, cleared_price, dispatched_mw, unit_id, profit_eur
+# 第3层 → 第4层 契约: market_results.csv
+# 列: timestamp, cleared_price, dispatched_mw, unit_id, profit_eur
 ```
 
-### Pattern 2: Strategy Pattern for Bidding
+### 模式 2: 投标策略模式 (Strategy Pattern)
 
-**What:** Bidding strategies implement a common interface (`calculate_bids(state) → List[Order]`). The simulation engine calls this interface — it doesn't care if the strategy is rule-based, optimization-based, or RL-based.
+**是什么:** 投标策略实现通用接口 (`calculate_bids(state) → List[Order]`)。仿真引擎调用此接口 —— 它不关心策略是基于规则的、基于优化的还是基于 RL 的。
 
-**When to use:** Agent layer. ASSUME already implements this internally — our wrapper respects the same interface.
+**何时使用:** 智能体层。ASSUME 已在内部实现了此模式 —— 我们的包装器遵循相同的接口。
 
-**Trade-offs:**
-- **Pro:** Learners start with simple marginal-cost bidding, then upgrade to RL without changing simulation code.
-- **Pro:** Backtesting can replay the same market against different strategies.
-- **Con:** State representation must be standardized. Some strategies need more state than others (RL needs full observation space).
+**权衡:**
+- **优点:** 学习者从简单的边际成本投标开始，然后升级到 RL，无需更改仿真代码。
+- **优点:** 回测可以用相同的市场数据对不同策略进行重放。
+- **缺点:** 状态表示必须标准化。某些策略需要比其他策略更多的状态 (RL 需要完整的观测空间)。
 
-**Example:**
+**示例:**
 ```python
-# ASSUME already uses this pattern:
+# ASSUME 已使用此模式:
 class BiddingStrategy(ABC):
     @abstractmethod
     def calculate_bids(self, unit, market_config, forecaster) -> List[Order]:
         ...
 
-# Rule-based (Stage 2 - warmup):
+# 基于规则的 (阶段 2 - 热身):
 class MarginalCostStrategy(BiddingStrategy):
     def calculate_bids(self, unit, market_config, forecaster):
         mc = unit.calculate_marginal_cost()
         max_power = unit.calculate_min_max_power()[1]
         return [Order(price=mc * 1.1, volume=max_power)]
 
-# Prediction-based (Stage 3):
+# 基于预测的 (阶段 3):
 class ForecastBasedStrategy(BiddingStrategy):
     def __init__(self, price_forecast_df):
         self.forecast = price_forecast_df
@@ -293,49 +293,49 @@ class ForecastBasedStrategy(BiddingStrategy):
     def calculate_bids(self, unit, market_config, forecaster):
         predicted_price = self.forecast.loc[timestamp, 'price']
         mc = unit.calculate_marginal_cost()
-        # Only bid if predicted price > marginal cost
+        # 仅在预测价格 > 边际成本时投标
         if predicted_price > mc:
             return [Order(price=predicted_price * 0.95, volume=max_power)]
         return []
 ```
 
-### Pattern 3: Pipeline with Checkpoints
+### 模式 3: 带检查点的管道
 
-**What:** Long-running pipelines (data → predict → simulate) save intermediate results to disk. Each stage checks for existing output and skips if already computed.
+**是什么:** 长时间运行的管道 (数据 → 预测 → 仿真) 将中间结果保存到磁盘。每个阶段检查是否存在已有输出，如果已计算则跳过。
 
-**When to use:** Data pipeline and backtesting.
+**何时使用:** 数据管道和回测。
 
-**Trade-offs:**
-- **Pro:** Faster iteration — change only the last stage.
-- **Pro:** Reproducible — each checkpoint is a versioned artifact.
-- **Con:** Cache invalidation complexity. Mitigated by content-hashing input configs.
+**权衡:**
+- **优点:** 更快的迭代 —— 只更改最后阶段。
+- **优点:** 可复现 —— 每个检查点是有版本的产物。
+- **缺点:** 缓存失效复杂性。通过对输入配置进行内容哈希来缓解。
 
-**Example:**
+**示例:**
 ```python
-# In backtest.py:
+# 在 backtest.py 中:
 def run_backtest(config: BacktestConfig):
-    # Stage 1: Load/cache data
+    # 阶段 1: 加载/缓存数据
     data = load_or_compute("cache/cleaned_data.parquet", 
                            lambda: ingest_and_clean(config.data_start, config.data_end))
     
-    # Stage 2: Generate predictions
+    # 阶段 2: 生成预测
     forecasts = load_or_compute("cache/forecasts.parquet",
                                 lambda: generate_forecasts(data, config.model))
     
-    # Stage 3: Run simulation
+    # 阶段 3: 运行仿真
     results = load_or_compute("cache/results.parquet",
                               lambda: run_assume_simulation(forecasts, config.scenario))
     
     return results
 ```
 
-### Pattern 4: Config-Driven Simulation
+### 模式 4: 配置驱动的仿真
 
-**What:** ASSUME simulations are defined entirely by YAML/CSV configuration files. No code changes needed to test different market designs, unit mixes, or strategies.
+**是什么:** ASSUME 仿真完全由 YAML/CSV 配置文件定义。测试不同的市场设计、机组组合或策略无需代码更改。
 
-**When to use:** Simulation layer. Enables rapid experimentation.
+**何时使用:** 仿真层。实现快速实验。
 
-**Example:**
+**示例:**
 ```yaml
 # config/market_config.yaml
 markets:
@@ -351,317 +351,317 @@ markets:
         count: 24
 ```
 
-## Data Flow
+## 数据流
 
-### Complete Pipeline Flow
+### 完整管道流程
 
 ```
-[Public Data Sources]
-    │  PUDL, IEA, weather APIs
+[公开数据源]
+    │  PUDL, IEA, 天气 APIs
     ↓
 ┌───────────────────────────────────────┐
-│ LAYER 1: DATA                          │
+│ 第1层: 数据                             │
 │                                         │
 │ PUDL SQLite / IEA CSV                   │
-│     → enda/pandas: resample, fill gaps  │
-│     → Feature engineering (calendar,    │
-│       weather, lags)                    │
-│     → Store: Parquet files              │
-│  Output: cleaned_load.parquet,          │
-│          cleaned_price.parquet,         │
-│          weather_features.parquet       │
+│     → enda/pandas: 重采样, 填补缺失     │
+│     → 特征工程 (日历,                    │
+│       天气, 滞后)                        │
+│     → 存储: Parquet 文件                │
+│  输出: cleaned_load.parquet,            │
+│        cleaned_price.parquet,           │
+│        weather_features.parquet         │
 └───────────────┬───────────────────────┘
                 │
                 ↓
 ┌───────────────────────────────────────┐
-│ LAYER 2: PREDICTION                    │
+│ 第2层: 预测                             │
 │                                         │
-│ Load Forecaster:                        │
-│   features → XGBoost/OpenSTEF → load    │
-│ Price Forecaster:                       │
-│   features → LEAR/DNN → price           │
-│ Renewable Forecaster:                   │
-│   weather → physics/ML → wind, solar    │
+│ 负荷预测器:                              │
+│   特征 → XGBoost/OpenSTEF → 负荷        │
+│ 电价预测器:                              │
+│   特征 → LEAR/DNN → 价格                │
+│ 可再生能源预测器:                         │
+│   天气 → 物理/ML → 风电, 光伏            │
 │                                         │
-│  Output: forecast_24h.parquet with      │
-│   columns: [timestamp, load_mw,         │
-│   price_eur_mwh, wind_mw, solar_mw]    │
+│  输出: forecast_24h.parquet 包含        │
+│   列: [timestamp, load_mw,              │
+│    price_eur_mwh, wind_mw, solar_mw]   │
 └───────────────┬───────────────────────┘
                 │
                 ↓
 ┌───────────────────────────────────────┐
-│ LAYER 3: MARKET SIMULATION (ASSUME)    │
+│ 第3层: 市场仿真 (ASSUME)                │
 │                                         │
 │ World.setup(config.yaml)                │
-│   → Creates markets, units, operators   │
+│   → 创建市场, 机组, 运营者               │
 │   → Forecaster.init_forecasts()         │
-│     → Reads forecast_24h.parquet        │
+│     → 读取 forecast_24h.parquet         │
 │ World.run()                             │
-│   → Clock ticks (hourly)                │
-│   → Market opens → agents bid → clear   │
-│   → Results stored (TimescaleDB/CSV)    │
+│   → 时钟推进 (每小时)                    │
+│   → 市场开启 → 智能体投标 → 出清        │
+│   → 结果存储 (TimescaleDB/CSV)          │
 │                                         │
-│  Output: results.csv with columns:      │
+│  输出: results.csv 包含列:              │
 │   [timestamp, market, unit_id,          │
-│    bid_price, bid_volume, cleared_price, │
+│    bid_price, bid_volume, cleared_price,│
 │    dispatched_mw, profit_eur]           │
 └───────────────┬───────────────────────┘
                 │
                 ↓
 ┌───────────────────────────────────────┐
-│ LAYER 4: AGENT / BACKTEST              │
+│ 第4层: 智能体 / 回测                    │
 │                                         │
-│ Backtest Engine:                        │
-│   → Loop over historical windows       │
-│   → For each window:                    │
-│       1. Generate forecasts from data   │
-│       2. Run ASSUME with strategy       │
-│       3. Collect metrics (PnL, Sharpe,  │
-│          win rate)                      │
-│   → Compare strategies                  │
+│ 回测引擎:                                │
+│   → 遍历历史时间窗口                     │
+│   → 每个窗口:                            │
+│       1. 从数据生成预测                   │
+│       2. 用策略运行 ASSUME               │
+│       3. 收集指标 (PnL, Sharpe,         │
+│          胜率)                           │
+│   → 比较策略                             │
 │                                         │
-│ RL Training Loop:                       │
-│   → Environment = ASSUME wrapper        │
-│   → Agent observes state (forecasts,    │
-│     portfolio, market history)          │
-│   → Action = bid (price, volume)        │
-│   → Reward = profit or risk-adjusted    │
-│   → Train via TD3/SAC/PPO              │
+│ RL 训练循环:                            │
+│   → 环境 = ASSUME 包装器                 │
+│   → 智能体观测状态 (预测,                 │
+│     投资组合, 市场历史)                   │
+│   → 动作 = 投标 (价格, 量)              │
+│   → 奖励 = 利润或风险调整后的             │
+│   → 通过 TD3/SAC/PPO 训练              │
 └───────────────┬───────────────────────┘
                 │
                 ↓
 ┌───────────────────────────────────────┐
-│ LAYER 5: INTERFACE                     │
+│ 第5层: 接口                             │
 │                                         │
 │ FastAPI:                                │
-│   POST /predict → returns forecast      │
-│   POST /simulate → runs ASSUME → JSON   │
-│   GET  /results/{run_id} → metrics      │
+│   POST /predict → 返回预测              │
+│   POST /simulate → 运行 ASSUME → JSON  │
+│   GET  /results/{run_id} → 指标        │
 │                                         │
 │ CLI:                                    │
-│   $ ellectric predict --horizon 24h     │
-│   $ ellectric simulate --scenario basic │
-│   $ ellectric backtest --strategy rl    │
+│   $ ellectric predict --horizon 24h    │
+│   $ ellectric simulate --scenario basic│
+│   $ ellectric backtest --strategy rl   │
 │                                         │
 │ LLM Chatbot:                            │
-│   User: "What will tomorrow's load be?" │
-│   → Tool call: run_load_forecast()      │
-│   → Response: "Predicted load: 450MW    │
-│     peak at 18:00, min 280MW at 04:00"  │
+│   用户: "明天负荷是多少?"                │
+│   → 工具调用: run_load_forecast()       │
+│   → 响应: "预测负荷: 450MW               │
+│     峰值 18:00, 最低 280MW 04:00"       │
 └───────────────────────────────────────┘
 ```
 
-### Key Data Contract Schemas
+### 关键数据契约 Schema
 
-**Cleaned Data Schema (Layer 1 → 2):**
-| Column | Type | Description |
+**清洗后数据 Schema (第1层 → 第2层):**
+| 列 | Type | 描述 |
 |--------|------|-------------|
-| `timestamp` | datetime64[ns, UTC] | Hourly index |
-| `load_mw` | float64 | Actual system load |
-| `price_eur_mwh` | float64 | Day-ahead clearing price |
-| `wind_mw` | float64 | Actual wind generation |
-| `solar_mw` | float64 | Actual solar generation |
-| `temp_c` | float64 | Temperature |
+| `timestamp` | datetime64[ns, UTC] | 小时索引 |
+| `load_mw` | float64 | 实际系统负荷 |
+| `price_eur_mwh` | float64 | 日前出清价格 |
+| `wind_mw` | float64 | 实际风电发电 |
+| `solar_mw` | float64 | 实际光伏发电 |
+| `temp_c` | float64 | 温度 |
 | `hour` | int8 | 0-23 |
-| `day_of_week` | int8 | 0=Monday |
-| `is_holiday` | bool | Public holiday flag |
+| `day_of_week` | int8 | 0=周一 |
+| `is_holiday` | bool | 节假日标志 |
 | `month` | int8 | 1-12 |
 
-**Forecast Schema (Layer 2 → 3):**
-| Column | Type | Description |
+**预测 Schema (第2层 → 第3层):**
+| 列 | Type | 描述 |
 |--------|------|-------------|
-| `timestamp` | datetime64[ns, UTC] | Forecast target hour |
-| `predicted_load_mw` | float64 | Load forecast |
-| `predicted_price_eur_mwh` | float64 | Price forecast |
-| `predicted_wind_mw` | float64 | Wind gen forecast |
-| `predicted_solar_mw` | float64 | Solar gen forecast |
-| `forecast_created_at` | datetime64[ns, UTC] | When forecast was generated |
+| `timestamp` | datetime64[ns, UTC] | 预测目标小时 |
+| `predicted_load_mw` | float64 | 负荷预测 |
+| `predicted_price_eur_mwh` | float64 | 电价预测 |
+| `predicted_wind_mw` | float64 | 风电发电预测 |
+| `predicted_solar_mw` | float64 | 光伏发电预测 |
+| `forecast_created_at` | datetime64[ns, UTC] | 预测生成时间 |
 
-**Market Results Schema (Layer 3 → 4):**
-| Column | Type | Description |
+**市场结果 Schema (第3层 → 第4层):**
+| 列 | Type | 描述 |
 |--------|------|-------------|
-| `simulation_id` | str | Unique run identifier |
-| `timestamp` | datetime64[ns, UTC] | Dispatch hour |
-| `market` | str | "EOM" or "CRM" |
-| `unit_id` | str | Generator/unit identifier |
+| `simulation_id` | str | 唯一运行标识符 |
+| `timestamp` | datetime64[ns, UTC] | 调度小时 |
+| `market` | str | "EOM" 或 "CRM" |
+| `unit_id` | str | 发电机/机组标识符 |
 | `unit_type` | str | "power_plant", "storage", "demand", "renewable" |
-| `bid_price` | float64 | Submitted bid price |
-| `bid_volume` | float64 | Submitted bid volume (MW) |
-| `cleared_price` | float64 | Market clearing price |
-| `dispatched_mw` | float64 | Actual dispatch (MW) |
-| `marginal_cost` | float64 | Unit's marginal cost |
-| `revenue_eur` | float64 | Revenue from dispatch |
-| `profit_eur` | float64 | Revenue minus cost |
+| `bid_price` | float64 | 提交的投标价格 |
+| `bid_volume` | float64 | 提交的投标量 (MW) |
+| `cleared_price` | float64 | 市场出清价格 |
+| `dispatched_mw` | float64 | 实际调度 (MW) |
+| `marginal_cost` | float64 | 机组边际成本 |
+| `revenue_eur` | float64 | 调度收入 |
+| `profit_eur` | float64 | 收入减成本 |
 
-### State Management
+### 状态管理
 
-- **Configuration:** YAML/CSV files in `src/simulation/config/` and scenario folders. No runtime state — everything is declarative.
-- **Simulation State:** Managed entirely by ASSUME's `World` class and mango agent framework. We don't reimplement this.
-- **Model Artifacts:** Trained models saved as `.pkl` (XGBoost, scikit-learn) or `.pt` (PyTorch RL policies) in `models/` directory.
-- **API State:** FastAPI is stateless. Run metadata stored in SQLite (`results.db`).
-- **Chatbot:** LangChain conversation memory (buffer) — ephemeral, not persisted.
+- **配置:** YAML/CSV 文件在 `src/simulation/config/` 和场景文件夹中。无运行时状态 —— 一切都是声明式的。
+- **仿真状态:** 完全由 ASSUME 的 `World` 类和 mango agent 框架管理。我们不重新实现此部分。
+- **模型产物:** 训练好的模型保存为 `.pkl` (XGBoost, scikit-learn) 或 `.pt` (PyTorch RL 策略) 在 `models/` 目录中。
+- **API 状态:** FastAPI 是无状态的。运行元数据存储在 SQLite (`results.db`) 中。
+- **Chatbot:** LangChain 对话记忆 (buffer) —— 临时的，不持久化。
 
-## Building / Build Order Implications
+## 构建 / 构建顺序影响
 
-The architecture implies a strict build order matching the four-stage learning roadmap:
+架构暗示了严格的构建顺序，匹配四阶段学习路线图：
 
-### Phase 1: Data Foundation + Basic Prediction
-**Build:** `src/data_pipeline/` + basic `src/prediction/load_forecast.py`
-- Data ingestion from PUDL or IEA
-- Data cleaning pipeline
-- Simple XGBoost load predictor
-- **Why first:** Everything downstream needs clean data. Basic prediction validates the pipeline works.
-- **Dependencies:** None (standalone)
-- **Deliverable:** Working notebook showing "data → load forecast"
+### 阶段 1: 数据基础 + 基本预测
+**构建:** `src/data_pipeline/` + 基本的 `src/prediction/load_forecast.py`
+- 从 PUDL 或 IEA 接入数据
+- 数据清洗管道
+- 简单的 XGBoost 负荷预测器
+- **为什么先做:** 所有下游都需要干净数据。基本预测验证管道是否工作。
+- **依赖:** 无 (独立)
+- **交付物:** 展示 "数据 → 负荷预测" 的可运行 notebook
 
-### Phase 2: Deep Prediction + Market Simulation Introduction
-**Build:** Full `src/prediction/` + `src/simulation/` (ASSUME setup)
-- OpenSTEF integration for automated ML forecasting
-- Price forecasting with epftoolbox
-- ASSUME installation and basic scenarios (2-unit market)
-- **Why second:** Predictions feed simulation. ASSUME is the platform for all later trading work.
-- **Dependencies:** Phase 1 (needs clean data)
-- **Deliverable:** Running ASSUME simulation with naive strategies
+### 阶段 2: 深入预测 + 市场仿真入门
+**构建:** 完整 `src/prediction/` + `src/simulation/` (ASSUME 设置)
+- OpenSTEF 集成用于自动化 ML 预测
+- 使用 epftoolbox 进行电价预测
+- ASSUME 安装和基本场景 (2机组市场)
+- **为什么第二:** 预测输入仿真。ASSUME 是所有后续交易工作的平台。
+- **依赖:** 阶段 1 (需要干净数据)
+- **交付物:** 使用朴素策略运行 ASSUME 仿真
 
-### Phase 3: Trading Agents
-**Build:** `src/agents/` (strategies, RL, backtesting)
-- Custom bidding strategies (marginal cost, markup, prediction-based)
-- RL agent training (ASSUME's learning capabilities)
-- Historical backtesting engine
-- **Why third:** Strategies are meaningless without a market to test in. SIMULATION MUST EXIST FIRST.
-- **Dependencies:** Phase 2 (needs ASSUME + predictions)
-- **Deliverable:** RL agent outperforms naive strategy in backtest
+### 阶段 3: 交易智能体
+**构建:** `src/agents/` (策略, RL, 回测)
+- 自定义投标策略 (边际成本, 加成, 基于预测)
+- RL agent 训练 (ASSUME 的学习能力)
+- 历史回测引擎
+- **为什么第三:** 策略在没有市场可测试的情况下毫无意义。仿真必须先存在。
+- **依赖:** 阶段 2 (需要 ASSUME + 预测)
+- **交付物:** RL agent 在回测中优于朴素策略
 
-### Phase 4: Integration + LLM Interface
-**Build:** `src/interface/` (API, CLI, Chatbot)
-- FastAPI wrapping all pipeline stages
-- CLI with subcommands for each layer
-- LangChain chatbot with tool-calling
-- **Why last:** Interface layer wraps all previous layers. Everything underneath must be stable.
-- **Dependencies:** Phases 1-3 (all layers)
-- **Deliverable:** End-to-end "ask chatbot → get prediction → run simulation" flow
+### 阶段 4: 整合 + LLM 接口
+**构建:** `src/interface/` (API, CLI, Chatbot)
+- FastAPI 包装所有管道阶段
+- CLI 带各层的子命令
+- LangChain chatbot 带 tool-calling
+- **为什么最后:** 接口层包装所有之前的层。底层必须稳定。
+- **依赖:** 阶段 1-3 (所有层)
+- **交付物:** 端到端 "问 chatbot → 获取预测 → 运行仿真" 流程
 
-### Phase Dependency Graph
+### 阶段依赖图
 
 ```
-Phase 1 (Data + Basic Predict)
+阶段 1 (数据 + 基本预测)
     │
-    ├──→ Phase 2 (Deep Predict + Market Sim)
+    ├──→ 阶段 2 (深入预测 + 市场仿真)
     │        │
-    │        ├──→ Phase 3a (Rule-Based Strategies)
+    │        ├──→ 阶段 3a (基于规则的策略)
     │        │        │
-    │        │        └──→ Phase 3b (RL Agents)
+    │        │        └──→ 阶段 3b (RL Agents)
     │        │                 │
-    │        │                 └──→ Phase 4 (Interface)
+    │        │                 └──→ 阶段 4 (接口)
     │        │
-    │        └──→ Phase 2b (Price Forecast Enhancement)
+    │        └──→ 阶段 2b (电价预测增强)
     │
-    └──→ Notebooks (ongoing across all phases)
+    └──→ Notebooks (贯穿所有阶段持续进行)
 ```
 
-## Scaling Considerations
+## 扩展考量
 
-| Scale | Architecture Adjustments |
+| 规模 | 架构调整 |
 |-------|--------------------------|
-| **Learning (1 user)** | All layers run in single process. Data is small (<1GB). SQLite + Parquet on local disk. Model training on CPU (XGBoost). ASSUME with <20 units. |
-| **Research (1-5 users)** | Add Docker Compose for reproducibility. ASSUME with 50+ units, 1-year simulation. DuckDB replaces SQLite for faster analytical queries. GPU optional for RL training. |
-| **Classroom (20+ users)** | Pre-built Docker image with all dependencies. Pre-downloaded data in image. Cloud JupyterHub. Each learner gets isolated environment. |
-| **Production-scale** | Out of scope per project constraints. |
+| **学习 (1 用户)** | 所有层在单进程中运行。数据较小 (<1GB)。本地磁盘上的 SQLite + Parquet。模型训练在 CPU (XGBoost)。ASSUME <20 机组。 |
+| **研究 (1-5 用户)** | 添加 Docker Compose 以实现可复现性。ASSUME 50+ 机组, 1年仿真。DuckDB 替换 SQLite 以加速分析查询。GPU 可选用于 RL 训练。 |
+| **课堂 (20+ 用户)** | 预构建的 Docker 镜像包含所有依赖。镜像中预下载数据。云端 JupyterHub。每个学习者获得隔离环境。 |
+| **生产规模** | 根据项目约束超出范围。 |
 
-### Scaling Priorities
+### 扩展优先顺序
 
-1. **First bottleneck:** ASSUME simulation speed with many agents. Mitigation: Use ASSUME's built-in parallel execution (distributed simulation with mango containers).
-2. **Second bottleneck:** Data volume (years of hourly data). Mitigation: DuckDB (columnar, fast analytical queries) over SQLite.
+1. **第一个瓶颈:** ASSUME 仿真速度与大量智能体。缓解：使用 ASSUME 内置的并行执行 (使用 mango 容器的分布式仿真)。
+2. **第二个瓶颈:** 数据量 (数年小时级数据)。缓解：DuckDB (列式、快速分析查询) 替代 SQLite。
 
-## Anti-Patterns
+## 反模式
 
-### Anti-Pattern 1: Monolithic Notebook
+### 反模式 1: 单体 Notebook
 
-**What people do:** Put everything in one massive Jupyter notebook — data loading, cleaning, training, simulation, plotting.
+**常见错误:** 把所有东西放在一个巨大的 Jupyter notebook 中 —— 数据加载、清洗、训练、仿真、绘图。
 
-**Why it's wrong:** Unrunnable independently. Can't swap one piece. Restart kernel = rerun everything. Impossible to test.
+**为什么错误:** 无法独立运行。不能替换其中一部分。重启 kernel = 重新运行一切。无法测试。
 
-**Do this instead:** Each layer is a Python module with functions. Notebooks import from modules and are thin (visualization + narrative). The modules are unit-testable.
+**正确做法:** 每层是一个带函数的 Python 模块。Notebooks 从模块导入，保持精简 (可视化 + 叙述)。模块可进行单元测试。
 
-### Anti-Pattern 2: Reinventing Market Simulation
+### 反模式 2: 重新发明市场仿真
 
-**What people do:** Write their own order book, clearing engine, unit models from scratch "to learn how it works."
+**常见错误:** 自己从零写 order book、出清引擎、机组模型 "来学习其工作原理"。
 
-**Why it's wrong:** Electricity market simulation is extremely complex (block orders, linked orders, network constraints, redispatch). Months of work to get a buggy version. No time left for the AI/learning part — which is the actual goal.
+**为什么错误:** 电力市场仿真极其复杂 (block orders, linked orders, 网络约束, 再调度)。需要数月时间得到一个有 bug 的版本。没有时间留给 AI/学习部分 —— 那才是实际目标。
 
-**Do this instead:** Use ASSUME as the simulation engine. Wrap it, configure it, extend its strategies. ASSUME already handles the market mechanics correctly. Focus learning energy on prediction models and trading strategies — where the AI value is.
+**正确做法:** 将 ASSUME 作为仿真引擎。包装它、配置它、扩展其策略。ASSUME 已经正确处理了市场机制。将学习精力集中在预测模型和交易策略上 —— 这才是 AI 价值的所在。
 
-### Anti-Pattern 3: Tight Coupling Between Prediction and Trading
+### 反模式 3: 预测与交易的强耦合
 
-**What people do:** Trading strategy code directly calls prediction models inline.
+**常见错误:** 交易策略代码直接内联调用预测模型。
 
-**Why it's wrong:** Can't backtest against different prediction quality levels. Can't swap XGBoost for LSTM without touching strategy code. Can't evaluate prediction and strategy separately.
+**为什么错误:** 无法针对不同预测质量水平进行回测。无法在不触动策略代码的情况下将 XGBoost 换成 LSTM。无法分别评估预测和策略。
 
-**Do this instead:** Predictions are materialized as DataFrames/files. Trading strategies consume prediction DataFrames through a defined interface. Backtesting replays different prediction files against the same strategy.
+**正确做法:** 预测被物化为 DataFrame/文件。交易策略通过定义的接口消费预测 DataFrame。回测用不同的预测文件对同一策略进行重放。
 
-### Anti-Pattern 4: Premature LLM Integration
+### 反模式 4: 过早集成 LLM
 
-**What people do:** Start building the chatbot before the pipeline works.
+**常见错误:** 在管道工作之前就开始构建 chatbot。
 
-**Why it's wrong:** The chatbot is a thin wrapper around function tools. If the underlying functions don't work, the chatbot hallucinates, errors compound, and the learner loses trust.
+**为什么错误:** Chatbot 是功能工具的薄包装。如果底层功能不工作，chatbot 会幻觉、错误级联、学习者失去信任。
 
-**Do this instead:** Every function tool MUST be a working CLI command first. Chatbot is the LAST layer added — only when all pipelines are proven stable.
+**正确做法:** 每个功能工具必须先是一个可工作的 CLI 命令。Chatbot 是最后添加的层 —— 仅在所有管道被证明稳定之后。
 
-## Learning Objective Mapping
+## 学习目标映射
 
-| Component | Learning Objective |
+| 组件 | 学习目标 |
 |-----------|-------------------|
-| `data_pipeline/ingest.py` | How to fetch and version public energy datasets |
-| `data_pipeline/clean.py` | Time-series data quality: gaps, resampling, UTC handling |
-| `data_pipeline/features.py` | Domain-specific feature engineering for energy |
-| `prediction/load_forecast.py` | ML pipeline: train/test split, feature importance, evaluation |
-| `prediction/price_forecast.py` | Day-ahead market mechanics, LEAR model, forecast benchmarking |
-| `simulation/config/` | Electricity market design: EOM, clearing mechanisms, product types |
-| `simulation/runner.py` | Running multi-agent simulations at scale |
-| `agents/strategies/marginal_cost.py` | Generator cost structures, merit order, bid formulation |
-| `agents/rl/` | Reinforcement learning: state/action/reward design, DRL algorithms |
-| `agents/backtest.py` | Strategy evaluation: Sharpe ratio, PnL, drawdown, statistical tests |
-| `interface/api/` | Building production-ready Python APIs with FastAPI |
-| `interface/chatbot/` | LLM function calling, prompt engineering, tool composition |
+| `data_pipeline/ingest.py` | 如何获取和版本化公开能源数据集 |
+| `data_pipeline/clean.py` | 时序数据质量: 缺失值, 重采样, UTC 处理 |
+| `data_pipeline/features.py` | 能源领域特征工程 |
+| `prediction/load_forecast.py` | ML 管道: 训练/测试划分, 特征重要性, 评估 |
+| `prediction/price_forecast.py` | 日前市场机制, LEAR 模型, 预测基准测试 |
+| `simulation/config/` | 电力市场设计: EOM, 出清机制, 产品类型 |
+| `simulation/runner.py` | 大规模运行多智能体仿真 |
+| `agents/strategies/marginal_cost.py` | 发电机成本结构, 排序法, 投标制定 |
+| `agents/rl/` | 强化学习: 状态/动作/奖励设计, DRL 算法 |
+| `agents/backtest.py` | 策略评估: Sharpe 比率, PnL, 回撤, 统计检验 |
+| `interface/api/` | 使用 FastAPI 构建生产就绪的 Python API |
+| `interface/chatbot/` | LLM function calling, prompt engineering, 工具编排 |
 
-## Integration Points
+## 集成点
 
-### External Libraries
+### 外部库
 
-| Library | Integration Pattern | Notes |
+| 库 | 集成模式 | 备注 |
 |---------|---------------------|-------|
-| **ASSUME** | Imported as `assume` package. Scenario configs in YAML/CSV. Our code wraps `World.setup()` and `World.run()`. | AGPL-3.0 license. Install `pip install assume-framework[learning]`. |
-| **OpenSTEF** | Import `openstef` for automated ML pipeline. Use its `openstef.model` and `openstef.pipeline` modules. | MPL-2.0 license. Requires custom database connector or file-based fallback. |
-| **enda** | Import `enda` for timeseries utilities: `enda.timeseries`, `enda.feature_engineering`. | MIT license. Lightweight, no database dependency. |
-| **epftoolbox** | Import `epftoolbox` for LEAR model and benchmark datasets. | Apache-2.0 license. Includes 5 market datasets. |
-| **PUDL** | Use `pudl` Python package or download pre-built SQLite from Kaggle/AWS. | MIT license. 500MB+ SQLite database. |
-| **LangChain** | `langchain` + `langchain-openai` or `langchain-ollama` for chatbot. | MIT license. |
-| **FastAPI** | Standard FastAPI + Pydantic v2 for REST API. | MIT license. |
-| **stable-baselines3** | Imported internally by ASSUME for RL. We extend via ASSUME's strategy interface. | MIT license. |
+| **ASSUME** | 作为 `assume` 包导入。场景配置在 YAML/CSV 中。我们的代码包装 `World.setup()` 和 `World.run()`。 | AGPL-3.0 license. 安装 `pip install assume-framework[learning]`。 |
+| **OpenSTEF** | 导入 `openstef` 用于自动化 ML 管道。使用其 `openstef.model` 和 `openstef.pipeline` 模块。 | MPL-2.0 license. 需要自定义数据库连接器或基于文件的回退。 |
+| **enda** | 导入 `enda` 用于时序工具: `enda.timeseries`, `enda.feature_engineering`。 | MIT license. 轻量级, 无数据库依赖。 |
+| **epftoolbox** | 导入 `epftoolbox` 用于 LEAR 模型和基准数据集。 | Apache-2.0 license. 包含 5 个市场数据集。 |
+| **PUDL** | 使用 `pudl` Python 包或从 Kaggle/AWS 下载预构建的 SQLite。 | MIT license. 500MB+ SQLite 数据库。 |
+| **LangChain** | `langchain` + `langchain-openai` 或 `langchain-ollama` 用于 chatbot。 | MIT license. |
+| **FastAPI** | 标准 FastAPI + Pydantic v2 用于 REST API。 | MIT license. |
+| **stable-baselines3** | 被 ASSUME 内部导入用于 RL。我们通过 ASSUME 的策略接口扩展。 | MIT license. |
 
-### Internal Boundaries
+### 内部边界
 
-| Boundary | Communication | Notes |
+| 边界 | 通信方式 | 备注 |
 |----------|---------------|-------|
-| Data → Prediction | Parquet file (path passed as config) | Schema defined in `shared/types.py` |
-| Prediction → Simulation | DataFrame passed to ASSUME forecaster or CSV file | ASSUME natively supports CSV forecast input |
-| Simulation → Agent | ASSUME outputs CSV → parsed by backtest engine | Or direct Python object if running inline |
-| Agent → Interface | Function calls within same process | All pipeline stages are importable Python functions |
-| Interface → User | JSON (API), text (CLI), natural language (Chatbot) | Three parallel access modes |
+| Data → Prediction | Parquet 文件 (路径作为配置传入) | Schema 在 `shared/types.py` 中定义 |
+| Prediction → Simulation | DataFrame 传递给 ASSUME 预测器或 CSV 文件 | ASSUME 原生支持 CSV 预测输入 |
+| Simulation → Agent | ASSUME 输出 CSV → 由回测引擎解析 | 或者如果内联运行则直接使用 Python 对象 |
+| Agent → Interface | 同一进程内的函数调用 | 所有管道阶段是可导入的 Python 函数 |
+| Interface → User | JSON (API), text (CLI), 自然语言 (Chatbot) | 三种并行访问模式 |
 
-## Sources
+## 来源
 
-- **ASSUME Framework Architecture:** https://assume.readthedocs.io/en/latest/introduction.html#architecture (official docs, HIGH confidence)
-- **ASSUME API Reference:** https://assume.readthedocs.io/en/latest/assume.html (official docs, HIGH confidence)
-- **ASSUME Unit Forecasts:** https://assume.readthedocs.io/en/latest/unit_forecasts.html (official docs, HIGH confidence)
-- **OpenSTEF GitHub:** https://github.com/OpenSTEF/openstef (official repo, HIGH confidence)
-- **enda GitHub:** https://github.com/enercoop/enda (official repo, HIGH confidence)
-- **epftoolbox GitHub:** https://github.com/jeslago/epftoolbox (official repo, HIGH confidence)
-- **PUDL GitHub:** https://github.com/catalyst-cooperative/pudl (official repo, HIGH confidence)
-- **ASSUME Paper (SoftwareX 2025):** Harder et al., "ASSUME: An agent-based simulation framework for exploring electricity market dynamics with reinforcement learning" (peer-reviewed, HIGH confidence)
-- **epftoolbox Paper (Applied Energy 2021):** Lago et al., "Forecasting day-ahead electricity prices" (peer-reviewed, HIGH confidence)
+- **ASSUME 框架架构:** https://assume.readthedocs.io/en/latest/introduction.html#architecture (官方文档, HIGH confidence)
+- **ASSUME API 参考:** https://assume.readthedocs.io/en/latest/assume.html (官方文档, HIGH confidence)
+- **ASSUME Unit Forecasts:** https://assume.readthedocs.io/en/latest/unit_forecasts.html (官方文档, HIGH confidence)
+- **OpenSTEF GitHub:** https://github.com/OpenSTEF/openstef (官方仓库, HIGH confidence)
+- **enda GitHub:** https://github.com/enercoop/enda (官方仓库, HIGH confidence)
+- **epftoolbox GitHub:** https://github.com/jeslago/epftoolbox (官方仓库, HIGH confidence)
+- **PUDL GitHub:** https://github.com/catalyst-cooperative/pudl (官方仓库, HIGH confidence)
+- **ASSUME Paper (SoftwareX 2025):** Harder et al., "ASSUME: An agent-based simulation framework for exploring electricity market dynamics with reinforcement learning" (同行评审, HIGH confidence)
+- **epftoolbox Paper (Applied Energy 2021):** Lago et al., "Forecasting day-ahead electricity prices" (同行评审, HIGH confidence)
 
 ---
 
-*Architecture research for: AI-driven electricity trading learning platform*
-*Researched: 2026-05-20*
+*架构调研：AI驱动的电力交易学习平台*
+*调研日期: 2026-05-20*
