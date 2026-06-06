@@ -91,8 +91,59 @@ ellectric/
 - FastAPI 后端服务
 - LLM 交易助手
 
+## 🔌 ASSUME 电力市场仿真
+
+### 安装
+
+```bash
+pip install "assume-framework[learning]==0.6.0"
+```
+
+这将安装 ASSUME 核心框架 + PyTorch (CPU) + stable-baselines3 + gymnasium。
+
+### 验证安装
+
+```bash
+python scripts/verify_assume.py
+```
+
+预期输出：
+
+```
+==================================================
+  ASSUME 安装验证报告
+==================================================
+
+[1/4] Python 版本检查
+[2/4] 导入验证
+  [PASS] ASSUME 导入成功
+  [PASS] PyTorch 导入成功 -> version: 2.x.x (CPU only)
+  [PASS] stable-baselines3 导入成功 -> version: 2.x.x
+  [PASS] gymnasium 导入成功 -> version: 1.x.x
+
+[3/4] 版本检查
+  ASSUME 版本: 0.6.0
+
+[4/4] 最小仿真运行
+  [PASS] 最小仿真运行成功
+
+==================================================
+  状态: 全部通过 ✓
+==================================================
+```
+
+### 依赖锁定文件
+
+`requirements-assume.txt` 包含已锁定的 ASSUME 及相关依赖版本。
+
+### 注意
+
+- ASSUME 独立于 Phase 1 的 `requirements.txt`，安装在同一个 venv 中
+- 仿真结果默认输出为 CSV 文件（无需 Docker）
+- Docker Compose TimescaleDB + Grafana 集成见 task-10
+
 ## 📚 参考文献
 
 - [OWID Energy Data](https://github.com/owid/energy-data) — 全球能源数据库
 - [XGBoost 文档](https://xgboost.readthedocs.io/) — 梯度提升框架
-- [综合研究: AI电力交易技术栈](https://github.com/assume-framework/assume) — 电力市场仿真框架
+- [ASSUME 框架](https://github.com/assume-framework/assume) — 电力市场仿真框架

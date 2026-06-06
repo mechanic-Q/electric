@@ -1,0 +1,335 @@
+schema_version: 1
+project: Ellectric
+source_commit: 53bf8ae
+generated_at: 2026-06-06 21:36:10
+generator: sillyspec-scan
+modules:
+  data-loader:
+    status: active
+    doc: modules/data-loader.md
+    paths:
+      - ellectric/pipeline/data_loader.py
+    tags:
+      - data
+      - ingestion
+      - owid
+      - china
+      - etl
+    aliases:
+      - loader
+      - data-source
+      - DataLoader
+    entrypoints:
+      - create_loader
+    main_symbols:
+      - DataLoader
+      - OWIDChinaLoader
+      - ChineseDataLoader
+      - create_loader
+      - _safe_float
+      - _twh_to_daily_mw
+      - _standardize_columns
+    depends_on: []
+    used_by: []
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  cleaner:
+    status: active
+    doc: modules/cleaner.md
+    paths:
+      - ellectric/pipeline/cleaner.py
+    tags:
+      - cleaning
+      - preprocessing
+      - validation
+      - outlier-detection
+      - timezone
+    aliases:
+      - data-cleaning
+      - ETL
+    entrypoints:
+      - clean_data
+      - validate_schema
+    main_symbols:
+      - clean_data
+      - validate_schema
+      - REQUIRED_COLUMNS
+      - OPTIONAL_COLUMNS
+    depends_on: []
+    used_by: []
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  feature-engineer:
+    status: active
+    doc: modules/feature-engineer.md
+    paths:
+      - ellectric/pipeline/features.py
+    tags:
+      - feature-engineering
+      - time-series
+      - lag-features
+      - cyclic-encoding
+      - rolling-statistics
+    aliases:
+      - features
+      - FeatureEngineer
+    entrypoints:
+      - prepare_features
+    main_symbols:
+      - FeatureEngineer
+      - prepare_features
+      - add_tier1_features
+      - add_tier2_features
+      - add_tier3_features
+      - get_feature_columns
+    depends_on: []
+    used_by: []
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  forecaster:
+    status: active
+    doc: modules/forecaster.md
+    paths:
+      - ellectric/pipeline/forecaster.py
+    tags:
+      - prediction
+      - xgboost
+      - persistence
+      - pnl
+      - time-series
+    aliases:
+      - prediction
+      - model
+      - XGBoostForecaster
+    entrypoints:
+      - persistence_forecast
+      - calculate_pnl
+      - plot_pnl
+    main_symbols:
+      - XGBoostForecaster
+      - persistence_forecast
+      - calculate_pnl
+      - plot_pnl
+    depends_on: []
+    used_by: []
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  price-loader:
+    status: active
+    doc: modules/price-loader.md
+    paths:
+      - ellectric/pipeline/price_loader.py
+    tags:
+      - data
+      - electricity-price
+      - xlsx
+      - china
+      - etl
+    aliases:
+      - PriceDataLoader
+      - price-loader
+    entrypoints:
+      - create_price_loader
+    main_symbols:
+      - PriceDataLoader
+      - create_price_loader
+      - _standardize_columns
+      - _safe_float
+    depends_on: []
+    used_by: [price-forecaster]
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  price-forecaster:
+    status: active
+    doc: modules/price-forecaster.md
+    paths:
+      - ellectric/pipeline/price_forecaster.py
+    tags:
+      - prediction
+      - lasso
+      - lear
+      - electricity-price
+      - time-series
+    aliases:
+      - LEARForecaster
+      - price-forecast
+    entrypoints:
+      - LEARForecaster
+    main_symbols:
+      - LEARForecaster
+      - add_price_features
+      - train_evaluate
+      - predict
+      - save_model
+      - load_model
+      - plot_price_forecast
+      - plot_coefficients
+      - get_feature_columns
+    depends_on: [price-loader]
+    used_by: [notebooks]
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  statistical-tests:
+    status: active
+    doc: modules/statistical-tests.md
+    paths:
+      - ellectric/pipeline/statistical_tests.py
+    tags:
+      - statistics
+      - dm-test
+      - gw-test
+      - evaluation
+    aliases:
+      - DM
+      - GW
+      - Diebold-Mariano
+      - Giacomini-White
+    entrypoints:
+      - run_statistical_tests
+    main_symbols:
+      - run_statistical_tests
+    depends_on: []
+    used_by: [notebooks]
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  assume-configs:
+    status: active
+    doc: modules/assume-configs.md
+    paths:
+      - ellectric/assume/configs/*.yaml
+    tags:
+      - assume
+      - simulation
+      - china-market
+      - yaml
+    aliases:
+      - ASSUME config
+      - china-config
+    entrypoints: []
+    main_symbols: []
+    depends_on: []
+    used_by: [assume-simulation]
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  assume-simulation:
+    status: active
+    doc: modules/assume-simulation.md
+    paths:
+      - ellectric/assume/run_simulation.py
+      - ellectric/assume/verify_simulation.py
+    tags:
+      - assume
+      - simulation
+      - market-clearing
+      - cli
+    aliases:
+      - ASSUME runner
+      - simulation runner
+    entrypoints:
+      - run_simulation.py
+      - verify_simulation.py
+    main_symbols: []
+    depends_on: [assume-configs]
+    used_by: [grafana-dashboard]
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  grafana-dashboard:
+    status: active
+    doc: modules/grafana-dashboard.md
+    paths:
+      - ellectric/assume/grafana/**
+      - ellectric/docker-compose.yml
+    tags:
+      - grafana
+      - visualization
+      - dashboard
+      - timescaledb
+    aliases:
+      - Grafana
+      - dashboard
+    entrypoints: []
+    main_symbols: []
+    depends_on: [assume-simulation]
+    used_by: []
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  epftoolbox-install:
+    status: active
+    doc: modules/epftoolbox-install.md
+    paths:
+      - ellectric/install_epftoolbox.sh
+    tags:
+      - epftoolbox
+      - benchmark
+      - installation
+    aliases:
+      - epftoolbox
+    entrypoints: []
+    main_symbols: []
+    depends_on: []
+    used_by: []
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  assume-verify:
+    status: active
+    doc: modules/assume-verify.md
+    paths:
+      - ellectric/scripts/verify_assume.py
+      - ellectric/requirements-assume.txt
+    tags:
+      - assume
+      - verification
+      - installation
+    aliases:
+      - ASSUME verify
+    entrypoints:
+      - verify_assume.py
+    main_symbols:
+      - check_imports
+      - check_version
+      - run_minimal_simulation
+    depends_on: []
+    used_by: []
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  notebooks:
+    status: active
+    doc: modules/notebooks.md
+    paths:
+      - ellectric/notebooks/*.ipynb
+    tags:
+      - jupyter
+      - tutorial
+      - learning
+      - demo
+      - walkthrough
+    aliases:
+      - tutorial
+      - workbook
+    entrypoints: []
+    main_symbols: []
+    depends_on:
+      - data-loader
+      - cleaner
+      - feature-engineer
+      - forecaster
+      - price-loader
+      - price-forecaster
+      - statistical-tests
+      - assume-simulation
+    used_by: []
+    needs_review: false
+    concerns: []
+    review_reasons: []

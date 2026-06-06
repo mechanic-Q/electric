@@ -1,0 +1,51 @@
+# =============================================================================
+# ASSUME 中国省间现货市场 — 高风电场景 (High Wind Scenario)
+# =============================================================================
+# 场景描述: 新能源高渗透率运行场景
+#   - 继承基准配置所有参数
+#   - 风电: 20GW → 30GW (+50%)
+#   - 煤电: 50GW → 40GW (-20%) — 为风电让出发电空间
+#   - 其余参数与基准完全一致
+#   - 典型应用: 模拟大风日 (Spring gale) 下市场出清变化
+# =============================================================================
+
+# ---------- 锚定义 (继承基准中的不变子结构) ----------
+_defaults: &defaults
+  market:
+    type: "zonal"
+    clearing_mechanism: "pay_as_clear"
+    price_limits:
+      min: 0
+      max: 1500
+    deviation_penalty: 0.1
+  demand:
+    profile: "china_summer_peak"
+    total_demand_mw: 80000
+  agents: &agents
+    - type: "learning"
+      algorithm: "PPO"
+    - type: "naive"
+    - type: "strategic"
+  simulation: &simulation
+    duration_days: 7
+    granularity: "1h"
+
+# <<: 合并基准键，再逐个覆盖变动的字段
+<<: *defaults
+
+generation_mix:
+  coal:
+    capacity_mw: 40000
+    marginal_cost: 300
+  wind:
+    capacity_mw: 30000
+    marginal_cost: 50
+  solar:
+    capacity_mw: 15000
+    marginal_cost: 30
+  gas:
+    capacity_mw: 10000
+    marginal_cost: 600
+  storage:
+    capacity_mw: 5000
+    marginal_cost: 100

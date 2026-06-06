@@ -1,0 +1,17 @@
+# Grafana datasource provisioning for TimescaleDB
+# Referenced by ASSUME simulation dashboards via uid: timescaledb
+apiVersion: 1
+datasources:
+  - name: TimescaleDB
+    uid: timescaledb
+    type: postgres
+    access: proxy
+    url: timescaledb:5432
+    database: assume
+    user: assume
+    secureJsonData:
+      password: assume
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: true

@@ -1,27 +1,34 @@
-# Phase 2 使用 — 取消注释按需启动
-# services:
-#   timescaledb:
-#     image: timescale/timescaledb:latest-pg16
-#     ports:
-#       - "5432:5432"
-#     environment:
-#       POSTGRES_DB: assume
-#       POSTGRES_USER: assume
-#       POSTGRES_PASSWORD: assume
-#     volumes:
-#       - timescale_data:/var/lib/postgresql/data
-#
-#   grafana:
-#     image: grafana/grafana:latest
-#     ports:
-#       - "3000:3000"
-#     environment:
-#       GF_SECURITY_ADMIN_PASSWORD: admin
-#     volumes:
-#       - grafana_data:/var/lib/grafana
-#     depends_on:
-#       - timescaledb
-#
-# volumes:
-#   timescale_data:
-#   grafana_data:
+# Docker Compose for ASSUME simulation visualization stack
+# Requires: Docker Engine 24+ and Docker Compose v2.20+
+# Usage: docker compose up -d
+# Services: TimescaleDB (data store) + Grafana (dashboard)
+# Grafana dashboards auto-loaded from ./assume/grafana/ provisioning
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: assume
+      POSTGRES_USER: assume
+      POSTGRES_PASSWORD: assume
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./assume/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./assume/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - timescaledb
+
+volumes:
+  timescale_data:
+  grafana_data:

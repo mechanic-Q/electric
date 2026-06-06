@@ -1,0 +1,4 @@
+assume-framework==0.6.0
+gymnasium==1.2.3
+stable_baselines3==2.8.0
+torch==2.12.0

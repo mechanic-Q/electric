@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "description": "DM/GW 统计检验结果 — 中国 LEAR vs epftoolbox 基准数据集",
+    "h": 24,
+    "crit": "MAE",
+    "epftoolbox_available": false,
+    "note": "epftoolbox 未安装在当前环境。运行 `pip install git+https://github.com/jeslago/epftoolbox.git` 在独立 venv 中获取真实结果。当前为模拟数据。"
+  },
+  "dm_results": [
+    {
+      "dataset": "EPEX-BE",
+      "dm_stat": 1.234,
+      "p_value": 0.218,
+      "significant": false,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    },
+    {
+      "dataset": "EPEX-FR",
+      "dm_stat": 2.345,
+      "p_value": 0.019,
+      "significant": true,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    },
+    {
+      "dataset": "EPEX-DE",
+      "dm_stat": 0.987,
+      "p_value": 0.324,
+      "significant": false,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    },
+    {
+      "dataset": "NordPool",
+      "dm_stat": 3.456,
+      "p_value": 0.001,
+      "significant": true,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    },
+    {
+      "dataset": "PJM",
+      "dm_stat": -1.234,
+      "p_value": 0.218,
+      "significant": false,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    }
+  ],
+  "gw_results": [
+    {
+      "dataset": "EPEX-BE",
+      "gw_stat": 1.456,
+      "p_value": 0.145,
+      "significant": false,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    },
+    {
+      "dataset": "EPEX-FR",
+      "gw_stat": 2.567,
+      "p_value": 0.010,
+      "significant": true,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    },
+    {
+      "dataset": "EPEX-DE",
+      "gw_stat": 0.789,
+      "p_value": 0.430,
+      "significant": false,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    },
+    {
+      "dataset": "NordPool",
+      "gw_stat": 4.567,
+      "p_value": 0.000,
+      "significant": true,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    },
+    {
+      "dataset": "PJM",
+      "gw_stat": -0.987,
+      "p_value": 0.324,
+      "significant": false,
+      "skip_reason": "MOCK — epftoolbox 未安装，使用模拟数据"
+    }
+  ],
+  "summary": "### Diebold-Mariano 检验结果\n\n| 基准数据集 | DM 统计量 | p-value | 显著差异? | 备注 |\n|---|---|---|---|---|\n| EPEX-BE | 1.234 | 0.218 | No | MOCK — epftoolbox 未安装，使用模拟数据 |\n| EPEX-FR | 2.345 | 0.019 | Yes* | MOCK — epftoolbox 未安装，使用模拟数据 |\n| EPEX-DE | 0.987 | 0.324 | No | MOCK — epftoolbox 未安装，使用模拟数据 |\n| NordPool | 3.456 | < 0.001 | Yes*** | MOCK — epftoolbox 未安装，使用模拟数据 |\n| PJM | -1.234 | 0.218 | No | MOCK — epftoolbox 未安装，使用模拟数据 |\n\n### Giacomini-White 检验结果\n\n| 基准数据集 | GW 统计量 | p-value | 显著差异? | 备注 |\n|---|---|---|---|---|\n| EPEX-BE | 1.456 | 0.145 | No | MOCK — epftoolbox 未安装，使用模拟数据 |\n| EPEX-FR | 2.567 | 0.010 | Yes** | MOCK — epftoolbox 未安装，使用模拟数据 |\n| EPEX-DE | 0.789 | 0.430 | No | MOCK — epftoolbox 未安装，使用模拟数据 |\n| NordPool | 4.567 | < 0.001 | Yes*** | MOCK — epftoolbox 未安装，使用模拟数据 |\n| PJM | -0.987 | 0.324 | No | MOCK — epftoolbox 未安装，使用模拟数据 |"
+}

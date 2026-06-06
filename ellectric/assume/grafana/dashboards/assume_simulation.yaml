@@ -1,0 +1,9 @@
+# Grafana dashboard provisioning for ASSUME simulation
+# Dashboards auto-loaded from /etc/grafana/provisioning/dashboards
+apiVersion: 1
+providers:
+  - name: ASSUME Simulation
+    folder: ASSUME
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards

@@ -1,0 +1,51 @@
+# =============================================================================
+# ASSUME 中国省间现货市场 — 基准配置 (Base Configuration)
+# =============================================================================
+# 场景描述: 中国省间现货市场标准运行场景
+#   - 出清机制: 分区定价 (zonal), 统一出清价结算 (pay_as_clear)
+#   - 报价限价: [0, 1500] 元/MWh (中国省间规则上限)
+#   - 偏差考核: 0.1 系数
+#   - 装机: 100GW (煤50 + 风20 + 光15 + 气10 + 储5)
+#   - 需求: 80GW 夏季高峰轮廓
+#   - 智能体: 3 类 (PPO学习/边际成本/策略性)
+#   - 仿真: 7 天逐小时出清
+# =============================================================================
+
+market:
+  type: "zonal"
+  clearing_mechanism: "pay_as_clear"
+  price_limits: &price_limits
+    min: 0
+    max: 1500
+  deviation_penalty: 0.1
+
+generation_mix:
+  coal:
+    capacity_mw: 50000
+    marginal_cost: 300
+  wind:
+    capacity_mw: 20000
+    marginal_cost: 50
+  solar:
+    capacity_mw: 15000
+    marginal_cost: 30
+  gas:
+    capacity_mw: 10000
+    marginal_cost: 600
+  storage:
+    capacity_mw: 5000
+    marginal_cost: 100
+
+demand:
+  profile: "china_summer_peak"
+  total_demand_mw: 80000
+
+agents: &agents
+  - type: "learning"
+    algorithm: "PPO"
+  - type: "naive"
+  - type: "strategic"
+
+simulation: &simulation
+  duration_days: 7
+  granularity: "1h"

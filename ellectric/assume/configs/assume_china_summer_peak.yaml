@@ -1,0 +1,56 @@
+# =============================================================================
+# ASSUME 中国省间现货市场 — 夏季高峰场景 (Summer Peak Scenario)
+# =============================================================================
+# 场景描述: 迎峰度夏高负荷运行场景
+#   - 继承基准配置所有参数
+#   - 需求: 80GW → 96GW (+20%) — 空调制冷负荷激增
+#   - 气电: 10GW → 15GW (+50%) — 增加调峰容量应对尖峰
+#   - 其余参数与基准完全一致
+#   - 典型应用: 模拟 7-8 月高温天气下供需紧张
+# =============================================================================
+
+# ---------- 锚定义 (继承基准中的不变子结构) ----------
+_defaults: &defaults
+  market:
+    type: "zonal"
+    clearing_mechanism: "pay_as_clear"
+    price_limits:
+      min: 0
+      max: 1500
+    deviation_penalty: 0.1
+  generation_mix: &gen_mix
+    coal:
+      capacity_mw: 50000
+      marginal_cost: 300
+    wind:
+      capacity_mw: 20000
+      marginal_cost: 50
+    solar:
+      capacity_mw: 15000
+      marginal_cost: 30
+    storage:
+      capacity_mw: 5000
+      marginal_cost: 100
+  simulation: &simulation
+    duration_days: 7
+    granularity: "1h"
+
+# <<: 合并基准键
+<<: *defaults
+
+# 覆盖变动的字段 — generation_mix 内部再用 <<: 继承不变机组
+generation_mix:
+  <<: *gen_mix
+  gas:
+    capacity_mw: 15000
+    marginal_cost: 600
+
+demand:
+  profile: "china_summer_peak"
+  total_demand_mw: 96000
+
+agents: &agents
+  - type: "learning"
+    algorithm: "PPO"
+  - type: "naive"
+  - type: "strategic"
