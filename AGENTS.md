@@ -167,30 +167,49 @@ Conventions not yet established. Will populate as patterns emerge during develop
 Architecture not yet mapped. Follow existing patterns found in the codebase.
 <!-- GSD:architecture-end -->
 
-<!-- GSD:skills-start source:skills/ -->
-## Project Skills
+<!-- workflow-start source:SillySpec + Karpathy -->
+## Workflow
 
-No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, `.github/skills/`, or `.codex/skills/` with a `SKILL.md` index file.
-<!-- GSD:skills-end -->
+本项目使用 **SillySpec** + **Karpathy Guidelines** 组合驱动开发。GSD 资产保留在 `.planning/` 中作为历史参考。
 
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
+### SillySpec 命令入口
 
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
+- `/sillyspec:scan` — 代码库扫描（棕地项目启动）
+- `/sillyspec:brainstorm "需求"` — 需求探索 + 规范生成
+- `/sillyspec:plan` — 实现计划（文件路径 + Wave 分组）
+- `/sillyspec:execute` — TDD 执行（子代理并行）
+- `/sillyspec:verify` — 验证（对照规范 + 测试套件）
+- `/sillyspec:archive` — 归档到 knowledge/
+- `/sillyspec:quick` — 小修小补，跳过完整流程
+- `/sillyspec:explore` — 自由思考、调研
+- `/sillyspec:continue` — 自动下一步
+- `/sillyspec:resume` — 中断恢复
+- `/sillyspec:status` — 查看进度
 
-Use these entry points:
-- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd-debug` for investigation and bug fixing
-- `/gsd-execute-phase` for planned phase work
+### Karpathy 行为准则（已注入 .opencode/karpathy-guidelines.md）
 
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
-<!-- GSD:workflow-end -->
+1. **Think Before Coding** — 不假设、不隐藏混淆、暴露权衡
+2. **Simplicity First** — 最少代码解决问题，无推测性功能
+3. **Surgical Changes** — 只改必要的地方，匹配已有风格
+4. **Goal-Driven Execution** — 定义成功标准，循环验证直到通过
+
+### 历史 GSD 资产
+
+`.planning/` 目录中的 ROADMAP.md、REQUIREMENTS.md 和 phase plans 保留为只读参考。新阶段执行时，由 SillySpec brainstorm 读取并转化为 SillySpec 规范的 design.md + tasks.md。
+
+### CLI 辅助（可选）
+
+```bash
+sillyspec progress show    # 查看项目状态
+sillyspec run brainstorm   # 需求探索
+sillyspec run plan         # 实现计划
+sillyspec setup            # 安装 MCP 工具增强
+```
+<!-- workflow-end -->
 
 
-
-<!-- GSD:profile-start -->
+<!-- profile-start -->
 ## Developer Profile
 
-> Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.
-> This section is managed by `generate-claude-profile` -- do not edit manually.
-<!-- GSD:profile-end -->
+> Profile not yet configured.
+<!-- profile-end -->

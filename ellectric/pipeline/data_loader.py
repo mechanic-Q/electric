@@ -93,7 +93,7 @@ class DataLoader(ABC):
     电力数据加载器抽象基类。
 
     所有数据加载器必须实现 load_data() 方法，
-    返回一个包含 timestamp、load_mw 列的标准 DataFrame。
+        返回一个包含 timestamp、load_mw 列的标准 DataFrame。
 
     为什么用抽象基类（ABC）？
     ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -119,6 +119,29 @@ class DataLoader(ABC):
         """
         ...
 
+    def get_metadata(self) -> dict:
+        """
+        返回数据集的元信息。
+
+        Returns:
+            dict with:
+            - source:       数据来源
+            - data_version: 数据版本标识
+            - rows:         行数
+            - start:        起始时间
+            - end:          结束时间
+            - frequency:    时间频率
+        """
+        df = self.load_data()
+        return {
+            "source": getattr(self, "_metadata_source", "unknown"),
+            "data_version": getattr(self, "_metadata_version", "unknown"),
+            "rows": len(df),
+            "start": str(df["timestamp"].min()),
+            "end": str(df["timestamp"].max()),
+            "frequency": pd.infer_freq(df["timestamp"]) or "unknown",
+        }
+
 
 # ═══════════════════════════════════════════════════════
 # OWID 中国年数据自动加载器
@@ -140,6 +163,9 @@ class OWIDChinaLoader(DataLoader):
     4. 将 TWh (太瓦时) 转换为 MW 等效日平均值
        （1 TWh = 10^6 MWh, 除以 365 天 / 24 小时）
     """
+
+    _metadata_source = "OWID"
+    _metadata_version = "github.com/owid/energy-data (master)"
 
     def load_data(self, start: Optional[str] = None, end: Optional[str] = None) -> pd.DataFrame:
         """
@@ -230,6 +256,9 @@ class ChineseDataLoader(DataLoader):
                        例如: 'data/guangdong_daily_2023.csv'
         """
         self.data_path = Path(data_path)
+        self.data_version = self.data_path.stem
+        self._metadata_source = f"local ({self.data_path.name})"
+        self._metadata_version = self.data_version
 
     def load_data(self, start: Optional[str] = None, end: Optional[str] = None) -> pd.DataFrame:
         """
@@ -271,6 +300,15 @@ class ChineseDataLoader(DataLoader):
         df = df.sort_values("timestamp").reset_index(drop=True)
         logger.info(f"本地数据加载完成: {len(df)} 行")
         return df
+
+    def load_hourly_demand(self, start: Optional[str] = None, end: Optional[str] = None) -> pd.Series:
+        """
+        加载每小时的需求负荷序列（按 timestamp 索引，仅 load_mw）。
+
+        这是 load_data() 的便捷封装，直接返回模型可用的 Series。
+        """
+        df = self.load_data(start=start, end=end)
+        return df.set_index("timestamp")["load_mw"]
 
 
 # ═══════════════════════════════════════════════════════

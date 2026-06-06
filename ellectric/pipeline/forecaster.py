@@ -294,7 +294,7 @@ class XGBoostForecaster:
         X: "pd.DataFrame",
         y: "pd.Series",
         n_splits: int = 5,
-        gap: int = 0,
+        gap: int = 24,
     ) -> dict:
         """
         用 TimeSeriesSplit 训练和评估 XGBoost 模型。
@@ -321,20 +321,21 @@ class XGBoostForecaster:
             X:       特征 DataFrame
             y:       目标值 Series (load_mw)
             n_splits: TimeSeriesSplit 的分割数，默认 5
-            gap:     训练/测试间的间隔（小时数），默认 0
+            gap:     训练/测试间的间隔（小时数），默认 24
+                     防止 lag_24h 特征跨越训练/测试边界
 
         Returns:
             dict with:
             - predictions: 所有 fold 的预测值拼接 (np.array)
             - actuals:     对应的实际值 (np.array)
-            - metrics:     {mae, rmse, mape, r2} — 聚合指标
+            - metrics:     {mae} — MAE 是唯一评估指标
             - model:       最后训练的模型 (可用于 predict())
             - feature_importance: 特征重要性 (dict)
         """
         import numpy as np
         from sklearn.model_selection import TimeSeriesSplit
         from sklearn.preprocessing import StandardScaler
-        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+        from sklearn.metrics import mean_absolute_error
         import xgboost as xgb
 
         self._feature_cols = list(X.columns)
@@ -382,23 +383,8 @@ class XGBoostForecaster:
         predictions = np.array(all_predictions)
         actuals = np.array(all_actuals)
 
-        # 聚合指标计算
         mae = mean_absolute_error(actuals, predictions)
-        rmse = np.sqrt(mean_squared_error(actuals, predictions))
 
-        # MAPE: 平均绝对百分比误差
-        # MAPE = mean(|(actual - pred) / actual|) × 100
-        # 解读: MAPE=5% 意味着预测平均偏离实际值 5%
-        mape = np.mean(np.abs((actuals - predictions) / (actuals + 1e-8))) * 100
-
-        # R²: 决定系数 "模型解释了多少方差"
-        # R²=0.9 表示模型解释了 90% 的负荷变化
-        # R²<0 表示模型还不如直接预测均值
-        r2 = r2_score(actuals, predictions)
-
-        # 特征重要性 — XGBoost 的"特征归因"
-        # gain: 该特征在所有分割点上的平均增益
-        # 数值越大 = 特征对预测越重要
         importance = model.get_booster().get_score(importance_type="gain")
         importance = {k: float(v) for k, v in importance.items()}
 
@@ -407,13 +393,12 @@ class XGBoostForecaster:
         result = {
             "predictions": predictions,
             "actuals": actuals,
-            "metrics": {"mae": mae, "rmse": rmse, "mape": mape, "r2": r2},
+            "metrics": {"mae": mae},
             "model": model,
             "feature_importance": importance,
         }
 
-        logger.info(f"XGBoost 训练完成: MAE={mae:.0f}, RMSE={rmse:.0f}, "
-                     f"MAPE={mape:.1f}%, R²={r2:.3f}")
+        logger.info(f"XGBoost 训练完成: MAE={mae:.0f}")
         return result
 
     def predict(self, X: "pd.DataFrame") -> "np.ndarray":
@@ -429,3 +414,101 @@ class XGBoostForecaster:
         if self._model is None:
             raise RuntimeError("模型尚未训练。请先调用 train_evaluate()。")
         return self._model.predict(X[self._feature_cols])
+
+    def save_model(self, path: str) -> None:
+        """
+        持久化模型到磁盘。
+
+        Args:
+            path: 保存路径（.joblib 或 .pkl）
+        """
+        import joblib
+        if self._model is None:
+            raise RuntimeError("模型尚未训练。请先调用 train_evaluate()。")
+        joblib.dump({"model": self._model, "feature_cols": self._feature_cols}, path)
+        logger.info(f"模型已保存到 {path}")
+
+    def load_model(self, path: str) -> None:
+        """
+        从磁盘加载模型。
+
+        Args:
+            path: 模型文件路径（.joblib 或 .pkl）
+        """
+        import joblib
+        data = joblib.load(path)
+        self._model = data["model"]
+        self._feature_cols = data["feature_cols"]
+        logger.info(f"模型已从 {path} 加载")
+
+    def plot_forecast(
+        self,
+        df: "pd.DataFrame",
+        predictions: "np.ndarray",
+        title: str = "XGBoost 负荷预测 vs 实际",
+    ) -> "go.Figure":
+        """
+        绘制预测对比图：实际 vs 预测叠加 + 误差分布直方图。
+
+        Args:
+            df:          原始数据（含 timestamp, load_mw）
+            predictions: 预测值数组
+            title:       图表标题
+
+        Returns:
+            plotly Figure 对象
+        """
+        actuals = df["load_mw"].values[-len(predictions):]
+        errors = actuals - predictions
+
+        fig = make_subplots(
+            rows=2, cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.08,
+            subplot_titles=("实际 vs 预测", "预测误差分布"),
+            row_heights=[0.6, 0.4],
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=df["timestamp"].values[-len(predictions):],
+                y=actuals,
+                mode="lines",
+                name="实际负荷",
+                line=dict(color="#1f77b4", width=2),
+            ),
+            row=1, col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=df["timestamp"].values[-len(predictions):],
+                y=predictions,
+                mode="lines",
+                name="XGBoost 预测",
+                line=dict(color="#ff7f0e", width=1.5, dash="dash"),
+            ),
+            row=1, col=1,
+        )
+
+        fig.add_trace(
+            go.Histogram(
+                x=errors,
+                nbinsx=30,
+                name="误差分布",
+                marker=dict(color="#2ca02c"),
+            ),
+            row=2, col=1,
+        )
+
+        fig.update_layout(
+            title=dict(text=title, font=dict(size=18)),
+            height=700,
+            hovermode="x unified",
+            showlegend=True,
+        )
+        fig.update_xaxes(title_text="时间", row=1, col=1)
+        fig.update_xaxes(title_text="预测误差 (MW)", row=2, col=1)
+        fig.update_yaxes(title_text="负荷 (MW)", row=1, col=1)
+        fig.update_yaxes(title_text="频次", row=2, col=1)
+
+        return fig

@@ -176,3 +176,82 @@ def validate_schema(df: pd.DataFrame) -> dict:
         "issues": issues,
         "summary": summary,
     }
+
+
+def detect_timezone(df: pd.DataFrame) -> str:
+    """
+    检测 DataFrame 的时区信息。
+
+    Returns:
+        'UTC', 'unknown', 或其他 IANA 时区名
+    """
+    if "timestamp" not in df.columns:
+        return "unknown"
+    tz = df["timestamp"].dt.tz
+    if tz is None:
+        return "no_timezone"
+    return str(tz)
+
+
+def standardize_frequency(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    检测并规范化时间频率。
+
+    检查 timestamp 的实际间隔，若不均匀则通过 resample 对齐到最可能的小时间隔。
+    """
+    if "timestamp" not in df.columns:
+        return df
+    if not pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
+        return df
+
+    df = df.set_index("timestamp").sort_index()
+    freq = pd.infer_freq(df.index[:100])
+    if freq is None:
+        logger.warning("无法推断时间频率，已跳过规范化")
+        return df.reset_index()
+    if freq != "h" and freq != "60min":
+        logger.info(f"数据频率为 {freq}，重采样为小时级 (h)")
+        df = df.resample("h").mean().bfill()
+    return df.reset_index()
+
+
+def get_data_quality_score(df: pd.DataFrame) -> dict:
+    """
+    计算数据质量评分（0-100）。
+
+    评分维度:
+    - 缺失率 (40 分)
+    - 时间连续性 (30 分)
+    - 异常值比例 (30 分)
+    """
+    score = 100
+    details = {}
+
+    n = len(df)
+    missing_rate = df["load_mw"].isna().sum() / n if n > 0 else 1.0
+    missing_score = max(0, 40 - int(missing_rate * 100))
+    score -= (40 - missing_score)
+    details["missing_rate"] = f"{missing_rate:.2%}"
+    details["missing_score"] = f"{missing_score}/40"
+
+    if "timestamp" in df.columns and pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
+        gaps = df["timestamp"].diff().dropna()
+        expected_gaps = gaps.mode()
+        if len(expected_gaps) > 0:
+            consistent_rate = (gaps == expected_gaps[0]).sum() / len(gaps)
+            time_score = int(consistent_rate * 30)
+            score -= (30 - time_score)
+            details["time_consistency"] = f"{consistent_rate:.2%}"
+            details["time_score"] = f"{time_score}/30"
+
+    q1 = df["load_mw"].quantile(0.25)
+    q3 = df["load_mw"].quantile(0.75)
+    iqr = q3 - q1
+    if iqr > 0:
+        outlier_rate = ((df["load_mw"] < q1 - 1.5 * iqr) | (df["load_mw"] > q3 + 1.5 * iqr)).sum() / n
+        outlier_score = max(0, 30 - int(outlier_rate * 100))
+        score -= (30 - outlier_score)
+        details["outlier_rate"] = f"{outlier_rate:.2%}"
+        details["outlier_score"] = f"{outlier_score}/30"
+
+    return {"quality_score": score, "details": details}
