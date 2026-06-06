@@ -164,3 +164,33 @@ logger = logging.getLogger(__name__)
 - ✗ 新增列不更新此注册表
 - ✗ 预测器接口不统一（某些没有 save_model 是 bug，不是设计）
 - ✗ 用 `df['timestamp'].dt.tz_localize()` 代替 `dt.tz_convert()` 在已知 UTC 的数据上
+
+## Git 管理规范
+
+### commit message 格式
+
+```
+<类型>(<范围>): <中文描述>
+
+类型: 新增/修复/重构/文档/清理
+范围: 阶段1/阶段2/pipeline/notebooks/配置
+
+示例:
+  新增(阶段1): OWID 中国数据自动拉取与清洗管道
+  修复(阶段1): gap=24, MAE-only, 补充 save_model/plot_forecast
+  重构(pipeline): 统一预测器接口 save/load/predict
+  文档: 新增中国电力数据获取指南
+```
+
+### 分支命名
+
+```
+gsd/阶段1-数据基础     ← Phase 1
+sillyspec/阶段2-重规划  ← Phase 2 worktree（SillySpec 自动创建）
+```
+
+### PR 与审查
+
+- PR 标题和正文使用中文
+- 每个阶段独立 PR，merge 到 master
+- review 前确认所有 notebook JSON 有效、py 编译通过
