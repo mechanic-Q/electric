@@ -348,7 +348,7 @@ class ElectricityMarketEnv(gym.Env):
         reward = self._compute_reward(cleared, price, pnl_hourly, info)
 
         # ── 终止判断 ──────────────────────────────────────────
-        terminated = self._current_step >= len(self._load_data) - 24
+        terminated = self._current_step >= len(self._load_data)
         truncated = False
 
         # ── 下一个观测 ────────────────────────────────────────
@@ -386,7 +386,11 @@ class ElectricityMarketEnv(gym.Env):
                 .values.astype(np.float32)
             )
         else:
-            price_history = np.zeros(168, dtype=np.float32)
+            available = self._price_data["price_da"].iloc[: self._current_step].values.astype(np.float32)
+            if len(available) == 0:
+                price_history = np.zeros(168, dtype=np.float32)
+            else:
+                price_history = np.pad(available, (168 - len(available), 0), mode="edge")
 
         # ── 账户状态 ──────────────────────────────────────────
         total_steps = max(len(self._load_data), 1)
@@ -542,9 +546,11 @@ class ElectricityMarketEnv(gym.Env):
             df["lag_24h_load"] = 0.0
 
         if "lag_24h_wind" in feature_cols:
-            df["lag_24h_wind"] = 0.0
+            wind_mw = data["wind_mw"].iloc[start] if "wind_mw" in data.columns else 0.0
+            df["lag_24h_wind"] = float(wind_mw)
         if "lag_24h_solar" in feature_cols:
-            df["lag_24h_solar"] = 0.0
+            solar_mw = data["solar_mw"].iloc[start] if "solar_mw" in data.columns else 0.0
+            df["lag_24h_solar"] = float(solar_mw)
 
         # ── 价格趋势 (LEAR tier3) ────────────────────────────
         if "price_trend_7d" in feature_cols and start >= 168:

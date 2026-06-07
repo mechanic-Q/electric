@@ -29,13 +29,6 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-try:
-    import shap
-except ImportError:
-    raise RuntimeError(
-        "shap 未安装。请运行: pip install shap"
-    )
-
 logger = logging.getLogger(__name__)
 
 
@@ -49,9 +42,6 @@ def _get_shap():
             "shap 未安装。请运行: pip install shap\n"
             "注意: feature_importance_ranking() 不需要 shap，仍可使用。"
         )
-
-
-_SHAP_RESULT_CONTAINS_ERROR = "contains shap_values results expected to have the same length"
 
 
 def explain_xgboost_sample(
@@ -252,7 +242,9 @@ def _validate_inputs(model: Any, X: pd.DataFrame, sample_idx: int) -> None:
         raise RuntimeError("模型缺少 _feature_cols 属性，请先训练模型")
     missing = [c for c in feature_cols if c not in X.columns]
     if missing:
-        logger.warning(f"X 中缺少特征列: {missing}（将被忽略）")
+        raise ValueError(
+            f"X 中缺少特征列: {missing}。请确保输入数据包含所有训练时使用的特征列。"
+        )
 
 
 def _resolve_max_display(max_display: int) -> int:

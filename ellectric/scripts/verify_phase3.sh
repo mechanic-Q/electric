@@ -35,7 +35,7 @@ if [ -d "$PROJECT_ROOT/.venv" ]; then
     echo -e "  $PASS .venv 存在，激活中..."
     source "$PROJECT_ROOT/.venv/bin/activate"
 else
-    echo -e "  $PASS 不使用 .venv"
+    echo -e "  $PASS 不使用 .venv（依赖系统 Python）"
 fi
 
 # ── [2/5] Import ─────────────────────────────────────
