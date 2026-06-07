@@ -288,6 +288,7 @@ class XGBoostForecaster:
         self.random_state = random_state
         self._model = None
         self._feature_cols = None
+        self._scaler = None
 
     def train_evaluate(
         self,
@@ -354,6 +355,7 @@ class XGBoostForecaster:
             scaler = StandardScaler()
             X_train = scaler.fit_transform(X_train_raw)
             X_test = scaler.transform(X_test_raw)
+            self._scaler = scaler  # save last fold's scaler for predict()
 
             # XGBoost 核心参数说明:
             # n_estimators: 树的数量 — 相当于"专家"的数量
@@ -413,7 +415,14 @@ class XGBoostForecaster:
         """
         if self._model is None:
             raise RuntimeError("模型尚未训练。请先调用 train_evaluate()。")
-        return self._model.predict(X[self._feature_cols])
+        X_scaled = X[self._feature_cols].copy()
+        if self._scaler is not None:
+            X_scaled = pd.DataFrame(
+                self._scaler.transform(X_scaled),
+                columns=self._feature_cols,
+                index=X_scaled.index,
+            )
+        return self._model.predict(X_scaled)
 
     def save_model(self, path: str) -> None:
         """
@@ -425,7 +434,11 @@ class XGBoostForecaster:
         import joblib
         if self._model is None:
             raise RuntimeError("模型尚未训练。请先调用 train_evaluate()。")
-        joblib.dump({"model": self._model, "feature_cols": self._feature_cols}, path)
+        joblib.dump({
+            "model": self._model,
+            "feature_cols": self._feature_cols,
+            "scaler": self._scaler,
+        }, path)
         logger.info(f"模型已保存到 {path}")
 
     def load_model(self, path: str) -> None:
@@ -439,6 +452,7 @@ class XGBoostForecaster:
         data = joblib.load(path)
         self._model = data["model"]
         self._feature_cols = data["feature_cols"]
+        self._scaler = data.get("scaler", None)
         logger.info(f"模型已从 {path} 加载")
 
     def plot_forecast(

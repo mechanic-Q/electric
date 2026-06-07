@@ -32,6 +32,7 @@ joblib.dump({"model": model, "feature_cols": cols}, path)  # → 持久化
 - MAE 是唯一评估指标，符合项目决策 D-14；如需 RMSE/MAPE/R² 在 notebook 中额外计算。
 ## 变更索引
 - ql-20260606-001-a3f2 | gap 0→24, MAE-only, 新增 save_model/load_model/plot_forecast
+- ql-20260607-001-3f2a | predict() 支持 scaler 转换: 新增 self._scaler, save/load 包含 scaler
 ## 人工备注
 <!-- MANUAL_NOTES_START -->
 <!-- MANUAL_NOTES_END -->

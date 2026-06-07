@@ -19,3 +19,5 @@ LEAR 电价预测器 — Lasso + 滞后特征 + 日历特征 + 滚动统计
 ## 注意事项
 - 目标变量为 price_da（日前价格），不是 load_mw
 - 不处理 price_rt（实时价格预测不在范围内）
+## 变更索引
+- ql-20260607-001-3f2a | predict() 支持 scaler 转换: 新增 self._scaler, save/load 包含 scaler

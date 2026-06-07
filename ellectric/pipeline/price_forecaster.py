@@ -102,6 +102,7 @@ class LEARForecaster:
         self.random_state = random_state
         self._model = None
         self._feature_cols = None
+        self._scaler = None
 
     # ════════════════════════════════════════════════════════════
     # 特征工程
@@ -287,6 +288,7 @@ class LEARForecaster:
             scaler = StandardScaler()
             X_train = scaler.fit_transform(X_train_raw)
             X_test = scaler.transform(X_test_raw)
+            self._scaler = scaler  # save last fold's scaler for predict()
 
             model = Lasso(
                 alpha=self.alpha,
@@ -357,7 +359,14 @@ class LEARForecaster:
                 f"输入数据缺少特征列: {missing}。请确保包含 {self._feature_cols}。"
             )
 
-        return self._model.predict(X[self._feature_cols])
+        X_scaled = X[self._feature_cols].copy()
+        if self._scaler is not None:
+            X_scaled = pd.DataFrame(
+                self._scaler.transform(X_scaled),
+                columns=self._feature_cols,
+                index=X_scaled.index,
+            )
+        return self._model.predict(X_scaled)
 
     # ════════════════════════════════════════════════════════════
     # 模型持久化
@@ -375,7 +384,7 @@ class LEARForecaster:
         if self._model is None:
             raise RuntimeError("模型尚未训练。请先调用 train_evaluate()。")
         joblib.dump(
-            {"model": self._model, "feature_cols": self._feature_cols},
+            {"model": self._model, "feature_cols": self._feature_cols, "scaler": self._scaler},
             path,
         )
         logger.info(f"LEAR 模型已保存到 {path}")
@@ -392,6 +401,7 @@ class LEARForecaster:
         data = joblib.load(path)
         self._model = data["model"]
         self._feature_cols = data["feature_cols"]
+        self._scaler = data.get("scaler", None)
         logger.info(f"LEAR 模型已从 {path} 加载")
 
     # ════════════════════════════════════════════════════════════

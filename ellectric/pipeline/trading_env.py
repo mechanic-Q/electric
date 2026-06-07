@@ -545,12 +545,18 @@ class ElectricityMarketEnv(gym.Env):
         elif "lag_24h_load" in feature_cols:
             df["lag_24h_load"] = 0.0
 
-        if "lag_24h_wind" in feature_cols:
-            wind_mw = data["wind_mw"].iloc[start] if "wind_mw" in data.columns else 0.0
-            df["lag_24h_wind"] = float(wind_mw)
-        if "lag_24h_solar" in feature_cols:
-            solar_mw = data["solar_mw"].iloc[start] if "solar_mw" in data.columns else 0.0
-            df["lag_24h_solar"] = float(solar_mw)
+        if "lag_24h_wind" in feature_cols and start >= 24:
+            wind_vals = data["wind_mw"].iloc[start - 24 : start].values if "wind_mw" in data.columns else np.zeros(n_hours)
+            df["lag_24h_wind"] = wind_vals
+        elif "lag_24h_wind" in feature_cols:
+            wind_vals = data["wind_mw"].iloc[:start].values if "wind_mw" in data.columns and start > 0 else np.zeros(n_hours)
+            df["lag_24h_wind"] = np.pad(wind_vals, (n_hours - len(wind_vals), 0), mode="edge")
+        if "lag_24h_solar" in feature_cols and start >= 24:
+            solar_vals = data["solar_mw"].iloc[start - 24 : start].values if "solar_mw" in data.columns else np.zeros(n_hours)
+            df["lag_24h_solar"] = solar_vals
+        elif "lag_24h_solar" in feature_cols:
+            solar_vals = data["solar_mw"].iloc[:start].values if "solar_mw" in data.columns and start > 0 else np.zeros(n_hours)
+            df["lag_24h_solar"] = np.pad(solar_vals, (n_hours - len(solar_vals), 0), mode="edge")
 
         # ── 价格趋势 (LEAR tier3) ────────────────────────────
         if "price_trend_7d" in feature_cols and start >= 168:

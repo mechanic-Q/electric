@@ -273,8 +273,12 @@ class _SB3Adapter(BaseRLAgent):
         """训练完成后，用当前策略在环境中跑一个回合估算最终奖励。"""
         if self._env is None:
             return 0.0
+        env_snapshot = (
+            getattr(self._env, '_current_step', None),
+            getattr(self._env, '_cash', None),
+        )
         try:
-            obs, _ = self._env.reset()
+            obs, info = self._env.reset()
             done = False
             total = 0.0
             while not done:
@@ -286,6 +290,8 @@ class _SB3Adapter(BaseRLAgent):
         except Exception as e:
             logger.warning("计算 final_reward 失败: %s", e)
             return 0.0
+        finally:
+            self._env.reset()
 
 
 class RLAgentFactory:

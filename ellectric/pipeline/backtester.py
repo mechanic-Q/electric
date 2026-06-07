@@ -207,22 +207,11 @@ class BacktestRunner:
         price = price.bfill().ffill()
 
         # ── 创建环境 ──────────────────────────────────────
-        # 从 env_factory 获取 forecasters（如果有），否则 None
-        load_forecaster = None
-        price_forecaster = None
-        try:
-            test_env = self._env_factory()
-            load_forecaster = getattr(test_env, '_load_forecaster', None)
-            price_forecaster = getattr(test_env, '_price_forecaster', None)
-        except Exception:
-            pass
-        env = ElectricityMarketEnv(
-            load_data=load,
-            price_data=price,
-            load_forecaster=load_forecaster,
-            price_forecaster=price_forecaster,
-            initial_cash=self._initial_cash,
-        )
+        env = self._env_factory()
+        env._load_data = load.reset_index(drop=True)
+        env._price_data = price.reset_index(drop=True)
+        env._max_capacity = load["load_mw"].max()
+        env._current_step = 0
         obs, _ = env.reset()
 
         # ── 逐 24h 块回放 ──────────────────────────────────
