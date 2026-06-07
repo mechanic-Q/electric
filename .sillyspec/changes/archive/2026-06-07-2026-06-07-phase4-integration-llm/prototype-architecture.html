@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 4 Architecture — Ellectric</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "JetBrains Mono", "Fira Code", monospace; background: #1a1a2e; color: #e0e0e0; padding: 40px; }
+  h1 { text-align: center; font-size: 20px; color: #7dd3fc; margin-bottom: 30px; }
+  .arch { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .layer { border: 1px solid #333; border-radius: 8px; padding: 14px 24px; text-align: center; background: #16213e; }
+  .layer-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .layer-name { font-size: 15px; font-weight: bold; }
+  .box { display: inline-block; padding: 6px 14px; border-radius: 4px; margin: 4px; font-size: 12px; }
+
+  .row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+
+  .cli { background: #1e3a5f; border-color: #38bdf8; }  .cli .layer-name { color: #38bdf8; }
+  .api { background: #1e3a5f; border-color: #38bdf8; }  .api .layer-name { color: #38bdf8; }
+  .svc { background: #2d1b69; border-color: #a78bfa; }  .svc .layer-name { color: #a78bfa; }
+  .pl { background: #1a3a1a; border-color: #4ade80; }  .pl .layer-name { color: #4ade80; }
+  .llm { background: #3b1e1e; border-color: #f87171; }  .llm .layer-name { color: #f87171; }
+  .ext { background: #3a2a0a; border-color: #fbbf24; }  .ext .layer-name { color: #fbbf24; }
+
+  .arrow { color: #555; font-size: 20px; text-align: center; padding: 2px 0; }
+  .arrow-d { color: #38bdf8; font-size: 16px; text-align: center; }
+  .arrow-v { color: #a78bfa; font-size: 16px; text-align: center; }
+  .arrow-h { color: #f87171; font-size: 16px; text-align: center; }
+
+  .desc { font-size: 11px; color: #888; margin-top: 6px; }
+  .highlight { color: #fbbf24; }
+
+  .endpoints { display: flex; gap: 12px; justify-content: center; margin-top: 8px; }
+  .endpoint { background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 5px 10px; font-size: 11px; color: #94a3b8; }
+  .endpoint .method { color: #fbbf24; }
+  .endpoint .path { color: #7dd3fc; }
+
+  .tools { display: flex; gap: 10px; justify-content: center; margin-top: 6px; }
+  .tool { background: #3b1e1e; border: 1px solid #7f1d1d; border-radius: 4px; padding: 4px 10px; font-size: 11px; color: #fca5a5; }
+  .tool .fn { color: #f87171; }
+
+  hr { border: none; border-top: 1px solid #333; width: 100%; margin: 20px 0; }
+
+  .flow-section { margin-top: 20px; }
+  .flow-title { font-size: 14px; color: #7dd3fc; text-align: center; margin-bottom: 14px; }
+  .flow-step { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 8px; }
+  .step-num { background: #7dd3fc; color: #1a1a2e; width: 22px; height: 22px; border-radius: 50%; text-align: center; line-height: 22px; font-size: 11px; font-weight: bold; }
+  .step-text { font-size: 12px; color: #bbb; }
+  .step-arrow { color: #555; font-size: 14px; }
+
+  @media (max-width: 800px) { body { padding: 16px; } .row { flex-direction: column; align-items: center; } }
+</style>
+</head>
+<body>
+
+<h1>Phase 4: Integration + LLM Interface — Architecture</h1>
+
+<div class="arch">
+
+  <!-- Layer 1: Entry points -->
+  <div class="row">
+    <div class="layer cli"><div class="layer-label">终端入口</div><div class="layer-name">CLI (typer)</div>
+      <div style="margin-top:6px;font-size:11px;color:#94a3b8;">el-cli forecast | simulate | backtest | explain</div>
+    </div>
+    <div class="layer api"><div class="layer-label">HTTP 入口</div><div class="layer-name">FastAPI</div>
+      <div class="endpoints">
+        <div class="endpoint"><span class="method">POST</span> <span class="path">/predict</span></div>
+        <div class="endpoint"><span class="method">POST</span> <span class="path">/simulate</span></div>
+      </div>
+      <div class="endpoints">
+        <div class="endpoint"><span class="method">POST</span> <span class="path">/backtest</span></div>
+        <div class="endpoint"><span class="method">POST</span> <span class="path">/explain</span></div>
+      </div>
+    </div>
+    <div class="layer llm"><div class="layer-label">自然语言入口</div><div class="layer-name">LLM Agent</div>
+      <div class="tools">
+        <div class="tool"><span class="fn">query_forecast()</span></div>
+        <div class="tool"><span class="fn">run_simulation()</span></div>
+        <div class="tool"><span class="fn">run_backtest()</span></div>
+      </div>
+      <div class="desc">LangChain + <span class="highlight">DeepSeek API</span></div>
+    </div>
+  </div>
+
+  <div class="arrow">│</div>
+  <div class="arrow-d">import → call</div>
+  <div class="arrow">│</div>
+
+  <!-- Layer 2: Service -->
+  <div class="layer svc"><div class="layer-label">共享业务逻辑</div><div class="layer-name">ellectric.service</div>
+    <div class="row" style="margin-top:6px;">
+      <div class="box" style="background:#3b1e4a;color:#c084fc;border:1px solid #7e22ce;">ForecastRequest / ForecastResponse</div>
+      <div class="box" style="background:#3b1e4a;color:#c084fc;border:1px solid #7e22ce;">SimulateRequest / SimulateResponse</div>
+    </div>
+    <div class="row" style="margin-top:4px;">
+      <div class="box" style="background:#3b1e4a;color:#c084fc;border:1px solid #7e22ce;">BacktestRequest / BacktestResponse</div>
+      <div class="box" style="background:#3b1e4a;color:#c084fc;border:1px solid #7e22ce;">ExplainRequest / ExplainResponse</div>
+    </div>
+    <div class="desc">4 Pydantic schema pairs + 4 handler functions</div>
+  </div>
+
+  <div class="arrow">│</div>
+  <div class="arrow-v">import → call</div>
+  <div class="arrow">│</div>
+
+  <!-- Layer 3: Pipeline (existing, no changes) -->
+  <div class="layer pl"><div class="layer-label">已有 — 零改动</div><div class="layer-name">ellectric.pipeline</div>
+    <div class="row" style="margin-top:6px;">
+      <div class="box" style="background:#0f2a1a;color:#4ade80;border:1px solid #166534;">forecaster</div>
+      <div class="box" style="background:#0f2a1a;color:#4ade80;border:1px solid #166534;">price_forecaster</div>
+      <div class="box" style="background:#0f2a1a;color:#4ade80;border:1px solid #166534;">backtester</div>
+    </div>
+    <div class="row" style="margin-top:4px;">
+      <div class="box" style="background:#0f2a1a;color:#4ade80;border:1px solid #166534;">trading_env</div>
+      <div class="box" style="background:#0f2a1a;color:#4ade80;border:1px solid #166534;">rl_trainer</div>
+      <div class="box" style="background:#0f2a1a;color:#4ade80;border:1px solid #166534;">shap_explainer</div>
+      <div class="box" style="background:#0f2a1a;color:#4ade80;border:1px solid #166534;">assume/run_simulation</div>
+    </div>
+  </div>
+
+  <div class="arrow">│</div>
+  <div class="arrow">│</div>
+
+  <!-- Layer 4: External -->
+  <div class="layer ext"><div class="layer-label">外部服务</div><div class="layer-name">DeepSeek Chat API</div>
+    <div class="desc">OpenAI-compatible · api.deepseek.com</div>
+  </div>
+  <div style="color:#f87171;font-size:12px;margin-top:6px;text-align:center;">← LLM Agent 通过 langchain-openai 调用 →</div>
+
+</div>
+
+<hr>
+
+<div class="flow-section">
+  <div class="flow-title">🔁 典型请求流程 (以 POST /predict 为例)</div>
+  <div class="flow-step">
+    <div class="step-num">1</div><div class="step-text">HTTP Request: {model_type: "load", horizon: 24}</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">2</div><div class="step-text">Pydantic 校验 → ForecastRequest</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">3</div><div class="step-text">handler.run_forecast()</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">4</div><div class="step-text">加载模型 + 准备特征</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">5</div><div class="step-text">model.predict(X)</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">6</div><div class="step-text">ForecastResponse → JSON</div>
+  </div>
+</div>
+
+<div class="flow-section" style="margin-top:24px;">
+  <div class="flow-title">🤖 LLM 工具调用流程 (以 "昨天峰值负荷多少？" 为例)</div>
+  <div class="flow-step">
+    <div class="step-num">1</div><div class="step-text">用户输入自然语言</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">2</div><div class="step-text">LangChain Agent 决策调工具</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">3</div><div class="step-text">query_forecast(horizon=24)</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">4</div><div class="step-text">POST http://localhost:8000/predict</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">5</div><div class="step-text">JSON 结果 → Agent 组装回复</div>
+    <div class="step-arrow">→</div>
+    <div class="step-num">6</div><div class="step-text">"昨日峰值 582MW，谷值 312MW"</div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -22,3 +22,6 @@ jupyter==1.1.1
 nbformat>=5.0.0
 jedi>=0.19.1,<0.20    # shap 兼容性 pin（0.20+ 与 IPython completer 冲突）
 tensorboard==2.18.0       # RL 训练监控（奖励/行为曲线）
+
+# ── Phase 4: Integration + LLM Interface ──
+-r requirements-phase4.txt
