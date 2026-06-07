@@ -39,6 +39,21 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def _get_shap():
+    """惰性导入 shap，避免 shap 未安装时整个模块不可用。"""
+    try:
+        import shap
+        return shap
+    except ImportError:
+        raise RuntimeError(
+            "shap 未安装。请运行: pip install shap\n"
+            "注意: feature_importance_ranking() 不需要 shap，仍可使用。"
+        )
+
+
+_SHAP_RESULT_CONTAINS_ERROR = "contains shap_values results expected to have the same length"
+
+
 def explain_xgboost_sample(
     model: Any,
     X: pd.DataFrame,
@@ -77,6 +92,7 @@ def explain_xgboost_sample(
     X_sub = X[model._feature_cols].copy()
 
     try:
+        shap = _get_shap()
         explainer = shap.TreeExplainer(model._model)
         shap_values = explainer.shap_values(X_sub)
     except Exception as e:
@@ -132,6 +148,7 @@ def explain_lear_sample(
     X_sub = X[model._feature_cols].copy()
 
     try:
+        shap = _get_shap()
         explainer = shap.LinearExplainer(model._model, X_sub)
         shap_values = explainer.shap_values(X_sub)
     except Exception as e:

@@ -211,6 +211,10 @@ class ElectricityMarketEnv(gym.Env):
             raise ValueError("load_data 必须包含 'load_mw' 列")
         if "price_da" not in price_data.columns:
             raise ValueError("price_data 必须包含 'price_da' 列")
+        if "timestamp" not in load_data.columns:
+            raise ValueError("load_data 必须包含 'timestamp' 列")
+        if "timestamp" not in price_data.columns:
+            raise ValueError("price_data 必须包含 'timestamp' 列")
 
         # ── 副本化，绝不修改调用方数据 ──────────────────────
         self._load_data = load_data.copy()
@@ -321,7 +325,7 @@ class ElectricityMarketEnv(gym.Env):
         # ── 出清与盈亏 ────────────────────────────────────────
         bid_mw = action[:n_hours] * self._max_capacity
         cleared = np.minimum(bid_mw, actual_load)
-        pnl_hourly = -(bid_mw - actual_load) * price / 1000.0
+        pnl_hourly = -np.abs(bid_mw - actual_load) * price / 1000.0
 
         step_pnl = float(pnl_hourly.sum())
         self._cash += step_pnl
@@ -464,7 +468,7 @@ class ElectricityMarketEnv(gym.Env):
         # ── 构建时间戳 ────────────────────────────────────────
         current_ts = self._get_current_timestamp()
         times = pd.date_range(
-            start=current_ts + pd.Timedelta(hours=1),
+            start=current_ts,
             periods=n_hours,
             freq="h",
         )
