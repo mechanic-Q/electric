@@ -15,3 +15,10 @@ epftoolbox 独立 venv 安装脚本
 ## 注意事项
 - Python ≥3.11 推荐
 - 数据集下载后缓存于 data/epftoolbox_datasets/
+
+
+## 人工备注
+
+<!-- MANUAL_NOTES_START -->
+
+<!-- MANUAL_NOTES_END -->

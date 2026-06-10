@@ -51,8 +51,10 @@ Our World in Data (OWID) 是一个**完全开源、自动更新**的全球能源
 
 from abc import ABC, abstractmethod
 from typing import Optional
+from datetime import datetime, timezone
 import pandas as pd
 import urllib.request
+import urllib.error
 import io
 import csv
 import logging
@@ -60,13 +62,21 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# OWID 能源数据集的 GitHub raw URL
+# OWID 能源数据集的多级 URL
+# 优先级 1: OWID 官方 CDN（国内更稳定）
+# 优先级 2: GitHub raw（备用）
 # 这个 CSV 大约 25MB，包含全球所有国家的能源数据
 # 我们只过滤 iso_code == 'CHN'（中国）的行
-OWID_ENERGY_CSV_URL = (
+OWID_CDN_URL = (
+    "https://owid-public.owid.io/data/energy/"
+    "owid-energy-data.csv"
+)
+OWID_GITHUB_URL = (
     "https://raw.githubusercontent.com/owid/energy-data/"
     "master/owid-energy-data.csv"
 )
+# 保留旧常量以兼容外部引用
+OWID_ENERGY_CSV_URL = OWID_GITHUB_URL
 
 # 我们关心的列（从 OWID 100+ 列中筛选）
 OWID_COLUMNS_OF_INTEREST = {
@@ -152,46 +162,166 @@ class OWIDChinaLoader(DataLoader):
     """
     从 Our World in Data 自动拉取中国电力年度数据。
 
+    三级回退策略 (Fallback Chain)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    1. OWID 官方 CDN (owid-public.owid.io) — 优先，国内更稳定，15s 超时
+    2. GitHub raw (raw.githubusercontent.com) — 备用，30s 超时
+    3. 本地 Parquet 缓存 — 兜底，网络全断也能用上次数据
+
+    缓存策略 (Cache Strategy)
+    ~~~~~~~~~~~~~~~~~~~~~~~~
+    每次从网络成功拉取后，自动写入 ellectric/data/owid_china_cache.parquet。
+    调用 load_data(refresh=True) 可跳过缓存强制拉取。
+
     实现细节 (Implementation)
     ~~~~~~~~~~~~~~~~~~~~~~~~~
-    1. 通过 urllib 流式读取 OWID 的 ~25MB CSV 文件
-       （为什么用流式？因为不需要下载整个文件到内存）
-    2. 用 Python 标准库 csv.DictReader 逐行解析
-       （不需要额外依赖，标准库足够）
-    3. 只保留 iso_code == 'CHN' 且 year >= 2000 的行
-       （过滤掉早期无数据年份，减少内存占用）
-    4. 将 TWh (太瓦时) 转换为 MW 等效日平均值
-       （1 TWh = 10^6 MWh, 除以 365 天 / 24 小时）
+    - 流式 CSV 解析（~25MB 文件不加载到内存）
+    - csv.DictReader 逐行过滤 iso_code == 'CHN' + year >= 2000
+    - TWh → 日均 MW 转换（_twh_to_daily_mw）
+    - 优先级: 用电量(demand) > 发电量(generation)
     """
 
+    # ── 拉取链路配置 ──
+
+    # 多级数据源 URL（按优先级排列）
+    _FETCH_SOURCES = [
+        ("OWID CDN", OWID_CDN_URL, 15),
+        ("GitHub raw", OWID_GITHUB_URL, 30),
+    ]
+
+    # 本地缓存路径
+    CACHE_DIR = Path("ellectric/data")
+    CACHE_FILE = Path("ellectric/data/owid_china_cache.parquet")
+
     _metadata_source = "OWID"
-    _metadata_version = "github.com/owid/energy-data (master)"
+    _metadata_version = "owid china (multi-source)"
 
-    def load_data(self, start: Optional[str] = None, end: Optional[str] = None) -> pd.DataFrame:
+    # ═══════════════════════════════
+    # 公开接口
+    # ═══════════════════════════════
+
+    def load_data(
+        self, start: Optional[str] = None, end: Optional[str] = None,
+        refresh: bool = False
+    ) -> pd.DataFrame:
         """
-        从 OWID 加载中国电力年数据。
+        从 OWID 加载中国电力年数据（三级回退 + 缓存）。
 
-        返回的 DataFrame 中 load_mw 是从年度 TWh 推算的日均负荷。
+        Args:
+            start:   开始日期 'YYYY-MM-DD'（可选）
+            end:     结束日期 'YYYY-MM-DD'（可选）
+            refresh: True 跳过缓存强制从网络拉取
+
+        Returns:
+            DataFrame[timestamp, load_mw, year, generation_twh, ...]
         """
-        logger.info(f"正在从 OWID 拉取中国电力数据 ({OWID_ENERGY_CSV_URL[:50]}...)")
+        df = None
+        used_source = None
 
-        # 流式读取 — 不会把整个 25MB 文件加载进内存
-        req = urllib.request.Request(OWID_ENERGY_CSV_URL, headers={"User-Agent": "Ellectric/1.0"})
-        response = urllib.request.urlopen(req, timeout=30)
+        # ── 路径 1+2: 尝试网络拉取 ──
+        if not refresh:
+            # 非 refresh 模式：先尝试网络，失败才用缓存
+            used_source, df = self._try_fetch_chain()
 
-        # csv.DictReader 把每一行自动解析为 dict，key 是列名
+            if df is not None:
+                # 网络拉取成功 → 写缓存
+                try:
+                    self._save_cache(df)
+                except Exception as e:
+                    logger.warning(f"缓存写入失败（不影响数据返回）: {e}")
+
+        if df is None and not refresh:
+            # ── 路径 3: 本地缓存兜底 ──
+            logger.warning("网络源均不可用，尝试本地缓存")
+            try:
+                df = self._load_from_cache()
+                used_source = "本地缓存"
+            except FileNotFoundError:
+                pass
+
+        if df is None and refresh:
+            # refresh 模式：强制走网络
+            used_source, df = self._try_fetch_chain()
+
+        if df is None:
+            raise RuntimeError(
+                "OWID 数据全部不可用 —— "
+                "CDN 和 GitHub 拉取均失败，且本地缓存不存在。\n"
+                "请检查网络连接，或手动下载 OWID CSV 放入 data/ 目录。"
+            )
+
+        # ── 时间范围过滤 ──
+        if start:
+            df = df[df["timestamp"] >= pd.Timestamp(start, tz="UTC")]
+        if end:
+            df = df[df["timestamp"] <= pd.Timestamp(end, tz="UTC")]
+
+        # 更新版本信息
+        self._metadata_version = (
+            f"{used_source} @ {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}"
+        )
+
+        logger.info(
+            f"OWID 中国数据加载完成: {len(df)} 行 "
+            f"(年份 {df['year'].min()}-{df['year'].max()}, 来源: {used_source})"
+        )
+        return df
+
+    # ═══════════════════════════════
+    # 内部：网络拉取
+    # ═══════════════════════════════
+
+    def _try_fetch_chain(self) -> tuple[Optional[str], Optional[pd.DataFrame]]:
+        """
+        按优先级依次尝试从 OWID_CDN_URL → OWID_GITHUB_URL 拉取数据。
+
+        Returns:
+            (source_label, DataFrame) — 成功时 source_label 非空；
+            全部失败返回 (None, None)。
+        """
+        for label, url, timeout in self._FETCH_SOURCES:
+            try:
+                df = self._fetch_from_url(url, timeout)
+                logger.info(f"OWID 数据拉取成功（来源: {label}）")
+                return label, df
+            except Exception as e:
+                logger.warning(f"{label} 不可用: {e}")
+
+        return None, None
+
+    def _fetch_from_url(self, url: str, timeout: int) -> pd.DataFrame:
+        """
+        从指定 URL 流式拉取 OWID CSV，过滤中国数据。
+
+        Args:
+            url:     CSV 文件 URL
+            timeout: HTTP 超时秒数
+
+        Returns:
+            解析后的 DataFrame
+
+        Raises:
+            urllib.error.URLError: 网络不可达
+            ValueError: 数据格式异常
+        """
+        logger.info(f"正在拉取 OWID 数据 ({url[:60]}...)")
+
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Ellectric/1.0"}
+        )
+        response = urllib.request.urlopen(req, timeout=timeout)
+
         reader = csv.DictReader(io.TextIOWrapper(response, "utf-8"))
 
         rows = []
         for row in reader:
-            # 只保留中国数据
             if row.get("iso_code") != "CHN":
                 continue
             year = int(row.get("year", 0))
             if year < 2000:
                 continue
 
-            # 提取发电量、用电量（单位 TWh）
             gen = _safe_float(row.get("electricity_generation"))
             demand = _safe_float(row.get("electricity_demand"))
             solar = _safe_float(row.get("solar_electricity"))
@@ -199,12 +329,12 @@ class OWIDChinaLoader(DataLoader):
             coal = _safe_float(row.get("coal_electricity"))
 
             if gen is None:
-                continue  # 跳过无数据年份（早期年份可能为空）
+                continue
 
             rows.append({
-                "timestamp": pd.Timestamp(f"{year}-07-01", tz="UTC"),  # 年中日期作为代表
+                "timestamp": pd.Timestamp(f"{year}-07-01", tz="UTC"),
                 "year": year,
-                "load_mw": _twh_to_daily_mw(demand or gen),  # 优先用电量，其次发电量
+                "load_mw": _twh_to_daily_mw(demand or gen),
                 "generation_twh": gen,
                 "demand_twh": demand,
                 "solar_twh": solar,
@@ -216,10 +346,37 @@ class OWIDChinaLoader(DataLoader):
 
         response.close()
 
+        if not rows:
+            raise ValueError("未找到中国数据（iso_code='CHN' 行为空）")
+
         df = pd.DataFrame(rows)
         df = df.sort_values("timestamp").reset_index(drop=True)
-        logger.info(f"OWID 中国数据加载完成: {len(df)} 行 (年份 {df['year'].min()}-{df['year'].max()})")
         return df
+
+    # ═══════════════════════════════
+    # 内部：本地缓存
+    # ═══════════════════════════════
+
+    def _load_from_cache(self) -> pd.DataFrame:
+        """从本地 Parquet 缓存加载数据。缓存不存在时 raise FileNotFoundError。"""
+        if not self.CACHE_FILE.exists():
+            raise FileNotFoundError(
+                f"本地缓存不存在: {self.CACHE_FILE}\n"
+                f"请确保至少成功拉取过一次 OWID 数据，缓存会自动生成。"
+            )
+        df = pd.read_parquet(self.CACHE_FILE)
+        logger.info(f"从本地缓存加载: {len(df)} 行")
+        return df
+
+    def _save_cache(self, df: pd.DataFrame) -> None:
+        """保存 DataFrame 到本地 Parquet 缓存。"""
+        self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        df_with_version = df.copy()
+        df_with_version["data_version"] = (
+            datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
+        df_with_version.to_parquet(self.CACHE_FILE, index=False)
+        logger.info(f"OWID 数据已缓存: {self.CACHE_FILE} ({len(df)} 行)")
 
 
 # ═══════════════════════════════════════════════════════
@@ -327,9 +484,10 @@ def create_loader(source: str = "owid", **kwargs) -> DataLoader:
 
     Args:
         source: 数据源类型
-            - "owid"   : OWID 中国年级数据（自动拉取）
+            - "owid"   : OWID 中国年级数据（自动拉取，三级回退）
             - "manual" : 手动下载的日/小时数据
             - "file"   : 同 manual，传 kwarg data_path
+            - "ember"  : Ember Climate 中国小时级数据（探索性）
 
     Returns:
         对应的 DataLoader 实例
@@ -340,6 +498,9 @@ def create_loader(source: str = "owid", **kwargs) -> DataLoader:
 
         >>> loader = create_loader("manual", data_path="data/guangdong_2023.csv")
         >>> df = loader.load_data(start="2023-01-01", end="2023-12-31")
+
+        >>> loader = create_loader("ember")
+        >>> df = loader.load_data(start="2024-01-01", end="2024-12-31")
     """
     if source == "owid":
         return OWIDChinaLoader()
@@ -348,8 +509,12 @@ def create_loader(source: str = "owid", **kwargs) -> DataLoader:
         if not data_path:
             raise ValueError("manual/file 模式需要指定 data_path 参数")
         return ChineseDataLoader(data_path=data_path)
+    elif source == "ember":
+        # 延迟导入 — EmberLoader 是可选模块
+        from ellectric.pipeline.ember_loader import EmberLoader
+        return EmberLoader()
     else:
-        raise ValueError(f"未知数据源: {source}. 可选: 'owid', 'manual', 'file'")
+        raise ValueError(f"未知数据源: {source}. 可选: 'owid', 'manual', 'file', 'ember'")
 
 
 # ═══════════════════════════════════════════════════════

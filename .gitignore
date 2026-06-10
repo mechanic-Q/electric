@@ -31,5 +31,6 @@ Thumbs.db
 .env
 .env.*
 .sillyspec/.runtime/
+.sillyspec/.runtime/worktrees/
 .sillyspec/codebase/SCAN-RAW.md
 .sillyspec/local.yaml

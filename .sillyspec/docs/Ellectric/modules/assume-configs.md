@@ -16,3 +16,10 @@ ASSUME 中国省间现货市场 YAML 配置
 ## 注意事项
 - 边际成本为元/MWh
 - 智能体类型: learning(PPO), naive, strategic
+
+
+## 人工备注
+
+<!-- MANUAL_NOTES_START -->
+
+<!-- MANUAL_NOTES_END -->

@@ -16,3 +16,10 @@ ASSUME 7 天仿真运行 + 结果验证
 ## 注意事项
 - --seed 保证可复现 (默认42)
 - 信号中断时保存部分结果
+
+
+## 人工备注
+
+<!-- MANUAL_NOTES_START -->
+
+<!-- MANUAL_NOTES_END -->

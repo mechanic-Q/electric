@@ -44,7 +44,47 @@ ellectric/
     └── chinese-electricity-data-guide.md  # 中国电力数据获取指南
 ```
 
-## 📊 数据 Schema
+## 📊 数据源与获取
+
+项目接入了多个电力数据源，满足不同粒度和用途的需求：
+
+| 数据源 | 粒度 | 时间范围 | 获取方式 | 用途 |
+|--------|------|----------|----------|------|
+| **OWID** | 年度 | 2000–2025 | 自动拉取（三级回退） | 负荷预测、特征工程 |
+| **ChineseDataLoader** | 日/小时 | 用户自定义 | 手动放置本地文件 | 精细粒度分析 |
+| **Ember** | 小时 | 近年 | API（探索性） | 高频市场数据 |
+
+### OWID 数据获取与缓存
+
+`OWIDChinaLoader` 使用**三级回退策略**确保数据可用性：
+
+```
+1. OWID 官方 CDN (owid-public.owid.io)  → 15s 超时
+2. GitHub raw (raw.githubusercontent.com) → 30s 超时
+3. 本地 Parquet 缓存                       → 网络全断也能用
+```
+
+- 成功拉取后自动写入缓存：`ellectric/data/owid_china_cache.parquet`
+- 调用 `load_data(refresh=True)` 可跳过缓存强制重新拉取
+- 数据覆盖中国 2000–2025 年发电量/用电量（TWh → 日均 MW 自动转换）
+
+### Ember 数据源（探索性）
+
+Ember 提供全球电力行业的小时级和日级数据，覆盖碳排放、发电结构等维度。
+部分 API 需要申请 Key，当前仅作为探索性数据源，未集成到主流程。
+
+### 数据合约
+
+所有 DataLoader 产出的 DataFrame 必须包含以下两列：
+
+| 列名 | 类型 | 含义 |
+|------|------|------|
+| `timestamp` | datetime64[ns, UTC] | 时间戳（强制 UTC） |
+| `load_mw` | float64 | 电力负荷 (MW) |
+
+禁止别名：`date`, `datetime`, `load`, `demand`, `power`
+
+## 📋 数据 Schema
 
 | 列名 | 类型 | 含义 | 数据源 |
 |------|------|------|--------|

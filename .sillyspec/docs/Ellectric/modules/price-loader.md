@@ -16,3 +16,10 @@ module_id: price-loader
 ## 注意事项
 - 当前不支持 start/end 时间过滤
 - 用户需手动从 ZionLuo 仓库下载 xlsx
+
+
+## 人工备注
+
+<!-- MANUAL_NOTES_START -->
+
+<!-- MANUAL_NOTES_END -->

@@ -15,3 +15,10 @@ Grafana 仪表板可视化 — ASSUME 仿真结果展示
 ## 注意事项
 - 需要 `docker compose up -d` 启动服务
 - 需要 ASSUME 仿真先写数据到 TimescaleDB
+
+
+## 人工备注
+
+<!-- MANUAL_NOTES_START -->
+
+<!-- MANUAL_NOTES_END -->

@@ -16,3 +16,10 @@ DM/GW 统计检验封装 — 中国 LEAR vs 5 个基准数据集
 ## 注意事项
 - 在 epftoolbox venv 中运行才能获得真实结果
 - 不含 Bonferroni 等多重比较校正
+
+
+## 人工备注
+
+<!-- MANUAL_NOTES_START -->
+
+<!-- MANUAL_NOTES_END -->

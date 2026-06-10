@@ -410,6 +410,30 @@ modules:
     needs_review: false
     concerns: []
     review_reasons: []
+  ember-loader:
+    status: active
+    doc: modules/ember-loader.md
+    paths:
+      - ellectric/pipeline/ember_loader.py
+    tags:
+      - data
+      - ember
+      - climate
+      - hourly
+    aliases:
+      - ember
+      - climate-data
+    entrypoints:
+      - EmberLoader
+    main_symbols:
+      - EmberLoader
+      - _standardize_ember_columns
+    depends_on:
+      - data-loader
+    used_by: []
+    needs_review: true
+    concerns: ["探索性模块，Ember API 可能需要 key"]
+    review_reasons: ["新增模块，需验证 Ember API 可用性"]
   notebooks:
     status: active
     doc: modules/notebooks.md

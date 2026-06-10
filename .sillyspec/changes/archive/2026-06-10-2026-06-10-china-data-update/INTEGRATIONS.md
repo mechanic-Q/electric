@@ -1,7 +1,10 @@
+---
+author: lmr
+created_at: 2026-06-10T00:00:00+08:00
+---
+
 # Integrations — Ellectric
 
-> **author**: lmr
-> **created_at**: 2026-06-06T00:00:00+08:00
 > **scan_type**: full
 > **source**: requirements.txt, pipeline/*.py, docker-compose.yml, setup.sh
 
@@ -78,15 +81,6 @@
 | Phase 4 | **chromadb** 1.5.9 | Vector database for RAG over trading documents |
 | Phase 4 | **MLflow** 3.12.0 | Experiment tracking and model registry |
 | Phase 4 | **end** 1.0.5 | Energy-specific timeseries manipulation (gap detection, resampling, contract-to-timeseries) |
-| Phase 5 | **Ember Climate API** | 小时级中国电力数据探索 |
-
-## Independent Data Sources
-
-| Tier | Source | Protocol | Purpose |
-|------|--------|----------|---------|
-| **Primary** | OWID CDN (`githubusercontent.com`) | HTTPS/urllib | 国家级电力年/月数据 (owid-energy-data.csv) |
-| **Fallback** | GitHub raw (`raw.githubusercontent.com`) | HTTPS/urllib | OWID CDN 不可达时自动回退 |
-| **Local** | `ellectric/data/*.{csv,parquet,xlsx}` | Filesystem | 离线缓存，避免重复下载 |
 
 ## Cross-Module Dependency Graph (Phase 1)
 

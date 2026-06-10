@@ -14,3 +14,10 @@ ASSUME 安装验证 — 确保框架可用
 - 最小仿真 48h, SQLite 输出
 ## 注意事项
 - 不依赖 Docker/Grafana (task-10 负责)
+
+
+## 人工备注
+
+<!-- MANUAL_NOTES_START -->
+
+<!-- MANUAL_NOTES_END -->
