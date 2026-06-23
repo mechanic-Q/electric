@@ -1,0 +1,97 @@
+{
+  "spot_da": {
+    "misses": [
+      "querySpotMarketClearing/2026-05:non-json status=200",
+      "querySpotMarketClearing/2026-04:non-json status=200",
+      "querySpotMarketClearing/2026-03:non-json status=200"
+    ]
+  },
+  "spot_rt": {
+    "misses": [
+      "queryRealTimeSpotMarketClearing/2026-05:non-json status=200",
+      "queryRealTimeSpotMarketClearing/2026-04:non-json status=200",
+      "queryRealTimeSpotMarketClearing/2026-03:non-json status=200"
+    ]
+  },
+  "mid_long": {
+    "misses": [
+      "queryMidLongDealInfo/2026-05:empty msg=",
+      "queryMidLongDealInfo/2026-04:empty msg=",
+      "queryMidLongDealInfo/2026-03:empty msg=",
+      "queryBatchMidLongDeal/2026-05:empty msg=",
+      "queryBatchMidLongDeal/2026-04:empty msg=",
+      "queryBatchMidLongDeal/2026-03:empty msg=",
+      "queryMidLongTradeInfo/2026-05:empty msg=",
+      "queryMidLongTradeInfo/2026-04:empty msg=",
+      "queryMidLongTradeInfo/2026-03:empty msg=",
+      "queryWholesaleMidLong/2026-05:empty msg=",
+      "queryWholesaleMidLong/2026-04:empty msg=",
+      "queryWholesaleMidLong/2026-03:empty msg="
+    ]
+  },
+  "user_mid_long": {
+    "misses": [
+      "queryUserMidLongDealInfo/2026-05:empty msg=",
+      "queryUserMidLongDealInfo/2026-04:empty msg=",
+      "queryUserMidLongDealInfo/2026-03:empty msg=",
+      "queryUserSideDeal/2026-05:empty msg=",
+      "queryUserSideDeal/2026-04:empty msg=",
+      "queryUserSideDeal/2026-03:empty msg=",
+      "queryUserMidLong/2026-05:empty msg=",
+      "queryUserMidLong/2026-04:empty msg=",
+      "queryUserMidLong/2026-03:empty msg="
+    ]
+  },
+  "user_month_price": {
+    "misses": [
+      "queryUserMonthPrice/2026-05:empty msg=",
+      "queryUserMonthPrice/2026-04:empty msg=",
+      "queryUserMonthPrice/2026-03:empty msg=",
+      "queryUserSidePrice/2026-05:empty msg=",
+      "queryUserSidePrice/2026-04:empty msg=",
+      "queryUserSidePrice/2026-03:empty msg=",
+      "queryUserMonthlyPrice/2026-05:empty msg=",
+      "queryUserMonthlyPrice/2026-04:empty msg=",
+      "queryUserMonthlyPrice/2026-03:empty msg=",
+      "queryMonthSettlementPrice/2026-05:empty msg=",
+      "queryMonthSettlementPrice/2026-04:empty msg=",
+      "queryMonthSettlementPrice/2026-03:empty msg="
+    ]
+  },
+  "year_month_curve": {
+    "misses": [
+      "queryYearMonthCurve/2026-05:empty msg=",
+      "queryYearMonthCurve/2026-04:empty msg=",
+      "queryYearMonthCurve/2026-03:empty msg=",
+      "queryYearTimeCurve/2026-05:empty msg=",
+      "queryYearTimeCurve/2026-04:empty msg=",
+      "queryYearTimeCurve/2026-03:empty msg=",
+      "queryYearStandardCurve/2026-05:empty msg=",
+      "queryYearStandardCurve/2026-04:empty msg=",
+      "queryYearStandardCurve/2026-03:empty msg="
+    ]
+  },
+  "price_float": {
+    "misses": [
+      "queryPriceFloat/2026-05:empty msg=",
+      "queryPriceFloat/2026-04:empty msg=",
+      "queryPriceFloat/2026-03:empty msg=",
+      "queryFloatPrice/2026-05:empty msg=",
+      "queryFloatPrice/2026-04:empty msg=",
+      "queryFloatPrice/2026-03:empty msg=",
+      "queryTimePriceFloat/2026-05:empty msg=",
+      "queryTimePriceFloat/2026-04:empty msg=",
+      "queryTimePriceFloat/2026-03:empty msg="
+    ]
+  },
+  "price_float_no_time": {
+    "misses": [
+      "queryPriceFloatNoTime/2026-05:empty msg=",
+      "queryPriceFloatNoTime/2026-04:empty msg=",
+      "queryPriceFloatNoTime/2026-03:empty msg=",
+      "queryNoTimeFloatPrice/2026-05:empty msg=",
+      "queryNoTimeFloatPrice/2026-04:empty msg=",
+      "queryNoTimeFloatPrice/2026-03:empty msg="
+    ]
+  }
+}

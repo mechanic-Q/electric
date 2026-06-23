@@ -1,0 +1,1 @@
+{"msg": "查询成功!", "code": 200, "data": {"seriesList": [{"seriesData": [], "seriesName": "（不分时）年、月、旬及日前现货加权出清电价算数平均值"}, {"seriesData": [], "seriesName": "（不分时）年、月及旬6:4加权出清电价算数平均值"}, {"seriesData": [], "seriesName": "（不分时）年、月、旬中长期分时段加权出清电价算数平均值"}, {"seriesData": [], "seriesName": "（不分时）年、月、旬及实时现货加权出清电价算数平均值"}], "dateList": []}}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { font-size: 100%; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0D0D0F; color: #F2F1EF;
+    font-family: 'Inter', -apple-system, 'PingFang SC', sans-serif;
+    display: flex; align-items: center;
+  }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(#1A1A1D 1px, transparent 1px),
+      linear-gradient(90deg, #1A1A1D 1px, transparent 1px);
+    background-size: 96px 96px;
+    opacity: 0.5;
+  }
+  .accent-line {
+    position: absolute; top: 80px; left: 100px;
+    width: 120px; height: 3px; background: #00D4AA;
+  }
+  .masthead {
+    position: absolute; top: 60px; right: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: #5C5C63; letter-spacing: 0.08em;
+  }
+  .content { position: relative; z-index: 2; margin-left: 100px; max-width: 1300px; }
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: #00D4AA; letter-spacing: 0.12em;
+    margin-bottom: 32px; text-transform: uppercase;
+  }
+  h1 {
+    font-family: 'Inter Tight', -apple-system, 'PingFang SC', sans-serif;
+    font-size: 96px; font-weight: 800; line-height: 1.05;
+    letter-spacing: -0.025em; margin-bottom: 28px;
+  }
+  h1 .accent { color: #00D4AA; }
+  .subtitle {
+    font-size: 28px; font-weight: 300; color: #8A8A92;
+    line-height: 1.4; max-width: 800px; margin-bottom: 48px;
+  }
+  .tech-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: #5C5C63; letter-spacing: 0.04em;
+  }
+  .tech-line span { color: #00D4AA; }
+  .bottom-line {
+    position: absolute; bottom: 80px; left: 100px; right: 100px;
+    height: 1px; background: #1A1A1D;
+  }
+  .geo-decor {
+    position: absolute; right: 120px; top: 50%; transform: translateY(-50%);
+    width: 420px; height: 420px;
+  }
+  .geo-ring {
+    position: absolute; inset: 0;
+    border: 1px solid rgba(0,212,170,0.15);
+    border-radius: 50%;
+  }
+  .geo-ring:nth-child(2) {
+    inset: 50px; border-color: rgba(0,212,170,0.08);
+  }
+  .geo-ring:nth-child(3) {
+    inset: 100px; border-color: rgba(0,212,170,0.05);
+  }
+  .geo-dot {
+    position: absolute; width: 6px; height: 6px;
+    background: #00D4AA; border-radius: 50%;
+  }
+  .geo-dot:nth-child(4) { top: 20px; left: 50%; transform: translateX(-50%); }
+  .geo-dot:nth-child(5) { bottom: 40px; right: 60px; }
+  .geo-dot:nth-child(6) { top: 50%; left: -3px; transform: translateY(-50%); }
+  .geo-line {
+    position: absolute; top: 50%; left: 50%; width: 180px;
+    height: 1px; background: rgba(0,212,170,0.2);
+    transform-origin: left center;
+    transform: rotate(30deg);
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="accent-line"></div>
+<div class="masthead">ELLECTRIC · AI + POWER TRADING</div>
+
+<div class="content">
+  <div class="tag">Phase 1 — 4 · 端到端技术闭环</div>
+  <h1><span class="accent">Ellectric</span><br>AI + 电力交易<br>技术学习平台</h1>
+  <p class="subtitle">从公开电力数据到智能交易策略 — 负荷预测、电价预测、市场仿真、强化学习、模型可解释性，完整跑通</p>
+  <p class="tech-line">
+    Python <span>3.11+</span> &nbsp;·&nbsp;
+    XGBoost <span>3.2.0</span> &nbsp;·&nbsp;
+    scikit-learn <span>1.8.0</span> &nbsp;·&nbsp;
+    stable-baselines3 &nbsp;·&nbsp;
+    FastAPI <span>0.136</span> &nbsp;·&nbsp;
+    LangChain <span>1.3</span>
+  </p>
+</div>
+
+<div class="geo-decor">
+  <div class="geo-ring"></div>
+  <div class="geo-ring"></div>
+  <div class="geo-ring"></div>
+  <div class="geo-line"></div>
+  <div class="geo-dot"></div>
+  <div class="geo-dot"></div>
+  <div class="geo-dot"></div>
+</div>
+
+<div class="bottom-line"></div>
+</body>
+</html>

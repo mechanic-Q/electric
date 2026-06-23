@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>山西现货数据接入 — 架构原型</title>
+<style>
+:root {
+  --primary: #1a73e8;
+  --secondary: #34a853;
+  --accent: #ea4335;
+  --bg: #f8f9fa;
+  --card-bg: #fff;
+  --border: #dadce0;
+  --text: #202124;
+  --muted: #5f6368;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--text); line-height:1.5; padding:24px; }
+h1 { font-size:1.6rem; margin-bottom:4px; }
+h2 { font-size:1.15rem; margin:16px 0 8px; color:var(--primary); }
+p { font-size:.9rem; color:var(--muted); }
+.sub { font-size:.85rem; color:var(--muted); margin-bottom:20px; }
+.grid { display:flex; flex-wrap:wrap; gap:16px; margin:12px 0; }
+.card { background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:14px 16px; flex:1; min-width:200px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.card h3 { font-size:1rem; margin-bottom:6px; }
+.card ul { list-style:none; font-size:.85rem; }
+.card li { padding:2px 0; color:var(--muted); }
+.card li b { color:var(--text); }
+.flow { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin:16px 0; }
+.flow-box { background:var(--card-bg); border:2px solid var(--primary); border-radius:8px; padding:10px 16px; text-align:center; min-width:100px; }
+.flow-box.rt { border-color:var(--secondary); }
+.flow-box.settle { border-color:#f9ab00; }
+.arrow { font-size:1.4rem; color:var(--muted); }
+.arch { position:relative; margin:16px 0; }
+.arch-row { display:flex; align-items:stretch; gap:12px; margin-bottom:16px; justify-content:center; flex-wrap:wrap; }
+.arch-item { background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:10px 14px; text-align:center; min-width:130px; }
+.arch-item.highlight { border-color:var(--primary); background:#e8f0fe; }
+.arch-item.highlight2 { border-color:var(--secondary); background:#e6f4ea; }
+.arch-item h4 { font-size:.9rem; margin-bottom:2px; }
+.arch-item p { font-size:.75rem; color:var(--muted); }
+.arch-label { text-align:center; font-size:.8rem; font-weight:600; color:var(--muted); margin:8px 0 4px; }
+.table-wrap { overflow-x:auto; margin:10px 0; }
+table { border-collapse:collapse; font-size:.85rem; width:100%; }
+th,td { border:1px solid var(--border); padding:6px 10px; text-align:left; }
+th { background:#f1f3f4; font-weight:500; }
+td { font-family: monospace; }
+.green { color:var(--secondary); font-weight:500; }
+.amber { color:#f9ab00; font-weight:500; }
+.red { color:var(--accent); font-weight:500; }
+</style>
+</head>
+<body>
+
+<h1>⚡ 山西现货数据接入方案</h1>
+<p class="sub">变更: 2026-06-22-shanxi-spot-data-access · A级 — 数据准备 · 不动现有pipeline</p>
+
+<!-- ===== 数据源 ===== -->
+<h2>📡 数据源：山西零售商城</h2>
+<div class="grid">
+  <div class="card">
+    <h3>✅ 核心接入 (3 API)</h3>
+    <ul>
+      <li><b>spot_da</b> — 日前现货市场出清情况</li>
+      <li><b>spot_rt</b> — 实时现货市场出清情况</li>
+      <li><b>month_settle</b> — 用户侧月度统一结算点电价</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>📁 归档 (4 API)</h3>
+    <ul>
+      <li>month_deal — 批发中长期成交</li>
+      <li>user_transaction — 用户侧成交</li>
+      <li>year_trade_fit — 年度拟分时曲线</li>
+      <li>time_div_trend — 分时浮动项</li>
+    </ul>
+    <p style="margin-top:6px">已下载保存，不进 loader</p>
+  </div>
+  <div class="card">
+    <h3>❌ 空数据 (11 API)</h3>
+    <ul>
+      <li>dynamic, policy, price_trend, market_list</li>
+      <li>market_users, month_market, public_info</li>
+      <li>retail_settle, retail_prob, no_time_trend</li>
+      <li>sale_arrears</li>
+    </ul>
+    <p style="margin-top:6px">接口存在但返回空或非交易数据</p>
+  </div>
+</div>
+
+<!-- ===== 数据流向 ===== -->
+<h2>🔀 数据流向</h2>
+<div class="flow">
+  <div class="flow-box">山西零售商城<br><small>pxf-phbsx-shop</small></div>
+  <span class="arrow">→</span>
+  <div class="flow-box">POSTh<br><small>querySpotMarketClearing</small></div>
+  <span class="arrow">→</span>
+  <div class="flow-box">JSON 原始文件<br><small>raw/shanxi/*.json</small></div>
+  <span class="arrow">→</span>
+  <div class="flow-box" style="border-width:2px;border-color:var(--primary)">ShanxiBaseLoader<br><small>pipeline/data_loader.py</small></div>
+  <span class="arrow">→</span>
+  <div class="flow-box" style="border-color:var(--secondary);border-width:2px">DataFrame<br><small>{timestamp,load_mw,价格/电量}</small></div>
+</div>
+
+<!-- ===== 架构 ===== -->
+<h2>🏗️ Loader 架构</h2>
+<div class="arch">
+  <div class="arch-label">现有基类</div>
+  <div class="arch-row">
+    <div class="arch-item highlight"><h4>DataLoader (ABC)</h4><p>ellectric/pipeline/data_loader.py</p></div>
+  </div>
+  <div class="arch-label">现有子类（不动）</div>
+  <div class="arch-row">
+    <div class="arch-item"><h4>OWIDChinaLoader</h4><p>OWID GitHub raw CSV</p></div>
+    <div class="arch-item"><h4>ChineseDataLoader</h4><p>本地 CSV/Excel/Parquet</p></div>
+  </div>
+  <div class="arch-label">新增抽象基类（本变更）</div>
+  <div class="arch-row">
+    <div class="arch-item highlight2"><h4>ShanxiBaseLoader</h4><p>JSON文件扫描·月度解析·UTC标准化·24:00处理</p></div>
+  </div>
+  <div class="arch-label">新增子类 × 3（本变更）</div>
+  <div class="arch-row">
+    <div class="arch-item"><h4>ShanxiSpotDaLoader</h4><p>record1→da_price_a<br>record2→da_price_b</p></div>
+    <div class="arch-item"><h4>ShanxiSpotRtLoader</h4><p>rqRecord→rt_energy_demand<br>ssRecord→rt_energy_supply</p></div>
+    <div class="arch-item"><h4>ShanxiMonthSettleLoader</h4><p>dayPrice→settle_day<br>realTimePrice→settle_rt</p></div>
+  </div>
+  <div class="arch-label">工厂</div>
+  <div class="arch-row">
+    <div class="arch-item highlight"><h4>create_loader()</h4><p>新增: shanxi_spot_da / shanxi_spot_rt / shanxi_month_settle</p></div>
+  </div>
+</div>
+
+<!-- ===== 时间范围 ===== -->
+<h2>📅 覆盖范围</h2>
+<div class="table-wrap">
+<table>
+  <tr><th>数据集</th><th>有效时间</th><th>粒度</th><th>月数</th><th>总行数</th><th>类型</th></tr>
+  <tr><td>spot_da</td><td>2022-04 ~ 2026-05</td><td class="green">15min × 24h = 96点</td><td>50</td><td>4800</td><td>价格(元/MWh)</td></tr>
+  <tr><td>spot_rt</td><td>2022-04 ~ 2026-05</td><td class="green">15min × 24h = 96点</td><td>50</td><td>4800</td><td>电量(亿千瓦时)</td></tr>
+  <tr><td>month_settle</td><td>2018-01 ~ 2026-12</td><td class="amber">逐日分时 23-24点/月</td><td>108</td><td>2525</td><td>价格(元/MWh)</td></tr>
+</table>
+</div>
+<p style="font-size:.8rem;color:var(--accent);margin-top:4px">⚠️ spot_da/spot_rt 是每月一条 96 点典型曲线，非逐日历史序列</p>
+
+<!-- ===== 字段映射 ===== -->
+<h2>🔤 字段语义化映射</h2>
+<div class="table-wrap">
+<table>
+  <tr><th>原始字段</th><th style="width:6em">重命名</th><th>推断含义</th><th>样例值</th><th>置信度</th></tr>
+  <tr>
+    <td>record1</td><td>da_price_a</td><td>日前出清价 (价区A)</td><td>325.83</td>
+    <td class="amber">推断</td>
+  </tr>
+  <tr>
+    <td>record2</td><td>da_price_b</td><td>日前出清价 (价区B)</td><td>336.78</td>
+    <td class="amber">推断</td>
+  </tr>
+  <tr>
+    <td>rqRecord</td><td>rt_energy_demand</td><td>实时需求量/日前申报(万MWh级)</td><td>32430.065</td>
+    <td class="amber">推断</td>
+  </tr>
+  <tr>
+    <td>ssRecord</td><td>rt_energy_supply</td><td>实时供应量/出清量(万MWh级)</td><td>31837.878</td>
+    <td class="amber">推断</td>
+  </tr>
+  <tr>
+    <td>dayPrice</td><td>settle_day_price</td><td>月度一中日统一点价</td><td>295.43</td>
+    <td class="green">高频</td>
+  </tr>
+  <tr>
+    <td>realTimePrice</td><td>settle_rt_price</td><td>月度实时统一点价</td><td>272.18</td>
+    <td class="green">高频</td>
+  </tr>
+</table>
+</div>
+
+<!-- ===== 范围边界 ===== -->
+<h2>🚧 本变更范围</h2>
+<div class="grid">
+  <div class="card" style="border-left:4px solid var(--secondary)">
+    <h3 style="color:var(--secondary)">✅ 包括</h3>
+    <ul>
+      <li>✓ ellectric/data/raw/shanxi/README.md</li>
+      <li>✓ ShanxiBaseLoader + 3 子类</li>
+      <li>✓ create_loader 扩展 3 个 source</li>
+      <li>✓ 字段语义化重命名</li>
+    </ul>
+  </div>
+  <div class="card" style="border-left:4px solid var(--accent)">
+    <h3 style="color:var(--accent)">❌ 排除</h3>
+    <ul>
+      <li>✗ pipeline 现有代码修改</li>
+      <li>✗ TradingEnv 24→96 参数化</li>
+      <li>✗ 特征工程/模型训练</li>
+      <li>✗ API/CLI/LLM 桥接</li>
+    </ul>
+  </div>
+  <div class="card" style="border-left:4px solid var(--primary)">
+    <h3 style="color:var(--primary)">→ 后续变更</h3>
+    <ul>
+      <li>▸ time-resolution-param (参数化)</li>
+      <li>▸ gd-spot-data-access (广东兜底)</li>
+      <li>▸ data-schema-expand (字段扩展)</li>
+      <li>▸ realtime-data-pipeline (准实时)</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>
