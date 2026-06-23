@@ -25,6 +25,8 @@ import numpy as np
 import pandas as pd
 from gymnasium.spaces import Box, Dict
 
+from ellectric.config import TimeConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -235,23 +237,23 @@ class ElectricityMarketEnv(gym.Env):
         self.observation_space = Dict(
             {
                 "load_forecast_24h": Box(
-                    0.0, np.inf, shape=(24,), dtype=np.float32
+                    0.0, np.inf, shape=(TimeConfig.points_per_day,), dtype=np.float32
                 ),
                 "price_forecast_24h": Box(
-                    0.0, np.inf, shape=(24,), dtype=np.float32
+                    0.0, np.inf, shape=(TimeConfig.points_per_day,), dtype=np.float32
                 ),
                 "time_features": Box(
                     -1.0, 1.0, shape=(4,), dtype=np.float32
                 ),
                 "price_history_168h": Box(
-                    0.0, np.inf, shape=(168,), dtype=np.float32
+                    0.0, np.inf, shape=(TimeConfig.points_per_week,), dtype=np.float32
                 ),
                 "account_state": Box(
                     -np.inf, np.inf, shape=(2,), dtype=np.float32
                 ),
             }
         )
-        self.action_space = Box(0.0, 1.0, shape=(24,), dtype=np.float32)
+        self.action_space = Box(0.0, 1.0, shape=(TimeConfig.points_per_day,), dtype=np.float32)
 
         # ── 内部状态 ──────────────────────────────────────────
         self._current_step = 0
@@ -304,7 +306,7 @@ class ElectricityMarketEnv(gym.Env):
 
         # ── 动作裁剪 ──────────────────────────────────────────
         action = np.asarray(action, dtype=np.float32).ravel()
-        if action.shape[0] != 24:
+        if action.shape[0] != TimeConfig.points_per_day:
             raise ValueError(
                 f"action 必须为 24 维（实际 {action.shape[0]}）"
             )
@@ -316,7 +318,7 @@ class ElectricityMarketEnv(gym.Env):
 
         # ── 获取实际数据 ──────────────────────────────────────
         start = self._current_step
-        end = min(start + 24, len(self._load_data))
+        end = min(start + TimeConfig.points_per_day, len(self._load_data))
         n_hours = end - start
 
         actual_load = self._load_data["load_mw"].iloc[start:end].values.astype(np.float64)
@@ -379,18 +381,18 @@ class ElectricityMarketEnv(gym.Env):
         )
 
         # ── 价格历史 (过去 168 小时) ─────────────────────────
-        if self._current_step >= 168:
+        if self._current_step >= TimeConfig.points_per_week:
             price_history = (
                 self._price_data["price_da"]
-                .iloc[self._current_step - 168 : self._current_step]
+                .iloc[self._current_step - TimeConfig.points_per_week : self._current_step]
                 .values.astype(np.float32)
             )
         else:
             available = self._price_data["price_da"].iloc[: self._current_step].values.astype(np.float32)
             if len(available) == 0:
-                price_history = np.zeros(168, dtype=np.float32)
+                price_history = np.zeros(TimeConfig.points_per_week, dtype=np.float32)
             else:
-                price_history = np.pad(available, (168 - len(available), 0), mode="edge")
+                price_history = np.pad(available, (TimeConfig.points_per_week - len(available), 0), mode="edge")
 
         # ── 账户状态 ──────────────────────────────────────────
         total_steps = max(len(self._load_data), 1)
@@ -452,8 +454,8 @@ class ElectricityMarketEnv(gym.Env):
             if feat_df is None:
                 return None
             pred = forecaster.predict(feat_df)
-            if pred is not None and len(pred) >= 24:
-                return np.array(pred[:24], dtype=np.float32)
+            if pred is not None and len(pred) >= TimeConfig.points_per_day:
+                return np.array(pred[:TimeConfig.points_per_day], dtype=np.float32)
         except Exception as e:
             logger.warning(f"{target_col} 模型预测失败: {e}")
 
@@ -467,14 +469,14 @@ class ElectricityMarketEnv(gym.Env):
     ) -> Optional[pd.DataFrame]:
         """为未来 24 小时构建预测特征 DataFrame。"""
         start = self._current_step
-        n_hours = 24
+        n_hours = TimeConfig.points_per_day
 
         # ── 构建时间戳 ────────────────────────────────────────
         current_ts = self._get_current_timestamp()
         times = pd.date_range(
             start=current_ts,
             periods=n_hours,
-            freq="h",
+            freq=TimeConfig.freq,
         )
 
         df = pd.DataFrame({"timestamp": times})
@@ -500,10 +502,10 @@ class ElectricityMarketEnv(gym.Env):
                 if "lag_24h_price" in feature_cols
                 else None
             )
-        if lag_24h_name and start >= 24:
+        if lag_24h_name and start >= TimeConfig.points_per_day:
             df[lag_24h_name] = (
                 data[target_col]
-                .iloc[start - 24 : start]
+                .iloc[start - TimeConfig.points_per_day : start]
                 .values[:n_hours]
             )
         elif lag_24h_name:
@@ -517,14 +519,14 @@ class ElectricityMarketEnv(gym.Env):
                 if "lag_168h_price" in feature_cols
                 else None
             )
-        if lag_168h_name and start >= 168:
-            df[lag_168h_name] = data[target_col].iloc[start - 168 : start - 168 + n_hours].values
+        if lag_168h_name and start >= TimeConfig.points_per_week:
+            df[lag_168h_name] = data[target_col].iloc[start - TimeConfig.points_per_week : start - TimeConfig.points_per_week + n_hours].values
         elif lag_168h_name:
             df[lag_168h_name] = 0.0
 
         # ── 滚动统计 ──────────────────────────────────────────
         if start >= 24:
-            hist_window = data[target_col].iloc[max(0, start - 24) : start]
+            hist_window = data[target_col].iloc[max(0, start - TimeConfig.points_per_day) : start]
             if "rolling_mean_24h" in feature_cols:
                 df["rolling_mean_24h"] = float(hist_window.mean())
             if "rolling_std_24h" in feature_cols:
@@ -536,32 +538,32 @@ class ElectricityMarketEnv(gym.Env):
                 df["rolling_std_24h"] = 0.0
 
         # ── LEAR 负荷滞后 (用于电价预测) ─────────────────────
-        if "lag_24h_load" in feature_cols and start >= 24:
+        if "lag_24h_load" in feature_cols and start >= TimeConfig.points_per_day:
             df["lag_24h_load"] = (
                 self._load_data["load_mw"]
-                .iloc[start - 24 : start]
+                .iloc[start - TimeConfig.points_per_day : start]
                 .values[:n_hours]
             )
         elif "lag_24h_load" in feature_cols:
             df["lag_24h_load"] = 0.0
 
-        if "lag_24h_wind" in feature_cols and start >= 24:
-            wind_vals = data["wind_mw"].iloc[start - 24 : start].values if "wind_mw" in data.columns else np.zeros(n_hours)
+        if "lag_24h_wind" in feature_cols and start >= TimeConfig.points_per_day:
+            wind_vals = data["wind_mw"].iloc[start - TimeConfig.points_per_day : start].values if "wind_mw" in data.columns else np.zeros(n_hours)
             df["lag_24h_wind"] = wind_vals
         elif "lag_24h_wind" in feature_cols:
             wind_vals = data["wind_mw"].iloc[:start].values if "wind_mw" in data.columns and start > 0 else np.zeros(n_hours)
             df["lag_24h_wind"] = np.pad(wind_vals, (n_hours - len(wind_vals), 0), mode="edge")
-        if "lag_24h_solar" in feature_cols and start >= 24:
-            solar_vals = data["solar_mw"].iloc[start - 24 : start].values if "solar_mw" in data.columns else np.zeros(n_hours)
+        if "lag_24h_solar" in feature_cols and start >= TimeConfig.points_per_day:
+            solar_vals = data["solar_mw"].iloc[start - TimeConfig.points_per_day : start].values if "solar_mw" in data.columns else np.zeros(n_hours)
             df["lag_24h_solar"] = solar_vals
         elif "lag_24h_solar" in feature_cols:
             solar_vals = data["solar_mw"].iloc[:start].values if "solar_mw" in data.columns and start > 0 else np.zeros(n_hours)
             df["lag_24h_solar"] = np.pad(solar_vals, (n_hours - len(solar_vals), 0), mode="edge")
 
         # ── 价格趋势 (LEAR tier3) ────────────────────────────
-        if "price_trend_7d" in feature_cols and start >= 168:
+        if "price_trend_7d" in feature_cols and start >= TimeConfig.points_per_week:
             df["price_trend_7d"] = float(
-                data[target_col].iloc[start - 168 : start].mean()
+                data[target_col].iloc[start - TimeConfig.points_per_week : start].mean()
             )
         elif "price_trend_7d" in feature_cols:
             df["price_trend_7d"] = 0.0
@@ -583,13 +585,13 @@ class ElectricityMarketEnv(gym.Env):
     ) -> np.ndarray:
         """持续法预测：用最近 24 小时实际值作为预测。"""
         start = self._current_step
-        if start >= 24:
+        if start >= TimeConfig.points_per_day:
             return (
                 data[target_col]
-                .iloc[start - 24 : start]
+                .iloc[start - TimeConfig.points_per_day : start]
                 .values.astype(np.float32)
             )
-        return np.zeros(24, dtype=np.float32)
+        return np.zeros(TimeConfig.points_per_day, dtype=np.float32)
 
     def _compute_reward(
         self,

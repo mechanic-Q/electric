@@ -42,6 +42,8 @@ import logging
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from ellectric.config import TimeConfig
+
 logger = logging.getLogger(__name__)
 
 # ── Tier 特征列名定义 ─────────────────────────────────────────
@@ -160,8 +162,8 @@ class LEARForecaster:
         df["day_of_week"] = df["timestamp"].dt.dayofweek
         df["month"] = df["timestamp"].dt.month
         df["is_weekend"] = df["day_of_week"].isin([5, 6]).astype(int)
-        df["lag_24h_price"] = df["price_da"].shift(24).bfill()
-        df["lag_168h_price"] = df["price_da"].shift(168).bfill()
+        df["lag_24h_price"] = df["price_da"].shift(TimeConfig.points_per_day).bfill()
+        df["lag_168h_price"] = df["price_da"].shift(TimeConfig.points_per_week).bfill()
         logger.info("Tier 1 特征: hour, day_of_week, month, is_weekend, lag_24h_price, lag_168h_price")
         return df
 
@@ -170,9 +172,9 @@ class LEARForecaster:
         _validate_required_columns(
             df, {"load_mw", "wind_mw", "solar_mw"}, "_add_tier2_price_features"
         )
-        df["lag_24h_load"] = df["load_mw"].shift(24).bfill()
-        df["lag_24h_wind"] = df["wind_mw"].shift(24).bfill()
-        df["lag_24h_solar"] = df["solar_mw"].shift(24).bfill()
+        df["lag_24h_load"] = df["load_mw"].shift(TimeConfig.points_per_day).bfill()
+        df["lag_24h_wind"] = df["wind_mw"].shift(TimeConfig.points_per_day).bfill()
+        df["lag_24h_solar"] = df["solar_mw"].shift(TimeConfig.points_per_day).bfill()
         df["rolling_mean_24h_price"] = df["price_da"].rolling(24, min_periods=1).mean()
         df["rolling_std_24h_price"] = (
             df["price_da"].rolling(24, min_periods=1).std().fillna(0)
