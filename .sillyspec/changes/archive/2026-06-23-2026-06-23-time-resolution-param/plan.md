@@ -24,28 +24,28 @@ created_at: 2026-06-23T19:20:00+08:00
 ## Tasks
 
 ### Wave 1 (无依赖)
-- [ ] task-01: 新建 `ellectric/config.py` 定义 TimeConfig 类（覆盖：FR-001, D-001@v1, NFR-002）
+- [x] task-01: 新建 `ellectric/config.py` 定义 TimeConfig 类（覆盖：FR-001, D-001@v1, NFR-002）
 
 ### Wave 2 (依赖 task-01，可并行)
-- [ ] task-02: `trading_env.py` 约 30 处硬编码替换（覆盖：FR-002, D-002@v1）
-- [ ] task-03: `features.py` 2 处 shift 替换（覆盖：FR-003, D-002@v1）
-- [ ] task-04: `forecaster.py` 1 处 shift 替换（覆盖：FR-004, D-002@v1）
-- [ ] task-05: `price_forecaster.py` 5 处 shift 替换（覆盖：FR-005, D-002@v1）
-- [ ] task-06: `cleaner.py` freq 比较和重采样目标替换（覆盖：FR-006, D-002@v1）
+- [x] task-02: `trading_env.py` 约 30 处硬编码替换（覆盖：FR-002, D-002@v1）
+- [x] task-03: `features.py` 2 处 shift 替换（覆盖：FR-003, D-002@v1）
+- [x] task-04: `forecaster.py` 1 处 shift 替换（覆盖：FR-004, D-002@v1）
+- [x] task-05: `price_forecaster.py` 5 处 shift 替换（覆盖：FR-005, D-002@v1）
+- [x] task-06: `cleaner.py` freq 比较和重采样目标替换（覆盖：FR-006, D-002@v1）
 
 ### Wave 3 (依赖全部)
-- [ ] task-07: 新建 `ellectric/scripts/verify_time_resolution.py` 验证脚本（覆盖：FR-007, D-003@v1, NFR-001~NFR-004）
+- [x] task-07: 新建 `ellectric/scripts/verify_time_resolution.py` 验证脚本（覆盖：FR-007, D-003@v1, NFR-001~NFR-004）
 
 ## 验收
 
-- [ ] `python ellectric/scripts/verify_time_resolution.py` 退出码 0
-- [ ] 默认 24 下，`python ellectric/scripts/verify_shanxi_loader.py` 仍 24/24 通过
-- [ ] 改 `TimeConfig.points_per_day=96` 后，`ElectricityMarketEnv().action_space.shape == (96,)`
-- [ ] `features.py` 的 `shift(...)` 调用所有出现处都引用 TimeConfig
-- [ ] `cleaner.py` 没有硬编码 `"h"` 文字比较
-- [ ] `requirements.txt` 不变
-- [ ] `ellectric/pipeline/data_loader.py`、`shanxi_loader.py` 零修改
-- [ ] 全部新建/修改文件含类型标注（NFR-002）
+- [x] `python ellectric/scripts/verify_time_resolution.py` 退出码 0
+- [x] 默认 24 下，`python ellectric/scripts/verify_shanxi_loader.py` 仍 24/24 通过
+- [x] 改 `TimeConfig.points_per_day=96` 后，`ElectricityMarketEnv().action_space.shape == (96,)`
+- [x] `features.py` 的 `shift(...)` 调用所有出现处都引用 TimeConfig
+- [x] `cleaner.py` 没有硬编码 `"h"` 文字比较
+- [x] `requirements.txt` 不变
+- [x] `ellectric/pipeline/data_loader.py`、`shanxi_loader.py` 零修改
+- [x] 全部新建/修改文件含类型标注（NFR-002）
 
 ## 覆盖矩阵
 
