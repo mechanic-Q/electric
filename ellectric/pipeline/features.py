@@ -41,6 +41,8 @@ import pandas as pd
 import numpy as np
 import logging
 
+from ellectric.config import TimeConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -89,7 +91,7 @@ class FeatureEngineer:
         df["is_weekend"] = df["day_of_week"].isin([5, 6]).astype(int)
 
         # 滞后特征 — 昨天同时刻的负荷
-        df["lag_24h"] = df["load_mw"].shift(24)
+        df["lag_24h"] = df["load_mw"].shift(TimeConfig.points_per_day)
         # bfill: 前24个没有"昨天"的点用后续值填充
         df["lag_24h"] = df["lag_24h"].bfill()
 
@@ -128,7 +130,7 @@ class FeatureEngineer:
             df["is_holiday"] = 0
 
         # 168 小时滞后 — 一周前同时刻
-        df["lag_168h"] = df["load_mw"].shift(168)
+        df["lag_168h"] = df["load_mw"].shift(TimeConfig.points_per_week)
         df["lag_168h"] = df["lag_168h"].bfill()
 
         self._features_added.append("tier2")

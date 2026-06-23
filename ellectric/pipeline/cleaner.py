@@ -35,6 +35,8 @@ import pandas as pd
 import numpy as np
 import logging
 
+from ellectric.config import TimeConfig
+
 logger = logging.getLogger(__name__)
 
 # 数据清洗后的标准 schema
@@ -209,8 +211,8 @@ def standardize_frequency(df: pd.DataFrame) -> pd.DataFrame:
     if freq is None:
         logger.warning("无法推断时间频率，已跳过规范化")
         return df.reset_index()
-    if freq != "h" and freq != "60min":
-        logger.info(f"数据频率为 {freq}，重采样为小时级 (h)")
+    if freq != TimeConfig.freq and freq != "60min":
+        logger.info(f"数据频率为 {freq}，重采样为小时级")
         df = df.resample("h").mean().bfill()
     return df.reset_index()
 

@@ -48,6 +48,8 @@ import logging
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from ellectric.config import TimeConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,7 +70,7 @@ def persistence_forecast(df: pd.DataFrame) -> pd.Series:
         预测值 Series，索引与 df 相同。
         前 24 小时用后向填充补齐。
     """
-    forecast = df["load_mw"].shift(24)
+    forecast = df["load_mw"].shift(TimeConfig.points_per_day)
 
     # 前 24 个值没有"昨天数据"，用后向填充
     # 即用第 25 小时的值回填第 1-24 小时
