@@ -29,36 +29,36 @@ created_at: 2026-06-23T15:10:00+08:00
 ## Tasks (Wave 重排)
 
 ### Wave 1 (并行，无依赖)
-- [ ] task-01: 写 `data/raw/shanxi/README.md`，含 API 表、字段映射、有效范围、限制（覆盖：FR-001, FR-002, D-002@v1, D-003@v1, D-006@v1, NFR-005）
-- [ ] task-02: 在 `pipeline/shanxi_loader.py` 实现 `ShanxiBaseLoader(DataLoader)` 抽象基类，封装 JSON 扫描、月份解析、UTC 化、24:00 边界、`_metadata` 设置（覆盖：FR-003, D-001@v1, D-005@v1, NFR-002, NFR-003）
+- [x] task-01: 写 `data/raw/shanxi/README.md`，含 API 表、字段映射、有效范围、限制（覆盖：FR-001, FR-002, D-002@v1, D-003@v1, D-006@v1, NFR-005）
+- [x] task-02: 在 `pipeline/shanxi_loader.py` 实现 `ShanxiBaseLoader(DataLoader)` 抽象基类，封装 JSON 扫描、月份解析、UTC 化、24:00 边界、`_metadata` 设置（覆盖：FR-003, D-001@v1, D-005@v1, NFR-002, NFR-003）
 
 ### Wave 2 (依赖 task-02，可互相并行)
-- [ ] task-03: 在同文件实现 `ShanxiSpotDaLoader`：record1→da_price_a / record2→da_price_b，load_mw=NaN（覆盖：FR-004, D-002@v1）
-- [ ] task-04: 在同文件实现 `ShanxiSpotRtLoader`：rqRecord→rt_energy_demand / ssRecord→rt_energy_supply，load_mw=rt_energy_demand（覆盖：FR-005, D-003@v1）
-- [ ] task-05: 在同文件实现 `ShanxiMonthSettleLoader`：dayPrice→settle_day_price / realTimePrice→settle_rt_price，处理逐日分时（覆盖：FR-006, D-002@v1）
+- [x] task-03: 在同文件实现 `ShanxiSpotDaLoader`：record1→da_price_a / record2→da_price_b，load_mw=NaN（覆盖：FR-004, D-002@v1）
+- [x] task-04: 在同文件实现 `ShanxiSpotRtLoader`：rqRecord→rt_energy_demand / ssRecord→rt_energy_supply，load_mw=rt_energy_demand（覆盖：FR-005, D-003@v1）
+- [x] task-05: 在同文件实现 `ShanxiMonthSettleLoader`：dayPrice→settle_day_price / realTimePrice→settle_rt_price，处理逐日分时（覆盖：FR-006, D-002@v1）
 
 > ⚠️ 注意：task-03/04/05 在逻辑上独立可并行，但物理上修改同一文件 `shanxi_loader.py`。execute 阶段必须**串行追加**，不能真正并行编辑。
 
 ### Wave 3 (依赖 task-02~05)
-- [ ] task-06: 修改 `pipeline/data_loader.py` 的 `create_loader()`，添加 `shanxi_spot_da` / `shanxi_spot_rt` / `shanxi_month_settle` 三个分支（延迟导入）（覆盖：FR-007, FR-008, D-004@v1）
+- [x] task-06: 修改 `pipeline/data_loader.py` 的 `create_loader()`，添加 `shanxi_spot_da` / `shanxi_spot_rt` / `shanxi_month_settle` 三个分支（延迟导入）（覆盖：FR-007, FR-008, D-004@v1）
 
 ### Wave 4 (依赖 task-06)
-- [ ] task-07: 新增 `ellectric/scripts/verify_shanxi_loader.py` 验证脚本，调用 3 个 source 的 `load_data()`，打印行数/列名/时间范围/元数据，验证优雅降级（覆盖：FR-009, NFR-001）
+- [x] task-07: 新增 `ellectric/scripts/verify_shanxi_loader.py` 验证脚本，调用 3 个 source 的 `load_data()`，打印行数/列名/时间范围/元数据，验证优雅降级（覆盖：FR-009, NFR-001）
 
 ## 验收
 
-- [ ] `python ellectric/scripts/verify_shanxi_loader.py` 退出码 0
-- [ ] 输出包含：shanxi_spot_da ≥ 4000 行；shanxi_spot_rt ≥ 4000 行；shanxi_month_settle ≥ 2000 行
-- [ ] 每个 source 返回的 DataFrame 必含列：`timestamp`(UTC)、`load_mw`、`province`、`source`、`granularity`
-- [ ] `loader.get_metadata()` 返回 dict 含 source/rows/start/end 非空
-- [ ] 超范围 start/end（如 `start="2010-01"`）返回空 DataFrame + WARNING 日志，无异常
-- [ ] `create_loader("owid")`、`create_loader("manual", data_path=...)`、`create_loader("ember")` 行为不变
-- [ ] `data/raw/shanxi/README.md` 列出 8 个数据 API + 字段表 + 推断置信度 + 关键限制
-- [ ] 单次 `load_data()` 在 5 秒内完成（NFR-001）
-- [ ] 无新依赖（NFR-003），所有 import 已在 requirements.txt
-- [ ] `shanxi_loader.py` 模块级 docstring 使用中英双语 + ASCII 图（NFR-002）
-- [ ] 全部函数签名带类型标注（NFR-002）
-- [ ] 现有 OWIDChinaLoader / ChineseDataLoader / cleaner / features / forecaster 源码零修改
+- [x] `python ellectric/scripts/verify_shanxi_loader.py` 退出码 0
+- [x] 输出包含：shanxi_spot_da ≥ 4000 行；shanxi_spot_rt ≥ 4000 行；shanxi_month_settle ≥ 2000 行
+- [x] 每个 source 返回的 DataFrame 必含列：`timestamp`(UTC)、`load_mw`、`province`、`source`、`granularity`
+- [x] `loader.get_metadata()` 返回 dict 含 source/rows/start/end 非空
+- [x] 超范围 start/end（如 `start="2010-01"`）返回空 DataFrame + WARNING 日志，无异常
+- [x] `create_loader("owid")`、`create_loader("manual", data_path=...)`、`create_loader("ember")` 行为不变
+- [x] `data/raw/shanxi/README.md` 列出 8 个数据 API + 字段表 + 推断置信度 + 关键限制
+- [x] 单次 `load_data()` 在 5 秒内完成（NFR-001）
+- [x] 无新依赖（NFR-003），所有 import 已在 requirements.txt
+- [x] `shanxi_loader.py` 模块级 docstring 使用中英双语 + ASCII 图（NFR-002）
+- [x] 全部函数签名带类型标注（NFR-002）
+- [x] 现有 OWIDChinaLoader / ChineseDataLoader / cleaner / features / forecaster 源码零修改
 
 ## 覆盖矩阵
 
