@@ -142,10 +142,9 @@ def run_simulate(req: SimulateRequest) -> SimulateResponse:
 
     result = subprocess.run(
         [
-            "python", "ellectric/assume/run_simulation.py",
+            "python3", "ellectric/assume/run_simulation.py",
             "--config", config_path,
             "--output", output_dir,
-            "--days", str(req.days),
         ],
         capture_output=True,
         text=True,

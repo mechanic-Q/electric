@@ -55,10 +55,11 @@ def create_agent_executor():
         )
 
     llm = ChatOpenAI(
-        model="deepseek-v4-flash",
+        model=os.environ.get("ELLECTRIC_LLM_MODEL", "deepseek-v4-flash"),
         api_key=api_key,
         base_url="https://api.deepseek.com/v1",
         temperature=0.3,
+        streaming=True,
     )
 
     return create_agent(

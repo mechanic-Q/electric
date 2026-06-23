@@ -1,0 +1,1 @@
+{"msg": "查询成功!", "code": 200, "data": [{"type": "低压用户交易", "dateList": [], "energyList": [], "priceList": []}, {"type": "普通交易", "dateList": [], "energyList": [], "priceList": []}]}

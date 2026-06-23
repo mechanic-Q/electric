@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { font-size: 100%; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0D0D0F; color: #F2F1EF;
+    font-family: 'Inter', -apple-system, 'PingFang SC', sans-serif;
+  }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(#1A1A1D 1px, transparent 1px),
+      linear-gradient(90deg, #1A1A1D 1px, transparent 1px);
+    background-size: 96px 96px;
+    opacity: 0.5;
+  }
+  .section-label {
+    position: absolute; top: 64px; left: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #00D4AA; letter-spacing: 0.12em;
+  }
+  .hairline-top {
+    position: absolute; top: 98px; left: 100px; right: 100px;
+    height: 1px; background: #1F1F22;
+  }
+  h2 {
+    position: absolute; top: 130px; left: 100px;
+    font-family: 'Inter Tight', -apple-system, 'PingFang SC', sans-serif;
+    font-size: 42px; font-weight: 700; letter-spacing: -0.02em;
+    color: #F2F1EF;
+  }
+  .subhead {
+    position: absolute; top: 190px; left: 100px;
+    font-size: 18px; color: #6B6B75; font-weight: 300;
+  }
+
+  /* 三列卡片 */
+  .cards { position: absolute; top: 270px; left: 100px; right: 100px; display: flex; gap: 32px; }
+  .card {
+    flex: 1; background: #121215;
+    border: 1px solid #1F1F22; padding: 40px 36px;
+  }
+  .card-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #00D4AA; letter-spacing: 0.1em; margin-bottom: 16px;
+  }
+  .card h3 {
+    font-family: 'Inter Tight', -apple-system, 'PingFang SC', sans-serif;
+    font-size: 24px; font-weight: 700; margin-bottom: 16px; color: #F2F1EF;
+  }
+  .card p {
+    font-size: 15px; line-height: 1.7; color: #8A8A92; margin-bottom: 20px;
+  }
+  .card-tag {
+    display: inline-block; font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; padding: 5px 10px; background: rgba(0,212,170,0.08);
+    color: #00D4AA; letter-spacing: 0.06em;
+  }
+
+  /* 底部四阶段 */
+  .phases {
+    position: absolute; bottom: 120px; left: 100px; right: 100px;
+    display: flex; gap: 24px;
+  }
+  .phase {
+    flex: 1; border-top: 2px solid #1F1F22; padding-top: 20px;
+  }
+  .phase.active { border-top-color: #00D4AA; }
+  .phase-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #5C5C63; letter-spacing: 0.06em; margin-bottom: 8px;
+  }
+  .phase.active .phase-label { color: #00D4AA; }
+  .phase-title {
+    font-size: 15px; font-weight: 600; color: #D0D0D8; margin-bottom: 6px;
+  }
+  .phase-desc {
+    font-size: 12px; color: #6B6B75; line-height: 1.5;
+  }
+
+  .bottom-line {
+    position: absolute; bottom: 80px; left: 100px; right: 100px;
+    height: 1px; background: #1A1A1D;
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="section-label">02 · 项目概述</div>
+<div class="hairline-top"></div>
+<h2>什么是 Ellectric？</h2>
+<p class="subhead">Ellectric = Electric + Lecture，一个动手实践型 AI + 电力交易学习平台</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-num">01</div>
+    <h3>🧪 动手实践</h3>
+    <p>10 个渐进式 Jupyter notebooks，从数据加载到 RL 训练，每一步都有详细中英双语注释和设计决策说明</p>
+    <span class="card-tag">EDUCATIONAL</span>
+  </div>
+  <div class="card">
+    <div class="card-num">02</div>
+    <h3>📐 工程严谨</h3>
+    <p>TimeSeriesSplit 防时序泄露，StandardScaler fit-on-train-only，数据合约强制校验，绝不污染测试集</p>
+    <span class="card-tag">PRODUCTION-GRADE</span>
+  </div>
+  <div class="card">
+    <div class="card-num">03</div>
+    <h3>🔬 可解释性</h3>
+    <p>SHAP TreeExplainer + LinearExplainer，LEAR 系数直接可读，Diebold-Mariano 统计显著性检验，模型不是黑盒</p>
+    <span class="card-tag">INTERPRETABLE</span>
+  </div>
+</div>
+
+<div class="phases">
+  <div class="phase active">
+    <div class="phase-label">PHASE 1</div>
+    <div class="phase-title">数据管道 + XGBoost</div>
+    <div class="phase-desc">OWID 自动拉取 · 清洗 · 三级特征 · 负荷预测</div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">PHASE 2</div>
+    <div class="phase-title">电价预测 + 仿真</div>
+    <div class="phase-desc">LEAR Lasso · ASSUME · Merit Order 出清</div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">PHASE 3</div>
+    <div class="phase-title">RL 交易 + 回测</div>
+    <div class="phase-desc">PPO/SAC/TD3 · BacktestRunner · SHAP</div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">PHASE 4</div>
+    <div class="phase-title">API / CLI / LLM</div>
+    <div class="phase-desc">FastAPI · Typer · LangChain DeepSeek</div>
+  </div>
+</div>
+
+<div class="bottom-line"></div>
+</body>
+</html>

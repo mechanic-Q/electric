@@ -1,0 +1,242 @@
+{
+  "spot_da": {
+    "2025-12": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_da_2025-12.json",
+      "fields": [
+        "endPointTime",
+        "record1",
+        "record2"
+      ],
+      "first": {
+        "endPointTime": "00:15",
+        "record1": 399.24,
+        "record2": 289.91
+      },
+      "last": {
+        "endPointTime": "24:00",
+        "record1": 221.8,
+        "record2": 190.27
+      }
+    },
+    "2026-01": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_da_2026-01.json",
+      "fields": [
+        "endPointTime",
+        "record1",
+        "record2"
+      ],
+      "first": {
+        "endPointTime": "00:15",
+        "record1": 324.75,
+        "record2": 264.93
+      },
+      "last": {
+        "endPointTime": "24:00",
+        "record1": 215.58,
+        "record2": 205.07
+      }
+    },
+    "2026-02": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_da_2026-02.json",
+      "fields": [
+        "endPointTime",
+        "record1",
+        "record2"
+      ],
+      "first": {
+        "endPointTime": "00:15",
+        "record1": 220.76,
+        "record2": 178.17
+      },
+      "last": {
+        "endPointTime": "24:00",
+        "record1": 182.5,
+        "record2": 157.46
+      }
+    },
+    "2026-03": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_da_2026-03.json",
+      "fields": [
+        "endPointTime",
+        "record1",
+        "record2"
+      ],
+      "first": {
+        "endPointTime": "00:15",
+        "record1": 350.0,
+        "record2": 332.81
+      },
+      "last": {
+        "endPointTime": "24:00",
+        "record1": 302.94,
+        "record2": 272.38
+      }
+    },
+    "2026-04": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_da_2026-04.json",
+      "fields": [
+        "endPointTime",
+        "record1",
+        "record2"
+      ],
+      "first": {
+        "endPointTime": "00:15",
+        "record1": 329.77,
+        "record2": 372.45
+      },
+      "last": {
+        "endPointTime": "24:00",
+        "record1": 310.15,
+        "record2": 299.27
+      }
+    },
+    "2026-05": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_da_2026-05.json",
+      "fields": [
+        "endPointTime",
+        "record1",
+        "record2"
+      ],
+      "first": {
+        "endPointTime": "00:15",
+        "record1": 325.83,
+        "record2": 336.78
+      },
+      "last": {
+        "endPointTime": "24:00",
+        "record1": 303.84,
+        "record2": 301.78
+      }
+    },
+    "2026-06": {
+      "rows": 0,
+      "msg": "查询成功!"
+    }
+  },
+  "spot_rt": {
+    "2025-12": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_rt_2025-12.json",
+      "fields": [
+        "dataTime",
+        "rqRecord",
+        "ssRecord"
+      ],
+      "first": {
+        "dataTime": "00:15",
+        "rqRecord": 37903.452,
+        "ssRecord": 36104.495
+      },
+      "last": {
+        "dataTime": "24:00",
+        "rqRecord": 35574.548,
+        "ssRecord": 35679.142
+      }
+    },
+    "2026-01": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_rt_2026-01.json",
+      "fields": [
+        "dataTime",
+        "rqRecord",
+        "ssRecord"
+      ],
+      "first": {
+        "dataTime": "00:15",
+        "rqRecord": 38432.226,
+        "ssRecord": 37573.315
+      },
+      "last": {
+        "dataTime": "24:00",
+        "rqRecord": 36819.258,
+        "ssRecord": 37139.782
+      }
+    },
+    "2026-02": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_rt_2026-02.json",
+      "fields": [
+        "dataTime",
+        "rqRecord",
+        "ssRecord"
+      ],
+      "first": {
+        "dataTime": "00:15",
+        "rqRecord": 32767.964,
+        "ssRecord": 30751.519
+      },
+      "last": {
+        "dataTime": "24:00",
+        "rqRecord": 32284.393,
+        "ssRecord": 31702.973
+      }
+    },
+    "2026-03": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_rt_2026-03.json",
+      "fields": [
+        "dataTime",
+        "rqRecord",
+        "ssRecord"
+      ],
+      "first": {
+        "dataTime": "00:15",
+        "rqRecord": 34847.774,
+        "ssRecord": 34041.219
+      },
+      "last": {
+        "dataTime": "24:00",
+        "rqRecord": 33199.742,
+        "ssRecord": 31754.965
+      }
+    },
+    "2026-04": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_rt_2026-04.json",
+      "fields": [
+        "dataTime",
+        "rqRecord",
+        "ssRecord"
+      ],
+      "first": {
+        "dataTime": "00:15",
+        "rqRecord": 32658.233,
+        "ssRecord": 32378.636
+      },
+      "last": {
+        "dataTime": "24:00",
+        "rqRecord": 31153.433,
+        "ssRecord": 30768.059
+      }
+    },
+    "2026-05": {
+      "rows": 96,
+      "file": "/mnt/e/Electric/ellectric/data/raw/shanxi/spot_rt_2026-05.json",
+      "fields": [
+        "dataTime",
+        "rqRecord",
+        "ssRecord"
+      ],
+      "first": {
+        "dataTime": "00:15",
+        "rqRecord": 32430.065,
+        "ssRecord": 31837.878
+      },
+      "last": {
+        "dataTime": "24:00",
+        "rqRecord": 31366.161,
+        "ssRecord": 30666.102
+      }
+    },
+    "2026-06": {
+      "rows": 0,
+      "msg": "查询成功!"
+    }
+  }
+}
