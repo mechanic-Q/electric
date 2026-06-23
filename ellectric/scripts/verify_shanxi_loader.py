@@ -95,5 +95,26 @@ for src in ["owid", "ember"]:
 
 # ── 总结 ──
 print()
+
+# ── Schema 扩展: 5 个新 source ──
+print("\n── Schema 扩展 (5 new source) ──")
+
+NEW_SOURCES = [
+    ("shanxi_month_deal", "ShanxiMonthDealLoader", 0, "daily"),
+    ("shanxi_user_transaction", "ShanxiUserTransactionLoader", 0, "daily"),
+    ("shanxi_year_trade_fit", "ShanxiYearTradeFitLoader", 100, "month-curve"),
+    ("shanxi_month_settle1", "ShanxiMonthSettle1Loader", 400, "daily-point"),
+    ("shanxi_time_div_trend", "ShanxiTimeDivTrendLoader", 400, "time-div"),
+]
+
+for src_name, cls_name, min_rows, expected_gran in NEW_SOURCES:
+    loader = create_loader(src_name)
+    df = loader.load_data()
+    check(f"{src_name} 类型正确", type(loader).__name__ == cls_name, f"got {type(loader).__name__}")
+    check(f"{src_name} 行数 >= {min_rows}", len(df) >= min_rows, f"got {len(df)}")
+    if len(df) > 0:
+        check(f"{src_name} granularity={expected_gran}",
+            expected_gran in df["granularity"].unique(), f"got {df['granularity'].unique()}")
+
 print(f"✅ {PASS} 通过 / ❌ {FAIL} 失败")
 sys.exit(0 if FAIL == 0 else 1)

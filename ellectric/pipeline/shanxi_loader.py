@@ -176,7 +176,8 @@ class ShanxiBaseLoader(DataLoader):
         df["province"] = self._province
         df["source"] = self._source
         df["granularity"] = self._granularity
-        df = df.sort_values("timestamp").reset_index(drop=True)
+        if "timestamp" in df.columns:
+            df = df.sort_values("timestamp").reset_index(drop=True)
         return df
 
     # ── 子类钩子 ──
@@ -918,3 +919,204 @@ class ShanxiMonthSettleLoader(ShanxiBaseLoader):
                 "granularity": pd.Series(dtype="object"),
             }
         )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 数据 schema 扩展 — 5 个新子类 (data-schema-expand 变更)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class ShanxiMonthDealLoader(ShanxiBaseLoader):
+    """批发市场中长期成交 — 购方/售方按日的成交电量与价格 (inferred)."""
+
+    _metadata_source = "shanxi-month-deal"
+    _granularity = "daily"
+
+    def __init__(self, data_dir: str | None = None) -> None:
+        super().__init__(data_prefix="month_deal", data_dir=data_dir)
+        self._metadata_version = "month_deal/local-json/v1"
+
+    def _standardize(self, records: list[dict], year_month: str) -> pd.DataFrame:
+        """展开 dateList/energyList/priceList 为长表."""
+        if not records:
+            return self._empty_deal_frame()
+        rows = []
+        for r in records:
+            side = r.get("type", "")
+            dates = r.get("dateList") or []
+            energies = r.get("energyList") or []
+            prices = r.get("priceList") or []
+            n = min(len(dates), len(energies), len(prices))
+            for i in range(n):
+                try:
+                    ts = pd.Timestamp(dates[i], tz="UTC")
+                except Exception:
+                    continue
+                rows.append({
+                    "timestamp": ts,
+                    "deal_side": side,
+                    "deal_energy_mwh": _safe_float(energies[i]),
+                    "deal_price": _safe_float(prices[i]),
+                })
+        if not rows:
+            return self._empty_deal_frame()
+        df = pd.DataFrame(rows)
+        df["load_mw"] = float("nan")
+        df["province"] = "shanxi"
+        df["source"] = "pxf-phbsx-shop"
+        df["granularity"] = "daily"
+        return df[["timestamp", "deal_side", "deal_energy_mwh", "deal_price", "load_mw", "province", "source", "granularity"]]
+
+    def _empty_deal_frame(self) -> pd.DataFrame:
+        return pd.DataFrame({
+            "timestamp": pd.Series(dtype="datetime64[ns, UTC]"),
+            "deal_side": pd.Series(dtype="object"),
+            "deal_energy_mwh": pd.Series(dtype="float64"),
+            "deal_price": pd.Series(dtype="float64"),
+            "load_mw": pd.Series(dtype="float64"),
+            "province": pd.Series(dtype="object"),
+            "source": pd.Series(dtype="object"),
+            "granularity": pd.Series(dtype="object"),
+        })
+
+
+class ShanxiUserTransactionLoader(ShanxiBaseLoader):
+    """用户侧成交 — 市场主体按日成交电量与价格 (inferred)."""
+
+    _metadata_source = "shanxi-user-transaction"
+    _granularity = "daily"
+
+    def __init__(self, data_dir: str | None = None) -> None:
+        super().__init__(data_prefix="user_transaction", data_dir=data_dir)
+        self._metadata_version = "user_transaction/local-json/v1"
+
+    def _standardize(self, records: list[dict], year_month: str) -> pd.DataFrame:
+        if not records:
+            return self._empty_ut_frame()
+        rows = []
+        for r in records:
+            member = r.get("marketMember", "")
+            dates = r.get("dateList") or []
+            energies = r.get("energyList") or []
+            prices = r.get("priceList") or []
+            n = min(len(dates), len(energies), len(prices))
+            for i in range(n):
+                try:
+                    ts = pd.Timestamp(dates[i], tz="UTC")
+                except Exception:
+                    continue
+                rows.append({
+                    "timestamp": ts,
+                    "market_member": member,
+                    "deal_energy_mwh": _safe_float(energies[i]),
+                    "deal_price": _safe_float(prices[i]),
+                })
+        if not rows:
+            return self._empty_ut_frame()
+        df = pd.DataFrame(rows)
+        df["load_mw"] = float("nan")
+        df["province"] = "shanxi"
+        df["source"] = "pxf-phbsx-shop"
+        df["granularity"] = "daily"
+        return df[["timestamp", "market_member", "deal_energy_mwh", "deal_price", "load_mw", "province", "source", "granularity"]]
+
+    def _empty_ut_frame(self) -> pd.DataFrame:
+        return pd.DataFrame({
+            "timestamp": pd.Series(dtype="datetime64[ns, UTC]"),
+            "market_member": pd.Series(dtype="object"),
+            "deal_energy_mwh": pd.Series(dtype="float64"),
+            "deal_price": pd.Series(dtype="float64"),
+            "load_mw": pd.Series(dtype="float64"),
+            "province": pd.Series(dtype="object"),
+            "source": pd.Series(dtype="object"),
+            "granularity": pd.Series(dtype="object"),
+        })
+
+
+class ShanxiYearTradeFitLoader(ShanxiBaseLoader):
+    """年度交易各标的月拟合分时价格曲线 — series_name × time_index × fit_price (inferred)."""
+
+    _metadata_source = "shanxi-year-trade-fit"
+    _granularity = "month-curve"
+
+    def __init__(self, data_dir: str | None = None) -> None:
+        super().__init__(data_prefix="year_trade_fit", data_dir=data_dir)
+        self._metadata_version = "year_trade_fit/local-json/v1"
+
+    def _standardize(self, records: list[dict], year_month: str) -> pd.DataFrame:
+        if not records:
+            return self._empty_series_frame("fit_price", "month-curve")
+        rows = []
+        for r in records:
+            name = r.get("seriesName", "")
+            data = r.get("seriesData") or []
+            for i, v in enumerate(data):
+                rows.append({
+                    "series_name": name,
+                    "time_index": i,
+                    "fit_price": _safe_float(v),
+                })
+        if not rows:
+            return self._empty_series_frame("fit_price", "month-curve")
+        df = pd.DataFrame(rows)
+        df["load_mw"] = float("nan")
+        df["province"] = "shanxi"
+        df["source"] = "pxf-phbsx-shop"
+        df["granularity"] = "month-curve"
+        return df[["series_name", "time_index", "fit_price", "load_mw", "province", "source", "granularity"]]
+
+    def _empty_series_frame(self, value_col: str, granularity: str) -> pd.DataFrame:
+        return pd.DataFrame({
+            "series_name": pd.Series(dtype="object"),
+            "time_index": pd.Series(dtype="Int64"),
+            value_col: pd.Series(dtype="float64"),
+            "load_mw": pd.Series(dtype="float64"),
+            "province": pd.Series(dtype="object"),
+            "source": pd.Series(dtype="object"),
+            "granularity": pd.Series(dtype="object"),
+        })
+
+
+class ShanxiMonthSettle1Loader(ShanxiMonthSettleLoader):
+    """月度统一结算点电价(2) — 字段与 month_settle 完全一致, 复用 _standardize."""
+
+    _metadata_source = "shanxi-month-settle1"
+    _granularity = "daily-point"
+
+    def __init__(self, data_dir: str | None = None) -> None:
+        # 直接调用 ShanxiBaseLoader.__init__, 跳过 ShanxiMonthSettleLoader 默认前缀
+        ShanxiBaseLoader.__init__(self, data_prefix="month_settle1", data_dir=data_dir)
+        self._metadata_version = "month_settle1/local-json/v1"
+
+
+class ShanxiTimeDivTrendLoader(ShanxiYearTradeFitLoader):
+    """分时价格浮动项历史参考值 — 与 year_trade_fit 同 seriesData 结构, 值列为 trend_value."""
+
+    _metadata_source = "shanxi-time-div-trend"
+    _granularity = "time-div"
+
+    def __init__(self, data_dir: str | None = None) -> None:
+        ShanxiBaseLoader.__init__(self, data_prefix="time_div_trend", data_dir=data_dir)
+        self._metadata_version = "time_div_trend/local-json/v1"
+
+    def _standardize(self, records: list[dict], year_month: str) -> pd.DataFrame:
+        if not records:
+            return self._empty_series_frame("trend_value", "time-div")
+        rows = []
+        for r in records:
+            name = r.get("seriesName", "")
+            data = r.get("seriesData") or []
+            for i, v in enumerate(data):
+                rows.append({
+                    "series_name": name,
+                    "time_index": i,
+                    "trend_value": _safe_float(v),
+                })
+        if not rows:
+            return self._empty_series_frame("trend_value", "time-div")
+        df = pd.DataFrame(rows)
+        df["load_mw"] = float("nan")
+        df["province"] = "shanxi"
+        df["source"] = "pxf-phbsx-shop"
+        df["granularity"] = "time-div"
+        return df[["series_name", "time_index", "trend_value", "load_mw", "province", "source", "granularity"]]

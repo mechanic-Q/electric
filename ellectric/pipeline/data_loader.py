@@ -530,6 +530,21 @@ def create_loader(source: str = "owid", **kwargs) -> DataLoader:
     elif source == "shanxi_month_settle":
         from ellectric.pipeline.shanxi_loader import ShanxiMonthSettleLoader
         return ShanxiMonthSettleLoader(**kwargs)
+    elif source == "shanxi_month_deal":
+        from ellectric.pipeline.shanxi_loader import ShanxiMonthDealLoader
+        return ShanxiMonthDealLoader(**kwargs)
+    elif source == "shanxi_user_transaction":
+        from ellectric.pipeline.shanxi_loader import ShanxiUserTransactionLoader
+        return ShanxiUserTransactionLoader(**kwargs)
+    elif source == "shanxi_year_trade_fit":
+        from ellectric.pipeline.shanxi_loader import ShanxiYearTradeFitLoader
+        return ShanxiYearTradeFitLoader(**kwargs)
+    elif source == "shanxi_month_settle1":
+        from ellectric.pipeline.shanxi_loader import ShanxiMonthSettle1Loader
+        return ShanxiMonthSettle1Loader(**kwargs)
+    elif source == "shanxi_time_div_trend":
+        from ellectric.pipeline.shanxi_loader import ShanxiTimeDivTrendLoader
+        return ShanxiTimeDivTrendLoader(**kwargs)
     else:
         raise ValueError(
             f"未知数据源: {source}. 可选: 'owid', 'manual', 'file', 'ember', "
