@@ -484,13 +484,11 @@ def create_loader(source: str = "owid", **kwargs) -> DataLoader:
 
     Args:
         source: 数据源类型
-            - "owid"               : OWID 中国年级数据（自动拉取，三级回退）
-            - "manual"             : 手动下载的日/小时数据
-            - "file"               : 同 manual，传 kwarg data_path
-            - "ember"              : Ember Climate 中国小时级数据（探索性）
-            - "shanxi_spot_da"     : 山西日前出清价（15min 粒度，2022-04~2026-05）
-            - "shanxi_spot_rt"     : 山西实时出清电量（15min 粒度，2022-04~2026-05）
-            - "shanxi_month_settle": 山西月度结算电价（逐日分时，2018-01~2026-12）
+            - "owid"      : OWID 中国年级数据（自动拉取，三级回退）
+            - "manual"    : 手动下载的日/小时数据
+            - "file"      : 同 manual，传 kwarg data_path
+            - "ember"     : Ember Climate 中国小时级数据（探索性）
+            - "shandong"  : 山东 15min 现货数据（745天 × 96点，2024-01~2026-01）
         **kwargs: 透传给具体子类构造器（如 data_path / data_dir）
 
     Returns:
@@ -506,8 +504,8 @@ def create_loader(source: str = "owid", **kwargs) -> DataLoader:
         >>> loader = create_loader("ember")
         >>> df = loader.load_data(start="2024-01-01", end="2024-12-31")
 
-        >>> loader = create_loader("shanxi_spot_da")
-        >>> df = loader.load_data(start="2022-04", end="2026-05")
+        >>> loader = create_loader("shandong")
+        >>> df = loader.load_data(start="2024-06", end="2024-08")
     """
     if source == "owid":
         return OWIDChinaLoader()
@@ -520,35 +518,13 @@ def create_loader(source: str = "owid", **kwargs) -> DataLoader:
         # 延迟导入 — EmberLoader 是可选模块
         from ellectric.pipeline.ember_loader import EmberLoader
         return EmberLoader()
-    elif source == "shanxi_spot_da":
-        # 延迟导入 — ShanxiSpotDaLoader 位于独立模块 shanxi_loader.py
-        from ellectric.pipeline.shanxi_loader import ShanxiSpotDaLoader
-        return ShanxiSpotDaLoader(**kwargs)
-    elif source == "shanxi_spot_rt":
-        from ellectric.pipeline.shanxi_loader import ShanxiSpotRtLoader
-        return ShanxiSpotRtLoader(**kwargs)
-    elif source == "shanxi_month_settle":
-        from ellectric.pipeline.shanxi_loader import ShanxiMonthSettleLoader
-        return ShanxiMonthSettleLoader(**kwargs)
-    elif source == "shanxi_month_deal":
-        from ellectric.pipeline.shanxi_loader import ShanxiMonthDealLoader
-        return ShanxiMonthDealLoader(**kwargs)
-    elif source == "shanxi_user_transaction":
-        from ellectric.pipeline.shanxi_loader import ShanxiUserTransactionLoader
-        return ShanxiUserTransactionLoader(**kwargs)
-    elif source == "shanxi_year_trade_fit":
-        from ellectric.pipeline.shanxi_loader import ShanxiYearTradeFitLoader
-        return ShanxiYearTradeFitLoader(**kwargs)
-    elif source == "shanxi_month_settle1":
-        from ellectric.pipeline.shanxi_loader import ShanxiMonthSettle1Loader
-        return ShanxiMonthSettle1Loader(**kwargs)
-    elif source == "shanxi_time_div_trend":
-        from ellectric.pipeline.shanxi_loader import ShanxiTimeDivTrendLoader
-        return ShanxiTimeDivTrendLoader(**kwargs)
+    elif source == "shandong":
+        # 延迟导入 — ShandongDataLoader 位于独立模块 shandong_loader.py
+        from ellectric.pipeline.shandong_loader import ShandongDataLoader
+        return ShandongDataLoader(**kwargs)
     else:
         raise ValueError(
-            f"未知数据源: {source}. 可选: 'owid', 'manual', 'file', 'ember', "
-            f"'shanxi_spot_da', 'shanxi_spot_rt', 'shanxi_month_settle'"
+            f"未知数据源: {source}. 可选: 'owid', 'manual', 'file', 'ember', 'shandong'"
         )
 
 
