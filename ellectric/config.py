@@ -44,7 +44,7 @@ class TimeConfig:
             "h" 表示每小时一条记录的频率，"15min" 表示每 15 分钟一次。
     """
 
-    # ── 默认小时级配置 ──
-    points_per_day: int = 24
-    points_per_week: int = 168
-    freq: str = "h"
+    # ── 默认 15 分钟级配置（山东 Shandong 96 点/日）──
+    points_per_day: int = 96
+    points_per_week: int = 672
+    freq: str = "15min"

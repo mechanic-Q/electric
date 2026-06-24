@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概览
 
-AI + 电力交易技术学习平台。跑通"公开电力数据接入 → 负荷/电价预测 → 电力市场仿真 → 自动交易策略"的端到端技术闭环。非生产系统，教育/学习用途。
+AI + 电力交易技术学习平台。跑通"山东 15min 现货数据接入 → 负荷/电价预测 → 电力市场仿真 → 自动交易策略"的端到端技术闭环。非生产系统，教育/学习用途。
 
 **Python 3.11+。** 位于 `ellectric/` 目录下。
+
+**当前 MVP：山东 15min 数据**（745 天 × 96 点 / 日，2024-01 ~ 2026-01，真实出清价 + 风光核水出力）
 
 ## 常用命令
 
@@ -45,8 +47,9 @@ bash ellectric/scripts/verify_phase3.sh
 
 ```
 ellectric/
-├── pipeline/       # 核心机器学习/交易管道 (12 modules)
-│   ├── data_loader.py      # DataLoader ABC, OWIDChinaLoader, ChineseDataLoader, create_loader()
+├── pipeline/       # 核心机器学习/交易管道
+│   ├── data_loader.py      # DataLoader ABC, OWIDChinaLoader, ChineseDataLoader, ShandongDataLoader, create_loader()
+│   ├── shandong_loader.py  # ShandongDataLoader — 山东 15min CSV (21列 extended schema)
 │   ├── cleaner.py          # clean_data(), validate_schema(), 数据质量评分
 │   ├── features.py         # FeatureEngineer 类, Tier 1-3 渐进式特征
 │   ├── forecaster.py       # XGBoostForecaster, persistence_forecast(), P&L 计算
@@ -57,6 +60,9 @@ ellectric/
 │   ├── rl_trainer.py       # BaseRLAgent ABC, PPO/TD3/SAC 适配器, RLAgentFactory
 │   ├── shap_explainer.py   # SHAP TreeExplainer (XGBoost) + LinearExplainer (LEAR)
 │   ├── statistical_tests.py # Diebold-Mariano + Giacomini-White 检验 (需 epftoolbox)
+│   └── __init__.py
+├── fetch/           # 数据抓取层
+│   ├── weather.py          # WeatherFetcher — Open-Meteo 免费气象 (济南/青岛)
 │   └── __init__.py
 ├── api/server.py    # FastAPI app — /predict, /simulate, /backtest, /explain, /health
 ├── service/         # 请求处理层（桥接 API/CLI 到 pipeline）
