@@ -1,3 +1,8 @@
+# ---
+# author: lmr
+# created_at: 2026-06-27 19:12:11
+# ---
+
 """
 特征工程管道 — 从原始时序数据提取机器学习特征
 ================================================
@@ -40,10 +45,36 @@ XGBoost (以及所有机器学习模型) 不理解"今天是星期六"或"现在
 import pandas as pd
 import numpy as np
 import logging
+from pathlib import Path
 
 from ellectric.config import TimeConfig
 
 logger = logging.getLogger(__name__)
+
+
+# ── Weather Tier4 默认配置 ──
+
+DEFAULT_WEATHER_CACHE = "ellectric/data/shandong/weather_2024-2026.parquet"
+
+
+def _project_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _resolve_weather_cache(cache_path: str | Path | None = None) -> Path:
+    if cache_path is not None:
+        return Path(cache_path)
+    return _project_root() / DEFAULT_WEATHER_CACHE
+
+
+def _align_weather_to_15min(weather: pd.DataFrame, target_index: pd.Index) -> pd.DataFrame:
+    if "timestamp" in weather.columns:
+        weather = weather.set_index("timestamp")
+    if not isinstance(weather.index, pd.DatetimeIndex):
+        raise ValueError("weather DataFrame must have a DatetimeIndex or timestamp column")
+    if not isinstance(target_index, pd.DatetimeIndex):
+        target_index = pd.DatetimeIndex(target_index)
+    return weather.reindex(target_index, method="ffill")
 
 
 class FeatureEngineer:
@@ -60,6 +91,8 @@ class FeatureEngineer:
 
     def __init__(self):
         self._features_added = []
+        self._weather_columns: list[str] = []
+        self._last_df_columns: list[str] = []
 
     def add_tier1_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -177,6 +210,97 @@ class FeatureEngineer:
         logger.info(f"Tier 3 特征已添加: rolling_mean, rolling_std, hour_sin, hour_cos")
         return df
 
+    # ── Tier 4: 气象特征 ──
+
+    def add_tier4_weather_features(
+        self,
+        df: pd.DataFrame,
+        weather_df: pd.DataFrame | None = None,
+        weather_cache_path: str | Path | None = None,
+        fetch_if_missing: bool = True,
+    ) -> pd.DataFrame:
+        """添加 Tier4 气象特征。
+
+        Args:
+            df: 包含 timestamp 列的 DataFrame
+            weather_df: 可选，直接传入气象 DataFrame。index 或含 timestamp 列。
+            weather_cache_path: parquet cache 路径，None 使用默认。
+            fetch_if_missing: cache 缺失时是否自动抓取。
+
+        Returns:
+            含 weather columns 的 DataFrame，或原 df（降级时）。
+        """
+        df = df.copy()
+
+        weather_source = None
+        cache_path = _resolve_weather_cache(weather_cache_path)
+
+        # 优先级1: 直接传入 weather_df
+        if weather_df is not None:
+            if not weather_df.empty and len(weather_df.columns) > 0:
+                weather_source = weather_df
+                logger.info("使用直接传入的 weather_df (%d 列)", len(weather_df.columns))
+            else:
+                logger.debug("传入的 weather_df 为空，跳过")
+
+        # 优先级2: cache 文件
+        if weather_source is None:
+            if cache_path.exists():
+                try:
+                    weather_source = pd.read_parquet(cache_path)
+                    if weather_source.empty:
+                        weather_source = None
+                        logger.warning("weather cache 文件为空: %s", cache_path)
+                    else:
+                        logger.info("从 cache 读取气象数据: %s", cache_path)
+                except Exception as e:
+                    logger.warning("读取 weather cache 失败: %s", e)
+
+        # 优先级3: fetch_if_missing
+        if weather_source is None and fetch_if_missing:
+            try:
+                from ellectric.fetch.weather import WeatherFetcher
+                fetcher = WeatherFetcher()
+                start = df["timestamp"].min().strftime("%Y-%m-%d")
+                end = df["timestamp"].max().strftime("%Y-%m-%d")
+                fetched = fetcher.fetch_historical(start, end)
+                if not fetched.empty:
+                    weather_source = fetched
+                    cache_path.parent.mkdir(parents=True, exist_ok=True)
+                    fetched.to_parquet(cache_path)
+                    logger.info("气象数据已写入 cache: %s", cache_path)
+                else:
+                    logger.warning("抓取的气象数据为空")
+            except Exception as e:
+                logger.warning("抓取气象数据失败: %s", e)
+
+        # 无法获取 weather 数据
+        if weather_source is None:
+            logger.warning("无法获取气象数据，返回无 weather 特征的 DataFrame")
+            self._weather_columns = []
+            self._last_df_columns = list(df.columns)
+            return df
+
+        # 对齐 weather 到目标时间轴
+        aligned = _align_weather_to_15min(weather_source, df["timestamp"])
+
+        # 合并（只加 df 中不存在的列）
+        weather_cols = [c for c in aligned.columns if c not in df.columns]
+        if not weather_cols:
+            logger.info("weather 列均已存在，跳过合并")
+            self._weather_columns = []
+            self._last_df_columns = list(df.columns)
+            return df
+
+        for col in weather_cols:
+            df[col] = aligned[col].values
+
+        self._weather_columns = weather_cols
+        self._last_df_columns = list(df.columns)
+        self._features_added.append("tier4")
+        logger.info("Tier4 气象特征已添加: %s (%d 列)", weather_cols, len(weather_cols))
+        return df
+
     def get_feature_columns(self, tier: str = "tier1") -> list:
         """
         返回指定 tier 的特征列名列表。
@@ -191,12 +315,20 @@ class FeatureEngineer:
                       "is_holiday", "lag_168h",
                       "rolling_mean_24h", "rolling_std_24h", "hour_sin", "hour_cos"],
         }
+        if tier == "tier4":
+            weather_cols = getattr(self, "_weather_columns", [])
+            last_cols = getattr(self, "_last_df_columns", [])
+            existing = [c for c in weather_cols if c in last_cols]
+            return feature_map["tier3"] + existing
         return feature_map.get(tier, feature_map["tier1"])
 
 
 def prepare_features(
     df: pd.DataFrame,
-    tiers: list = None,
+    tiers: list | None = None,
+    weather_df: pd.DataFrame | None = None,
+    weather_cache_path: str | Path | None = None,
+    fetch_if_missing: bool = True,
 ) -> pd.DataFrame:
     """
     便捷函数：一次性准备所有特征。
@@ -204,12 +336,12 @@ def prepare_features(
     Args:
         df: 原始 DataFrame（timestamp, load_mw）
         tiers: 要添加的特征层列表，默认 ['tier1']
+        weather_df: 可选，直接传入气象 DataFrame
+        weather_cache_path: parquet cache 路径
+        fetch_if_missing: cache 缺失时是否自动抓取
 
     Returns:
         包含原始列 + 特征列的 DataFrame
-
-    Example:
-        >>> df_feat = prepare_features(df, tiers=['tier1', 'tier2'])
     """
     if tiers is None:
         tiers = ["tier1"]
@@ -222,5 +354,18 @@ def prepare_features(
             df = engineer.add_tier2_features(df)
         elif tier == "tier3":
             df = engineer.add_tier3_features(df)
+        elif tier == "tier4":
+            if "tier1" not in tiers:
+                df = engineer.add_tier1_features(df)
+            if "tier2" not in tiers:
+                df = engineer.add_tier2_features(df)
+            if "tier3" not in tiers:
+                df = engineer.add_tier3_features(df)
+            df = engineer.add_tier4_weather_features(
+                df,
+                weather_df=weather_df,
+                weather_cache_path=weather_cache_path,
+                fetch_if_missing=fetch_if_missing,
+            )
 
     return df

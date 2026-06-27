@@ -1,7 +1,7 @@
 ---
 author: lmr
 created_at: 2026-06-10T00:00:00+08:00
-updated_at: 2026-06-10T12:00:00+08:00
+updated_at: 2026-06-27T19:12:11+08:00
 ---
 
 # ARCHITECTURE: Ellectric (全 4 阶段)
@@ -58,7 +58,8 @@ updated_at: 2026-06-10T12:00:00+08:00
   │                                                                           │
   │  ┌──────────────┐    ┌──────────┐    ┌──────────────┐                   │
   │  │ data_loader  │───▶│ cleaner  │───▶│   features   │                   │
-  │  │  OWID/Manual │    │ 清洗校验  │    │  Tier 1→2→3  │                   │
+  │  │ Shandong CSV │    │ 清洗校验  │    │ Tier 1→2→3   │                   │
+  │  │ ⏳ OWID/Man. │    │          │    │ +Tier4(可选) │                   │
   │  └──────────────┘    └──────────┘    └──────┬───────┘                   │
   │                                              │                           │
   │  ┌──────────────┐    ┌──────────┐           ▼                           │
@@ -90,13 +91,15 @@ updated_at: 2026-06-10T12:00:00+08:00
 ## 数据流
 
 ```
-OWID GitHub (urllib raw CSV)          ZionLuo Excel (price_data.xlsx)
+Shandong CSV 15min (canonical)        ZionLuo Excel (price_data.xlsx)
+⏳ OWID GitHub (历史参考)                    │
          │                                        │
          ▼                                        ▼
-   OWIDChinaLoader                        PriceDataLoader
-   流式解析 ~25MB                         7 列: price_da, price_rt,
-   年级 TWh → 日均 MW                          load_mw, wind_mw, solar_mw,
-   ISO-3166 过滤 CHN                               tie_line_mw
+   ShandongDataLoader                    PriceDataLoader
+   直接加载 15min 时间序列                 7 列: price_da, price_rt,
+   timestamp/load_mw/price_da             load_mw, wind_mw, solar_mw,
+   price_rt/wind_mw/solar_mw              tie_line_mw
+   tie_line_mw
          │                                        │
          └────────────┬───────────────────────────┘
                       │
@@ -112,14 +115,23 @@ OWID GitHub (urllib raw CSV)          ZionLuo Excel (price_data.xlsx)
              ┌────────┴────────┐
              ▼                 ▼
    FeatureEngineer       LEAR add_price_features
-   Tier 1 → 2 → 3        Tier 1 → 2 → 3
+   Tier 1→2→3 + 可选 Tier4  Tier 1 → 2 → 3
    (负荷特征)              (电价特征)
-             │                 │
+   ┌────────┴─────────┐
+   │                  │
+   ▼                  ▼
+Tier1-3 特征    WeatherFetcher (可选)
+                Tier4 气象特征
+                (温度/风速/辐照)
+                      │
+             ┌────────┴────────┐
              ▼                 ▼
   XGBoostForecaster      LEARForecaster
   TimeSeriesSplit        Lasso L1 正则化
-  StandardScaler         自动特征选择
-  5-fold CV              alpha 正则参数
+  gap=TimeConfig.         自动特征选择
+  points_per_day (96)     alpha 正则参数
+  StandardScaler         │
+  5-fold CV              │
              │                 │
              ▼                 ▼
   {MAE,RMSE,MAPE}        {MAE,RMSE,MAPE}
@@ -135,7 +147,7 @@ OWID GitHub (urllib raw CSV)          ZionLuo Excel (price_data.xlsx)
                     │
                     ▼
           ElectricityMarketEnv
-          Box(0,1,(24,)) 动作空间
+          Box(0,1,(TimeConfig.points_per_day,)) 动作空间
           Dict 观测空间 (5 keys)
           3 种奖励函数 (RewardRegistry)
                     │
@@ -160,13 +172,18 @@ OWID GitHub (urllib raw CSV)          ZionLuo Excel (price_data.xlsx)
 ```
 DataLoader (ABC)
   load_data(start, end) → DataFrame[timestamp, load_mw]
-  ├── OWIDChinaLoader    — 自动拉取 OWID GitHub raw CSV
-  │                      — 年级 TWh → 日均 MW (_twh_to_daily_mw)
-  └── ChineseDataLoader  — 加载本地 CSV/Excel/Parquet
-                         — 列名标准化 (_standardize_columns): 中英文 → timestamp/load_mw
-                         — 强制 UTC 时区
+  ├── ShandongDataLoader  — 加载山东 15min CSV (Phase 1-2 主线)
+  │                       — 直接输出 timestamp/load_mw/price_da/price_rt/wind_mw/solar_mw/tie_line_mw
+  │                       — 无需年级→日均转换
+  ├── OWIDChinaLoader     — ⏳ 历史参考: 自动拉取 OWID GitHub raw CSV
+  │                       — 年级 TWh → 日均 MW (_twh_to_daily_mw), ISO-3166 过滤 CHN
+  └── ChineseDataLoader   — 通用加载本地 CSV/Excel/Parquet
+                          — 列名标准化 (_standardize_columns): 中英文 → timestamp/load_mw
+                          — 强制 UTC 时区
 
-create_loader(source="owid"|"manual"|"file", **kwargs) → DataLoader
+create_loader(source="shandong"|"owid"|"manual"|"file", **kwargs) → DataLoader
+  "shandong": ShandongDataLoader (默认推荐)
+  "owid":     OWIDChinaLoader (历史参考，年级→日均聚合)
 ```
 
 **数据合约:** `timestamp: datetime64[ns, UTC]`, `load_mw: float64`, 禁止别名。
@@ -190,12 +207,14 @@ FeatureEngineer
   add_tier1(df) → df   — hour, day_of_week, month, is_weekend, lag_24h
   add_tier2(df) → df   — is_holiday, lag_168h
   add_tier3(df) → df   — rolling_mean_24h, rolling_std_24h, hour_sin, hour_cos
-  get_feature_columns(tier) → list[str]
+  add_tier4_weather_features(df, weather_df=None) → df  — 温度/风速/辐照 (可选, 需天气数据)
+  get_feature_columns(tiers=["tier1","tier2","tier3","tier4"]) → list[str]
 
-prepare_features(df, tier="tier3") → df   — 一键执行全部三级特征
+prepare_features(df, tiers=["tier1","tier2","tier3"], weather_df=None) → df   — 一键执行全部指定层级特征
 ```
 
 循环编码 (hour_sin/cos): 将 0-23 映射到单位圆，保持时间邻近性。
+Tier4 为可选增强层，天气数据为小时级 ffill 到 15min 粒度，不保证预测精度提升。
 
 #### 4. `forecaster.py` — 负荷预测 (Phase 1)
 
@@ -203,12 +222,13 @@ prepare_features(df, tier="tier3") → df   — 一键执行全部三级特征
 模块级函数: persistence_forecast(), calculate_pnl(), plot_pnl()
 
 XGBoostForecaster
-  __init__(n_splits=5, gap=24, **xgb_kwargs)
+  __init__(n_splits=5, gap=TimeConfig.points_per_day, **xgb_kwargs)
   train_evaluate(X, y) → dict   — 5-fold CV + MAE/RMSE/MAPE/R²
   predict(X) → np.ndarray
 ```
 
-防泄漏: TimeSeriesSplit(gap=24), StandardScaler fit on train only。
+防泄漏: TimeSeriesSplit(gap=TimeConfig.points_per_day), StandardScaler fit on train only。
+gap=96 对应 15min 数据的 24h 保护窗口。
 
 #### 5. `price_loader.py` — 电价数据加载 (Phase 2)
 
@@ -233,7 +253,7 @@ LEARForecaster
 ```
 ElectricityMarketEnv(gym.Env)
   观测: Dict {load_forecast, price_forecast, time_features, history, account}
-  动作: Box(0, 1, (24,)) — 归一化投标量
+  动作: Box(0, 1, (TimeConfig.points_per_day,)) — 归一化投标量
   出清: cleared = min(bid, actual_load)  — 价格接受者
   奖励: 3 种函数通过 RewardRegistry 注册/查询
 ```
@@ -322,13 +342,13 @@ rich 库表格输出，`--json` 标志切换 JSON 模式。
 |------|------|------|
 | **ABC + Factory** | `data_loader.py`, `rl_trainer.py` | 抽象基类定义统一接口，工厂函数按参数创建具体实例 |
 | **数据合约** | 全 pipeline | `REQUIRED_COLUMNS = {"timestamp", "load_mw"}` — 所有模块依赖同一份 schema |
-| **3-Tier 特征** | `features.py`, `price_forecaster.py` | 渐进式 T1→T2→T3，Jupyter notebooks 逐步引入 |
+| **4-Tier 渐进式特征** | `features.py`, `price_forecaster.py` | 渐进式 T1→T2→T3→T4（可选），Jupyter notebooks 逐步引入。Tier4 气象特征依赖网络或 cache，可选不保证精度 |
 | **延迟导入** | `service/handlers.py` | 所有 pipeline import 在函数内部执行，规避模块级循环依赖 |
 | **可选依赖防护** | `shap_explainer.py`, `statistical_tests.py` | try/except ImportError 包裹非核心包，缺失时降级 |
 | **三明治架构** | API → Service → Pipeline | API/CLI/LLM 三层并行调用同一 Service 层，无重复逻辑 |
 | **组合优于继承** | `price_loader.py` | PriceDataLoader 不强行继承 DataLoader ABC，保持接口一致但不共享 ABC 链 |
 | **统一接口约定** | 所有预测器 | train_evaluate/predict/save/load 接口一致 |
-| **时序安全性** | `forecaster.py` | TimeSeriesSplit(gap=24)，Scaler 仅在训练集 fit，杜绝未来信息泄露 |
+| **时序安全性** | `forecaster.py` | TimeSeriesSplit(gap=TimeConfig.points_per_day)，Scaler 仅在训练集 fit，杜绝未来信息泄露 |
 
 ## 文件布局
 
@@ -393,7 +413,7 @@ ellectric/
 
 | Phase | 模块 | 核心技能 | 数据源 |
 |-------|------|----------|--------|
-| Phase 1 | data_loader, cleaner, features, forecaster | OWID 时序数据管道 + XGBoost 预测 | OWID GitHub |
+| Phase 1 | data_loader (ShandongDataLoader), cleaner, features, forecaster | 山东 15min 管道 + XGBoost 预测 | 山东 15min CSV (canonical) + ⏳ OWID GitHub (历史参考) |
 | Phase 2 | price_loader, price_forecaster, statistical_tests + assume/ | 电价 LEAR 预测 + 市场仿真 | ZionLuo Excel, ASSUME |
 | Phase 3 | trading_env, rl_trainer, backtester, shap_explainer | RL 交易 + 回测 + 可解释性 | Phase 1-2 产出 |
 | Phase 4 | api/, service/, cli/, llm/ | FastAPI + CLI + LLM 接口 | 上述所有层 |

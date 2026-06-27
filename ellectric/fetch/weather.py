@@ -181,7 +181,8 @@ class WeatherFetcher:
     ) -> pd.DataFrame:
         """将小时级气象数据对齐到 15min 电力数据时间轴。
 
-        通过 reindex + ffill 实现。
+        通过 reindex + 无容差 ffill 将每小时值前向填充到全部 4 个 15min 子点
+        (00:00, 00:15, 00:30, 00:45)，确保边界点不产生 NaN。
 
         Args:
             weather: fetch_historical() 返回的 DataFrame
@@ -190,7 +191,7 @@ class WeatherFetcher:
         Returns:
             与 shandong_index 对齐的 weather DataFrame
         """
-        aligned = weather.reindex(shandong_index, method="ffill", tolerance="30min")
+        aligned = weather.reindex(shandong_index, method="ffill")
         null_pct = 100 * aligned.iloc[:, 0].isna().sum() / len(aligned)
         if null_pct > 5:
             logger.warning("气象数据对齐后 %.0f%% 为 null", null_pct)

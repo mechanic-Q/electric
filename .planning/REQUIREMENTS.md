@@ -1,3 +1,8 @@
+---
+author: lmr
+created_at: 2026-06-27 19:12:11
+---
+
 # Requirements: Ellectric (AI + 电力交易技术学习平台)
 
 **定义日期:** 2026-05-20
@@ -9,21 +14,21 @@
 
 ### 环境与安装
 
-- [ ] **ENV-01**: 一键安装脚本，在干净 Python 3.11 环境中 30 分钟内完成所有依赖安装
-- [ ] **ENV-02**: Docker Compose 配置文件，启动 TimescaleDB + Grafana（ASSUME 可视化依赖）
-- [ ] **ENV-03**: Jupyter Notebook 作为主要交互界面，每个 notebook 包含：说明(Markdown) → 代码(Cell) → 可视化(Output) → 思考题
+- [x] **ENV-01**: 一键安装脚本，在干净 Python 3.11 环境中 30 分钟内完成所有依赖安装
+- [x] **ENV-02**: Docker Compose 配置文件，启动 TimescaleDB + Grafana（ASSUME 可视化依赖）
+- [x] **ENV-03**: Jupyter Notebook 作为主要交互界面，每个 notebook 包含：说明(Markdown) → 代码(Cell) → 可视化(Output) → 思考题
 
 ### 数据管道
 
-- [ ] **DATA-01**: 获取中国电力数据：OWID 年级数据自动拉取 + 日/小时级数据从地方开放平台手动下载，通过 DataLoader 统一接口加载
-- [ ] **DATA-02**: 实现 DataLoader 抽象类，统一数据访问接口，支持数据版本锁定
-- [ ] **DATA-03**: 数据清洗管道：缺失值填充、异常值检测(IQR)、时区标准化到 UTC
-- [ ] **DATA-04**: 时序特征工程：小时/星期/节日标识、滞后特征(lag features)、滚动窗口统计
+- [x] **DATA-01**: 获取中国电力数据：OWID 年级数据自动拉取 + 日/小时级数据从地方开放平台手动下载，通过 DataLoader 统一接口加载
+- [x] **DATA-02**: 实现 DataLoader 抽象类，统一数据访问接口，支持数据版本锁定
+- [x] **DATA-03**: 数据清洗管道：缺失值填充、异常值检测(IQR)、时区标准化到 UTC
+- [x] **DATA-04**: 时序特征工程：小时/星期/节日标识、滞后特征(lag features)、滚动窗口统计
 - [ ] **DATA-05**: 中国电价数据接入：从 ZionLuo/Electricity-Price-Forecasting 获取 price data.xlsx（日前价格、实时价格、统调负荷、新能源出力、省间联络线，~2000条小时级数据），通过 DataLoader 统一接口加载
 
 ### 预测
 
-- [ ] **PRED-01**: 使用 XGBoost 构建手动短期负荷预测模型，包含训练/测试集(TimeSeriesSplit)、模型持久化
+- [x] **PRED-01**: 使用 XGBoost 构建手动短期负荷预测模型，包含训练/测试集(TimeSeriesSplit)、模型持久化
 - [ ] **PRED-02**: 运行 OpenSTEF 自动化预测管道，与手动 XGBoost 模型对比 MAE/RMSE/MAPE
 - [ ] **PRED-03**: 使用 sklearn.linear_model.Lasso 实现 LEAR 日前电价预测（LASSO 回归 + 滞后特征 + 日历特征），训练数据为中国现货电价（DATA-05）；使用 epftoolbox 5 个基准数据集（EPEX-BE/FR/DE, NordPool, PJM）进行 DM/GW 统计检验和跨市场对比（epftoolbox 仅作基准对比，不安装在同一环境）
 - [ ] **PRED-04**: 多模型对比仪表板：XGBoost vs OpenSTEF（负荷），LEAR vs DNN vs 基准（电价），交互式 plotly 图表
@@ -50,7 +55,7 @@
 
 ### 可视化与可解释性
 
-- [ ] **VIZ-01**: 基本时序可视化：负荷预测叠加图、误差分布直方图、电价热力图
+- [x] **VIZ-01**: 基本时序可视化：负荷预测叠加图、误差分布直方图、电价热力图
 - [ ] **VIZ-02**: 模型可解释性：XGBoost 特征重要性、SHAP 瀑布图、置换重要性
 
 ## v2 需求
@@ -80,6 +85,8 @@
 | 碳交易市场全维度 | 显式排除，聚焦电力交易 |
 | 多用户协作平台 | 单用户 Jupyter 环境，通过 git 分享 |
 | 拖拽式图形投标界面 | 前端复杂度高，教育回报低 |
+| 准实时 T+15min 数据调度 | 不引入 cron/daemon/queue 依赖 |
+| 中长期合约串 pipeline | 增强项，当前 Phase 不做 |
 
 ## 可追溯性
 
@@ -87,16 +94,16 @@
 
 | 需求 | 阶段 | 状态 |
 |-------------|-------|--------|
-| ENV-01 | 阶段1 | 待开始 |
-| ENV-02 | 阶段1 | 待开始 |
-| ENV-03 | 阶段1 | 待开始 |
-| DATA-01 | 阶段1 | 待开始 |
-| DATA-02 | 阶段1 | 待开始 |
-| DATA-03 | 阶段1 | 待开始 |
-| DATA-04 | 阶段1 | 待开始 |
+| ENV-01 | 阶段1 | 已完成 |
+| ENV-02 | 阶段1 | 已完成 |
+| ENV-03 | 阶段1 | 已完成 |
+| DATA-01 | 阶段1 | 已完成 |
+| DATA-02 | 阶段1 | 已完成 |
+| DATA-03 | 阶段1 | 已完成 |
+| DATA-04 | 阶段1 | 已完成 |
 | DATA-05 | 阶段2 | 待开始 |
-| PRED-01 | 阶段1 | 待开始 |
-| VIZ-01 | 阶段1 | 待开始 |
+| PRED-01 | 阶段1 | 已完成 |
+| VIZ-01 | 阶段1 | 已完成 |
 | PRED-02 | 阶段2 | 待开始 |
 | PRED-03 | 阶段2 | 待开始 |
 | PRED-04 | 阶段2 | 待开始 |
@@ -118,6 +125,8 @@
 - 已映射到阶段: 24 项
 - 未映射: 0 ✓
 
+*注：REQUIREMENTS.md 仅记录各 Phase 原始需求启动状态。实际阶段状态以 ROADMAP.md 和 README.md 中 Phase 4 进展描述为准。*
+
 ---
 *需求定义日期: 2026-05-20*
-*最后更新: 2026-05-20 初始定义后*
+*最后更新: 2026-06-27（Phase 4 持续改进口径对齐）*
