@@ -141,6 +141,16 @@ class ShandongDataLoader(DataLoader):
         self._metadata_source = "山东用户提供CSV"
         self._metadata_version = "shandong_2024-2026_15min_v1"
 
+    def get_metadata(self) -> dict:
+        """
+        返回山东 15min 数据集的元信息，含时间粒度。
+        """
+        from ellectric.config import TimeConfig
+        meta = super().get_metadata()
+        meta["granularity"] = TimeConfig.freq
+        meta["points_per_day"] = TimeConfig.points_per_day
+        return meta
+
     # ── 公共接口 ──
 
     def load_data(

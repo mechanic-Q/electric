@@ -10,6 +10,7 @@ os.environ['PYTHONWARNINGS'] = 'ignore'
 
 import numpy as np
 import pandas as pd
+from ellectric.config import TimeConfig
 pd.set_option('display.max_columns', 20)
 pd.set_option('display.width', 120)
 
@@ -85,7 +86,7 @@ t1 = time.time()
 xgb_res = xgb.train_evaluate(
     df_feat[feat_cols].dropna(),
     df_train['load_mw'].loc[df_feat[feat_cols].dropna().index],
-    n_splits=3, gap=24
+    n_splits=3, gap=TimeConfig.points_per_day
 )
 xgb.save_model('ellectric/data/demo_xgb.joblib')
 ok(f"XGBoost 负荷预测 — MAE={xgb_res['metrics']['mae']:.0f} MW", f"训练耗时 {time.time()-t1:.1f}s")
@@ -94,7 +95,7 @@ ok(f"XGBoost 负荷预测 — MAE={xgb_res['metrics']['mae']:.0f} MW", f"训练�
 pf = LEARForecaster(alpha=0.05)
 pdf = pf.add_price_features(df_train, 'tier1')
 t1 = time.time()
-pf_res = pf.train_evaluate(pdf, 'tier1', n_splits=3, gap=24)
+pf_res = pf.train_evaluate(pdf, 'tier1', n_splits=3, gap=TimeConfig.points_per_day)
 pf.save_model('ellectric/data/demo_lear.joblib')
 ok(f"LEAR 电价预测 — MAE={pf_res['metrics']['mae']:.2f} 元/MWh", f"训练耗时 {time.time()-t1:.1f}s")
 

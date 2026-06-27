@@ -59,8 +59,8 @@ class ForecastRequest(BaseModel):
         description="预测时长，单位：小时 (1-168)",
     )
     data_source: str = Field(
-        default="owid",
-        description="数据源标识 (owid / chinese_hourly)",
+        default="shandong",
+        description="数据源标识 (shandong / owid / chinese_hourly)",
     )
 
 
@@ -168,8 +168,8 @@ class BacktestRequest(BaseModel):
         description="RL 模型权重路径 (strategy=ppo|sac|td3 时必填)",
     )
     data_source: str = Field(
-        default="owid",
-        description="数据源标识",
+        default="shandong",
+        description="数据源标识 (shandong / owid)",
     )
 
     @model_validator(mode="after")
@@ -238,6 +238,10 @@ class ExplainRequest(BaseModel):
         ge=1,
         le=50,
         description="最多显示的特征数 (1-50)",
+    )
+    data_source: str = Field(
+        default="shandong",
+        description="数据源标识 (shandong / owid)",
     )
 
 

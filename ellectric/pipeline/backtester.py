@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
+from ellectric.config import TimeConfig
 from ellectric.pipeline.rl_trainer import BaseRLAgent
 from ellectric.pipeline.trading_env import ElectricityMarketEnv
 
@@ -44,13 +45,13 @@ def baseline_persistence(env: ElectricityMarketEnv, t: int) -> np.ndarray:
         t: 当前 24h 块的起始行索引
 
     Returns:
-        归一化投标向量 (0~1), shape (24,), dtype float32
+        归一化投标向量 (0~1), shape (TimeConfig.points_per_day,), dtype float32
     """
     capacity = env._max_capacity
-    if t >= 24:
-        bid = env._load_data["load_mw"].iloc[t - 24 : t].values.astype(np.float64)
+    if t >= TimeConfig.points_per_day:
+        bid = env._load_data["load_mw"].iloc[t - TimeConfig.points_per_day : t].values.astype(np.float64)
     else:
-        bid = np.zeros(24, dtype=np.float64)
+        bid = np.zeros(TimeConfig.points_per_day, dtype=np.float64)
     return np.clip(bid / capacity, 0, 1).astype(np.float32)
 
 
@@ -65,15 +66,15 @@ def baseline_mean(env: ElectricityMarketEnv, t: int) -> np.ndarray:
         t: 当前 24h 块的起始行索引
 
     Returns:
-        归一化投标向量 (0~1), shape (24,), dtype float32
+        归一化投标向量 (0~1), shape (TimeConfig.points_per_day,), dtype float32
     """
     capacity = env._max_capacity
-    if t >= 168:
-        past = env._load_data["load_mw"].iloc[t - 168 : t].values
+    if t >= TimeConfig.points_per_week:
+        past = env._load_data["load_mw"].iloc[t - TimeConfig.points_per_week : t].values
         mean_val = past.mean() / capacity
     else:
         mean_val = 0.0
-    return np.full(24, mean_val, dtype=np.float32)
+    return np.full(TimeConfig.points_per_day, mean_val, dtype=np.float32)
 
 
 def oracle_strategy(env: ElectricityMarketEnv, t: int) -> np.ndarray:
@@ -87,13 +88,13 @@ def oracle_strategy(env: ElectricityMarketEnv, t: int) -> np.ndarray:
         t: 当前 24h 块的起始行索引
 
     Returns:
-        归一化投标向量 (0~1), shape (24,), dtype float32
+        归一化投标向量 (0~1), shape (TimeConfig.points_per_day,), dtype float32
     """
     capacity = env._max_capacity
-    n = min(24, len(env._load_data) - t)
+    n = min(TimeConfig.points_per_day, len(env._load_data) - t)
     bid = env._load_data["load_mw"].iloc[t : t + n].values.astype(np.float64)
-    if n < 24:
-        bid = np.pad(bid, (0, 24 - n), constant_values=0)
+    if n < TimeConfig.points_per_day:
+        bid = np.pad(bid, (0, TimeConfig.points_per_day - n), constant_values=0)
     return np.clip(bid / capacity, 0, 1).astype(np.float32)
 
 

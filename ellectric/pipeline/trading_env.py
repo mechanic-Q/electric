@@ -12,7 +12,7 @@ and the environment simulates market clearing with reward computation.
 
 关键设计:
 - 观测空间: Dict with 5 keys (load/price forecasts, time features, history, account)
-- 动作空间: Box(0, 1, (24,)) — 归一化投标量
+- 动作空间: Box(0, 1, (TimeConfig.points_per_day,)) — 归一化投标量
 - 出清逻辑: 价格接受者，cleared = min(bid, actual_load)
 - 奖励: 3 种内置函数 (profit_only, risk_adjusted, volume_penalty)
 """
@@ -153,14 +153,14 @@ class ElectricityMarketEnv(gym.Env):
     电力市场交易强化学习环境。
 
     观测空间 (Dict):
-        load_forecast_24h:  未来 24 小时负荷预测          (24,)
-        price_forecast_24h: 未来 24 小时电价预测          (24,)
+        load_forecast_24h:  未来 24 小时负荷预测          (TimeConfig.points_per_day,)
+        price_forecast_24h: 未来 24 小时电价预测          (TimeConfig.points_per_day,)
         time_features:      时间特征 (hour_sin/cos, dow_sin/cos)  (4,)
-        price_history_168h: 过去 168 小时电价历史         (168,)
+        price_history_168h: 过去 168 小时电价历史         (TimeConfig.points_per_week,)
         account_state:      账户状态 [cash, progress]      (2,)
 
     动作空间 (Box):
-        Box(0, 1, (24,)) — 归一化投标量
+        Box(0, 1, (TimeConfig.points_per_day,)) — 归一化投标量
         实际投标量 (MW) = action * max_capacity
 
     出清逻辑:
@@ -171,7 +171,7 @@ class ElectricityMarketEnv(gym.Env):
         >>> from ellectric.pipeline.trading_env import ElectricityMarketEnv
         >>> env = ElectricityMarketEnv(load_data, price_data, lf, pf)
         >>> obs, info = env.reset()
-        >>> obs, reward, terminated, truncated, info = env.step(np.zeros(24))
+        >>> obs, reward, terminated, truncated, info = env.step(np.zeros(TimeConfig.points_per_day))
     """
 
     metadata = {"render_modes": []}
@@ -293,7 +293,7 @@ class ElectricityMarketEnv(gym.Env):
         5. 构建下一个观测
 
         Args:
-            action: 24 维归一化投标向量
+            action: 归一化投标向量（点数由 TimeConfig.points_per_day 决定）
 
         Returns:
             (observation, reward, terminated, truncated, info)
@@ -308,7 +308,7 @@ class ElectricityMarketEnv(gym.Env):
         action = np.asarray(action, dtype=np.float32).ravel()
         if action.shape[0] != TimeConfig.points_per_day:
             raise ValueError(
-                f"action 必须为 24 维（实际 {action.shape[0]}）"
+                f"action 必须为 {TimeConfig.points_per_day} 维（实际 {action.shape[0]}）"
             )
         if np.any((action < 0) | (action > 1)):
             logger.warning(
@@ -418,7 +418,7 @@ class ElectricityMarketEnv(gym.Env):
         3. 零向量
 
         Returns:
-            (load_forecast_24h, price_forecast_24h), 均为 (24,) float32
+            (load_forecast_24h, price_forecast_24h), 均为 (TimeConfig.points_per_day,) float32
         """
         load_pred = self._predict_with_model(
             self._load_forecaster, self._load_data, "load_mw"
@@ -525,7 +525,7 @@ class ElectricityMarketEnv(gym.Env):
             df[lag_168h_name] = 0.0
 
         # ── 滚动统计 ──────────────────────────────────────────
-        if start >= 24:
+        if start >= TimeConfig.points_per_day:
             hist_window = data[target_col].iloc[max(0, start - TimeConfig.points_per_day) : start]
             if "rolling_mean_24h" in feature_cols:
                 df["rolling_mean_24h"] = float(hist_window.mean())

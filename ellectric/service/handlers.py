@@ -13,11 +13,13 @@ Phase 4 — Handler 函数：桥接 Pydantic Schema 到 Pipeline 模块
 
 import csv
 import json
+import logging
 import os
 import re
 import subprocess
 import time
 
+from ellectric.config import TimeConfig
 from ellectric.service.schemas import (
     ForecastRequest,
     ForecastResponse,
@@ -32,6 +34,7 @@ from ellectric.service.schemas import (
 )
 
 _DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+logger = logging.getLogger(__name__)
 _BASELINE_STRATEGIES = {"baseline_persistence", "baseline_mean", "oracle"}
 _RL_STRATEGIES = {"ppo", "sac", "td3"}
 _SUPPORTED_STRATEGIES = _BASELINE_STRATEGIES | _RL_STRATEGIES
@@ -51,6 +54,37 @@ def _get_data_dir() -> str:
     return os.environ.get("ELLECTRIC_DATA_DIR", "ellectric/data/")
 
 
+def _horizon_to_points(horizon_hours: int) -> int:
+    return max(1, int(horizon_hours * TimeConfig.points_per_day / 24))
+
+
+def _load_forecast_data(data_source: str):
+    if data_source == "shandong":
+        from ellectric.pipeline.shandong_loader import ShandongDataLoader
+        return ShandongDataLoader().load_data()
+    from ellectric.pipeline.data_loader import OWIDChinaLoader
+    return OWIDChinaLoader().load_data()
+
+
+def _load_price_data(data_source: str):
+    if data_source == "shandong":
+        from ellectric.pipeline.shandong_loader import ShandongDataLoader
+        df = ShandongDataLoader().load_data().rename(
+            columns={
+                "rt_price": "price_rt",
+                "da_price": "price_da",
+                "wind_actual_mw": "wind_mw",
+                "solar_actual_mw": "solar_mw",
+                "tie_line_actual_mw": "tie_line_mw",
+            }
+        )
+        if "price_da" in df.columns and "price_rt" in df.columns:
+            df["price_da"] = df["price_da"].fillna(df["price_rt"])
+        return df
+    from ellectric.pipeline.price_loader import PriceDataLoader
+    return PriceDataLoader(os.path.join(_get_data_dir(), "price_data.xlsx")).load_data()
+
+
 # ═══════════════════════════════════════════════════════════════════
 # 1. run_forecast
 # ═══════════════════════════════════════════════════════════════════
@@ -68,7 +102,6 @@ def run_forecast(req: ForecastRequest) -> ForecastResponse:
 
 def _run_load_forecast(req: ForecastRequest) -> ForecastResponse:
     from ellectric.pipeline.forecaster import XGBoostForecaster
-    from ellectric.pipeline.data_loader import OWIDChinaLoader
     from ellectric.pipeline.features import FeatureEngineer
 
     model_path = os.path.join(_get_model_dir(), "xgboost_model.joblib")
@@ -78,17 +111,17 @@ def _run_load_forecast(req: ForecastRequest) -> ForecastResponse:
     forecaster = XGBoostForecaster()
     forecaster.load_model(model_path)
 
-    loader = OWIDChinaLoader()
-    df = loader.load_data()
+    df = _load_forecast_data(req.data_source)
 
     engineer = FeatureEngineer()
     df_feat = engineer.add_tier1_features(df)
     df_feat = engineer.add_tier2_features(df_feat)
     df_feat = engineer.add_tier3_features(df_feat)
 
-    X = df_feat[forecaster._feature_cols].iloc[-req.horizon:]
+    horizon_points = _horizon_to_points(req.horizon)
+    X = df_feat[forecaster._feature_cols].iloc[-horizon_points:]
     predictions = forecaster.predict(X)
-    timestamps = df_feat["timestamp"].iloc[-req.horizon:].tolist()
+    timestamps = df_feat["timestamp"].iloc[-horizon_points:].tolist()
 
     return ForecastResponse(
         timestamps=timestamps,
@@ -99,7 +132,6 @@ def _run_load_forecast(req: ForecastRequest) -> ForecastResponse:
 
 def _run_price_forecast(req: ForecastRequest) -> ForecastResponse:
     from ellectric.pipeline.price_forecaster import LEARForecaster
-    from ellectric.pipeline.price_loader import PriceDataLoader
 
     model_path = os.path.join(_get_model_dir(), "lear_model.joblib")
     if not os.path.exists(model_path):
@@ -108,14 +140,13 @@ def _run_price_forecast(req: ForecastRequest) -> ForecastResponse:
     forecaster = LEARForecaster()
     forecaster.load_model(model_path)
 
-    xlsx_path = os.path.join(_get_data_dir(), "price_data.xlsx")
-    loader = PriceDataLoader(xlsx_path)
-    df = loader.load_data()
+    df = _load_price_data(req.data_source)
 
     df_feat = forecaster.add_price_features(df, "tier3")
-    X = df_feat[forecaster._feature_cols].iloc[-req.horizon:]
+    horizon_points = _horizon_to_points(req.horizon)
+    X = df_feat[forecaster._feature_cols].iloc[-horizon_points:]
     predictions = forecaster.predict(X)
-    timestamps = df_feat["timestamp"].iloc[-req.horizon:].tolist()
+    timestamps = df_feat["timestamp"].iloc[-horizon_points:].tolist()
 
     return ForecastResponse(
         timestamps=timestamps,
@@ -219,17 +250,10 @@ def run_backtest(req: BacktestRequest) -> BacktestResponse:
         )
 
     from ellectric.pipeline.backtester import BacktestRunner
-    from ellectric.pipeline.data_loader import OWIDChinaLoader
-    from ellectric.pipeline.price_loader import PriceDataLoader
     from ellectric.pipeline.trading_env import ElectricityMarketEnv
 
-    loader = OWIDChinaLoader()
-    load_df = loader.load_data()
-
-    price_loader = PriceDataLoader(
-        os.path.join(_get_data_dir(), "price_data.xlsx")
-    )
-    price_df = price_loader.load_data()
+    load_df = _load_forecast_data(req.data_source)
+    price_df = _load_price_data(req.data_source)
 
     env_factory = lambda: ElectricityMarketEnv(load_df, price_df, None, None)
     runner = BacktestRunner(env_factory)
@@ -298,7 +322,6 @@ def run_explain(req: ExplainRequest) -> ExplainResponse:
 
 def _run_xgboost_explain(req: ExplainRequest) -> ExplainResponse:
     from ellectric.pipeline.forecaster import XGBoostForecaster
-    from ellectric.pipeline.data_loader import OWIDChinaLoader
     from ellectric.pipeline.features import FeatureEngineer
     from ellectric.pipeline.shap_explainer import (
         explain_xgboost_sample,
@@ -312,8 +335,7 @@ def _run_xgboost_explain(req: ExplainRequest) -> ExplainResponse:
     forecaster = XGBoostForecaster()
     forecaster.load_model(model_path)
 
-    loader = OWIDChinaLoader()
-    df = loader.load_data()
+    df = _load_forecast_data(req.data_source)
 
     engineer = FeatureEngineer()
     df_feat = engineer.add_tier1_features(df)
@@ -331,7 +353,6 @@ def _run_xgboost_explain(req: ExplainRequest) -> ExplainResponse:
 
 def _run_lear_explain(req: ExplainRequest) -> ExplainResponse:
     from ellectric.pipeline.price_forecaster import LEARForecaster
-    from ellectric.pipeline.price_loader import PriceDataLoader
     from ellectric.pipeline.shap_explainer import (
         explain_lear_sample,
         feature_importance_ranking,
@@ -344,9 +365,7 @@ def _run_lear_explain(req: ExplainRequest) -> ExplainResponse:
     forecaster = LEARForecaster()
     forecaster.load_model(model_path)
 
-    xlsx_path = os.path.join(_get_data_dir(), "price_data.xlsx")
-    loader = PriceDataLoader(xlsx_path)
-    df = loader.load_data()
+    df = _load_price_data(req.data_source)
 
     df_feat = forecaster.add_price_features(df, "tier3")
 

@@ -55,28 +55,23 @@ logger = logging.getLogger(__name__)
 
 def persistence_forecast(df: pd.DataFrame) -> pd.Series:
     """
-    持续法预测：用 24 小时前的负荷作为预测。
+    持续法预测：用 24 小时前的负荷作为预测（按 TimeConfig 点数偏移）。
 
-    算法: forecast[t] = actual[t - 24]
-
-    为什么是 24？
-    电力负荷有日周期——昨天下午 3 点的负荷
-    是预测今天下午 3 点负荷的最好起点。
+    算法: forecast[t] = actual[t - points_per_day]
 
     Args:
         df: 包含 timestamp, load_mw 列的 DataFrame
 
     Returns:
         预测值 Series，索引与 df 相同。
-        前 24 小时用后向填充补齐。
+        前 points_per_day 个时间点用后向填充补齐。
     """
     forecast = df["load_mw"].shift(TimeConfig.points_per_day)
 
-    # 前 24 个值没有"昨天数据"，用后向填充
-    # 即用第 25 小时的值回填第 1-24 小时
+    # 前 points_per_day 个值没有历史数据，用后向填充
     forecast = forecast.bfill()
 
-    logger.info(f"持续法预测: 使用 24h 滞后, 共 {len(forecast)} 个预测值")
+    logger.info(f"持续法预测: 使用 {TimeConfig.points_per_day} 点滞后, 共 {len(forecast)} 个预测值")
     return forecast
 
 
@@ -262,9 +257,9 @@ class XGBoostForecaster:
         ...
     永远是过去预测未来，杜绝 look-ahead bias。
 
-    另外 gap=24 参数保证了 lag_24h 特征不会"偷看"测试集:
-        训练: [t=0, ..., t=1000] → gap=24 → 测试: [t=1025, ...]
-    这额外的 24 小时间隔防止 lag 特征跨越训练/测试边界。
+    另外 gap=TimeConfig.points_per_day 参数保证了 lag_24h 特征不会"偷看"测试集:
+        训练: [t=0, ..., t=1000] → gap=96 → 测试: [t=1097, ...]
+    这额外的 24 小时时间跨度防止 lag 特征跨越训练/测试边界。
     """
 
     def __init__(
@@ -297,7 +292,7 @@ class XGBoostForecaster:
         X: "pd.DataFrame",
         y: "pd.Series",
         n_splits: int = 5,
-        gap: int = 24,
+        gap: int = TimeConfig.points_per_day,
     ) -> dict:
         """
         用 TimeSeriesSplit 训练和评估 XGBoost 模型。
@@ -307,25 +302,12 @@ class XGBoostForecaster:
 
         这防止了 look-ahead bias（#1 反模式）。
 
-        为什么 scaler 要封装在 fold 内部？
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        如果用 scaler.fit_transform(X) 在全量数据上:
-        - Scaler 看到了测试集的分布
-        - 训练时的特征值被测试集"污染"了
-        - 模型指标虚高，但实际预测时不如预期
-
-        正确做法 (本方法):
-        - 每个 fold 内: scaler.fit(X_train) → transform(X_test)
-        - Scaler 只学习训练集的分布
-        - 测试集用训练集的 scaler 来变换
-        - 这模拟了真实场景——你训练时不知道未来的数据分布
-
         Args:
             X:       特征 DataFrame
             y:       目标值 Series (load_mw)
             n_splits: TimeSeriesSplit 的分割数，默认 5
-            gap:     训练/测试间的间隔（小时数），默认 24
-                     防止 lag_24h 特征跨越训练/测试边界
+            gap:     训练/测试间的间隔（点数），默认 TimeConfig.points_per_day
+                      当前 15min 数据下 96 点 = 24 小时，防止 lag_24h 泄漏
 
         Returns:
             dict with:

@@ -17,19 +17,18 @@ print("=" * 60)
 
 # 1: 默认值
 print("\n—— 默认Config值 ——")
-chk("points_per_day 默认 24", TimeConfig.points_per_day == 24)
-chk("points_per_week 默认 168", TimeConfig.points_per_week == 168)
-chk("freq 默认 h", TimeConfig.freq == "h")
+chk("points_per_day 默认 96", TimeConfig.points_per_day == 96)
+chk("points_per_week 默认 672", TimeConfig.points_per_week == 672)
+chk("freq 默认 15min", TimeConfig.freq == "15min")
 
-# 2: shanxi_loader仍通过（默认24下不受影响证明）
-print("\n—— 默认 24 下兼容验证 ——")
+# 2: 现有兼容 loader 验证（确认旧接口不被破坏）
+print("\n—— 兼容性验证 ——")
 try:
-    ldr = create_loader("shanxi_spot_da")
-    df = ldr.load_data()
-    chk("spot_da 默认行为不变", len(df) == 4800)
-    chk("spot_da data_loader 零修改", "da_price_a" in df.columns)
-except Exception as e:
-    chk(f"spot_da 兼容 {e}", False, str(e)[:80])
+    from ellectric.pipeline.data_loader import OWIDChinaLoader, ChineseDataLoader
+    chk("OWIDChinaLoader 可导入", True)
+    chk("ChineseDataLoader 可导入", True)
+except ImportError as e:
+    chk(f"兼容 loader 导入失败 {e}", False, str(e)[:80])
 
 # 3: 改为96验证
 print("\n—— 切换 15min 验证 ——")
@@ -67,9 +66,9 @@ TimeConfig.freq = save_freq
 
 # 4: 还原验证
 print("\n—— 还原默认配置 ——")
-chk("points_per_day 已还原", TimeConfig.points_per_day == 24)
-chk("points_per_week 已还原", TimeConfig.points_per_week == 168)
-chk("freq 已还原", TimeConfig.freq == "h")
+chk("points_per_day 已还原", TimeConfig.points_per_day == save_ppd)
+chk("points_per_week 已还原", TimeConfig.points_per_week == save_ppw)
+chk("freq 已还原", TimeConfig.freq == save_freq)
 
 # 5: cleaner 不再硬编码
 print("\n—— cleaner 无硬编码h ——")

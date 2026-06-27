@@ -24,7 +24,8 @@ _CLIENT = httpx.Client(timeout=30.0)  # 模块级共享客户端
 def query_forecast(model_type: str, horizon: int = 24) -> str:
     """查询负荷或电价预测结果。
 
-    调用 Ellectric `/predict` API 获取未来 N 小时的预测值。
+    调用 Ellectric `/predict` API 获取未来 N 小时时间跨度的预测值。
+    时间粒度由 TimeConfig 决定（默认 15min），horizon 表示小时跨度。
 
     Args:
         model_type: 预测类型 — 'load'（负荷预测）或 'price'（电价预测）

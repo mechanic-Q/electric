@@ -16,10 +16,10 @@ module_id: trading-env
 
 - `ElectricityMarketEnv(gym.Env)` — 核心环境类
   - `observation_space: gym.spaces.Dict` — 5 个 key: load_forecast_24h, price_forecast_24h, time_features, price_history_168h, account_state
-  - `action_space: gym.spaces.Box(0, 1, (24,))` — 24h 归一化投标量
+  - `action_space: gym.spaces.Box(0, 1, (TimeConfig.points_per_day,))` — 24h 归一化投标量，15min 默认 96 点
   - `reset(seed, options) -> (obs, info)` — 重置环境
-  - `step(action) -> (obs, reward, terminated, truncated, info)` — 推进一小时
-  - `get_prediction(horizon=24) -> (np.ndarray, np.ndarray)` — 获取预测
+  - `step(action) -> (obs, reward, terminated, truncated, info)` — 推进 24 小时时间跨度
+  - `_get_prediction() -> (np.ndarray, np.ndarray)` — 获取 24h 预测，shape 为 `TimeConfig.points_per_day`
 - `RewardRegistry` — 奖励函数注册表
   - `register(name, fn)`, `get(name)`, `list()`, `register_builtin()`
   - 内置: profit_only, risk_adjusted, volume_penalty

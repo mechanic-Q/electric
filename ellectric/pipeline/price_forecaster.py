@@ -175,9 +175,9 @@ class LEARForecaster:
         df["lag_24h_load"] = df["load_mw"].shift(TimeConfig.points_per_day).bfill()
         df["lag_24h_wind"] = df["wind_mw"].shift(TimeConfig.points_per_day).bfill()
         df["lag_24h_solar"] = df["solar_mw"].shift(TimeConfig.points_per_day).bfill()
-        df["rolling_mean_24h_price"] = df["price_da"].rolling(24, min_periods=1).mean()
+        df["rolling_mean_24h_price"] = df["price_da"].rolling(TimeConfig.points_per_day, min_periods=1).mean()
         df["rolling_std_24h_price"] = (
-            df["price_da"].rolling(24, min_periods=1).std().fillna(0)
+            df["price_da"].rolling(TimeConfig.points_per_day, min_periods=1).std().fillna(0)
         )
         logger.info("Tier 2 特征: lag_24h_load, lag_24h_wind, lag_24h_solar, rolling_mean_24h_price, rolling_std_24h_price")
         return df
@@ -186,7 +186,7 @@ class LEARForecaster:
         """添加 Tier 3 高级特征 (+3 = 14 个): 循环编码 + 价格趋势。"""
         df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
         df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
-        df["price_trend_7d"] = df["price_da"].rolling(168, min_periods=1).mean()
+        df["price_trend_7d"] = df["price_da"].rolling(TimeConfig.points_per_week, min_periods=1).mean()
         logger.info("Tier 3 特征: hour_sin, hour_cos, price_trend_7d")
         return df
 
@@ -219,7 +219,7 @@ class LEARForecaster:
         df: pd.DataFrame,
         tier: str = "tier1",
         n_splits: int = 5,
-        gap: int = 24,
+        gap: int = TimeConfig.points_per_day,
     ) -> dict:
         """
         TimeSeriesSplit + StandardScaler(fit-on-train) + Lasso 训练评估。
@@ -228,7 +228,7 @@ class LEARForecaster:
             df:       含特征列和目标列 (price_da) 的 DataFrame
             tier:     特征层级（特征列由 get_feature_columns 确定）
             n_splits: TimeSeriesSplit 折数
-            gap:      训练/测试间隔（小时），防 look-ahead bias
+            gap:      训练/测试间隔（点数），默认 TimeConfig.points_per_day，防 look-ahead bias
 
         Returns:
             dict:

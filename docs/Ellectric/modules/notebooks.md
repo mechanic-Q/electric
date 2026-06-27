@@ -10,7 +10,7 @@ module_id: notebooks
 - `01_data_ingestion` — OWID 中国电力数据自动拉取，展示 DataLoader 统一接口用法，初识 data cleaning 管道
 - `02_data_cleaning` — 深入清洗：缺失值填充策略选择、IQR 异常值检测、UTC 时区标准化、输出 `cleaned_load.parquet`
 - `03_feature_engineering` — Tier 1/2/3 渐进式特征构建（日历特征、lag-24h/lag-168h、滚动统计），Fit-on-train-only 缩放器使用演示
-- `04_load_forecasting` — XGBoost 训练 + TimeSeriesSplit(n_splits=5, gap=24) 交叉验证，实际 vs 预测叠加图 + 误差分布直方图
+- `04_load_forecasting` — XGBoost 训练 + TimeSeriesSplit(n_splits=5, gap=96) 交叉验证（15min 下 96 点 = 24h），实际 vs 预测叠加图 + 误差分布直方图
 - `05_end_to_end_baseline` — 持续法预测 → 简易模拟出清 → 累计 P&L 图表，证明五层管道可端到端跑通
 ## 关键逻辑
 ```
