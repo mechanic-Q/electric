@@ -1,3 +1,8 @@
+---
+author: lmr
+created_at: 2026-06-27 19:12:11
+---
+
 # Roadmap: Ellectric (AI + 电力交易技术学习平台)
 
 ## Overview
@@ -9,7 +14,7 @@ A hands-on learning journey through AI-driven electricity trading — from pulli
 - [x] **Phase 1: Data Foundation + Basic Prediction** — Working Jupyter environment, PUDL data pipeline, XGBoost load forecasting, end-to-end baseline run
 - [ ] **Phase 2: 中国电力市场预测与仿真** — sklearn LEAR 电价预测 + epftoolbox 基准对比 + ASSUME 中国省间现货仿真 + Grafana 仪表板
 - [ ] **Phase 3: Trading Agents + Backtesting** — RL agent training with custom reward functions, historical backtesting on stress periods, SHAP model explainability
-- [ ] **Phase 4: Integration + LLM Interface** — FastAPI REST API, CLI toolchain, LangChain + Ollama natural language trading assistant
+- [~] **Phase 4: Integration + LLM Interface** — FastAPI REST API, CLI toolchain, LangChain + Ollama natural language trading assistant（主线基本完成，持续改进阶段）
 
 ## Phase Details
 
@@ -90,7 +95,24 @@ Plans:
   4. Learner asks the LLM trading assistant "What was the peak load forecast for yesterday?" and receives a response with actual forecast data queried live from the prediction service via LangChain tool-calling
   5. Learner issues a natural language trading command: "Bid 50MW at $35/MWh for hours 8-16 tomorrow" — the assistant parses it into a structured bid configuration, confirms the parameters, and stores the configuration for the next simulation
 
-**Plans:** TBD
+**已完成：**
+   - FastAPI 三层接口 (REST API + SSE Web Chat)
+   - CLI 命令行框架
+   - SHAP 模型可解释性
+   - WeatherFetcher Tier4 特征集成（待最终验证）
+
+   **持续改进项（优先级排序）：**
+   1. Weather 特征验证与精度评估
+   2. 完整 96 维 RL training on full dataset
+   3. 中长期合约/新能源预测特征探索
+
+   **显式排除：**
+   - 准实时 T+15min 调度
+   - 中长期合约串 pipeline
+   - 多省/多节点市场覆盖
+   - 真实交易/付费数据源
+
+**Plans:** 1 plan
 
 ## Progress
 
@@ -99,7 +121,7 @@ Plans:
 | 1. Data Foundation + Basic Prediction | 3/3 | Shipped | 2026-06-06 |
 | 2. 中国电力市场预测与仿真 | 0/TBD | Shipped | 2026-06-07 |
 | 3. Trading Agents + Backtesting | 0/TBD | Shipped | 2026-06-07 |
-| 4. Integration + LLM Interface | 0/TBD | Not started | - |
+| 4. Integration + LLM Interface | 0/TBD | In progress | - |
 
 ## Notes
 

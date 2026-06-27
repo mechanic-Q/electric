@@ -72,20 +72,51 @@ modules:
       - lag-features
       - cyclic-encoding
       - rolling-statistics
+      - weather
+      - weather-features
+      - tier4
     aliases:
       - features
       - FeatureEngineer
     entrypoints:
       - prepare_features
+      - add_tier4_weather_features
     main_symbols:
       - FeatureEngineer
       - prepare_features
       - add_tier1_features
       - add_tier2_features
       - add_tier3_features
+      - add_tier4_weather_features
       - get_feature_columns
-    depends_on: []
+    depends_on:
+      - weather-fetcher  # Tier4 可选依赖
     used_by: []
+    needs_review: false
+    concerns: []
+    review_reasons: []
+  weather-fetcher:
+    status: active
+    doc: null
+    paths:
+      - ellectric/fetch/weather.py
+    tags:
+      - weather
+      - open-meteo
+      - fetch
+      - shandong
+    aliases:
+      - WeatherFetcher
+      - weather
+    entrypoints:
+      - WeatherFetcher
+    main_symbols:
+      - WeatherFetcher
+      - fetch_historical
+      - align_to_15min
+    depends_on: []
+    used_by:
+      - feature-engineer  # Tier4 可选依赖
     needs_review: false
     concerns: []
     review_reasons: []

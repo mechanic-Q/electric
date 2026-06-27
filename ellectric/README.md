@@ -1,3 +1,8 @@
+---
+author: lmr
+created_at: 2026-06-27 19:12:11
+---
+
 # Ellectric — AI + 电力交易技术学习平台
 
 > 🎯 以山东 15min 现货数据为 MVP 的 AI+电力交易学习原型。
@@ -38,7 +43,7 @@ ellectric/
 │   ├── data_loader.py        # DataLoader ABC + 工厂 (owid/manual/ember/shandong)
 │   ├── shandong_loader.py    # ShandongDataLoader — 山东 15min CSV (21列)
 │   ├── cleaner.py            # 数据清洗管道
-│   ├── features.py           # 特征工程（渐进式，3 层）
+│   ├── features.py           # 特征工程（渐进式，4 层）
 │   ├── forecaster.py         # XGBoost 负荷预测
 │   ├── price_forecaster.py   # LEAR 电价预测 (Lasso)
 │   ├── price_loader.py       # PriceDataLoader — 电价数据
@@ -127,9 +132,15 @@ ellectric/
 - [x] SHAP 模型可解释性
 
 ### Phase 4: 持续改进
-- [ ] WeatherFetcher 气象特征集成到 features
+- [x] WeatherFetcher 气象特征集成到 features（已接入，验证待完成）
 - [ ] 完整 96 维 RL training on full dataset
 - [ ] 中长期合约/新能源预测特征
+
+**本轮显式排除：**
+- 准实时 T+15min 调度 — 不引入 cron/daemon/queue
+- 中长期合约串 pipeline — 增强项，当前不做
+- 多省/多节点市场覆盖 — MVP 保持单省山东
+- 真实交易/付费数据源 — 学习原型不涉及真实资金
 
 ## 🔌 ASSUME 电力市场仿真
 
