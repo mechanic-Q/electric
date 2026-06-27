@@ -165,9 +165,9 @@ class FeatureEngineer:
         """
         df = df.copy()
 
-        # 滚动统计 — 窗口 24 小时
-        df["rolling_mean_24h"] = df["load_mw"].rolling(window=24, min_periods=1).mean()
-        df["rolling_std_24h"] = df["load_mw"].rolling(window=24, min_periods=1).std().fillna(0)
+        # 滚动统计 — 窗口 24 小时（按 TimeConfig 点数）
+        df["rolling_mean_24h"] = df["load_mw"].rolling(window=TimeConfig.points_per_day, min_periods=1).mean()
+        df["rolling_std_24h"] = df["load_mw"].rolling(window=TimeConfig.points_per_day, min_periods=1).std().fillna(0)
 
         # 循环编码 — 将小时映射到单位圆上
         df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)

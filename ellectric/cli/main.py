@@ -121,7 +121,7 @@ def _output_table_or_json(
 @app.command()
 def forecast(
     model: str = typer.Argument(..., help="预测模型: load|price"),
-    horizon: int = typer.Argument(24, help="预测时长 (小时)"),
+    horizon: int = typer.Argument(24, help="预测时长（小时跨度；15min 点数由 TimeConfig 决定）"),
     json_output: bool = typer.Option(False, "--json", help="JSON 格式输出"),
 ):
     """负荷/电价预测"""

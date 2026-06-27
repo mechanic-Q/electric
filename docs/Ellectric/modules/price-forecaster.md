@@ -13,7 +13,7 @@ LEAR 电价预测器 — Lasso + 滞后特征 + 日历特征 + 滚动统计
 - `plot_price_forecast(df, preds) -> go.Figure`, `plot_coefficients() -> go.Figure`
 ## 关键逻辑
 - Tier 1-3 渐进式特征 (6/11/14 列)
-- TimeSeriesSplit(n_splits=5, gap=24), StandardScaler fit-on-train-only
+- TimeSeriesSplit(n_splits=5, gap=TimeConfig.points_per_day), StandardScaler fit-on-train-only
 - L1 正则化自动特征选择
 - 与 XGBoostForecaster 同构接口
 ## 注意事项

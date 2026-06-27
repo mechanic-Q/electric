@@ -15,9 +15,9 @@ module_id: feature-engineer
   
   输入: pd.DataFrame (含 timestamp, load), 输出: pd.DataFrame (增加特征列)
 ## 关键逻辑
-1. Tier1: df.hour → hour; df.dayofweek → day_of_week; month/is_weekend → int; lag_24h = load.shift(24)
-2. Tier2: try `import holidays` → 查 China holidays → is_holiday 0/1; except ImportError → 全部填 0; lag_168h = load.shift(168)
-3. Tier3: rolling(24).mean/.std; hour → sin(2π*h/24), cos(2π*h/24)
+1. Tier1: df.hour → hour; df.dayofweek → day_of_week; month/is_weekend → int; lag_24h = load.shift(TimeConfig.points_per_day)
+2. Tier2: try `import holidays` → 查 China holidays → is_holiday 0/1; except ImportError → 全部填 0; lag_168h = load.shift(TimeConfig.points_per_week)
+3. Tier3: rolling(TimeConfig.points_per_day).mean/.std; hour → sin(2π*h/24), cos(2π*h/24)
 ## 注意事项
 - holidays 包可选——缺失时 is_holiday 全为 0，不会抛异常
 - 滞后特征 shift 会导致前 N 行为 NaN，训练前需 dropna
