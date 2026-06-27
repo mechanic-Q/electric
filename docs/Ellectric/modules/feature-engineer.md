@@ -29,6 +29,10 @@ module_id: feature-engineer
 - 天气数据源为 Open-Meteo 小时级 API；15min 对齐使用前向填充 (ffill)，不代表真实 15min 气象
 - Open-Meteo 网络失败不会阻断管道，Tier4 降级为无 weather 特征（记录 warning）
 - weather 列命名格式 {var}_{city}，城市源自 SHANDONG_CITIES（jinan, qingdao）
+### Weather Tier4 验证
+验证脚本: `python ellectric/scripts/validate_weather_tier4.py` — 验证 Weather Tier4 特征接入正确性并输出 JSON/Markdown 报告。
+产物路径: `ellectric/reports/weather_tier4/weather_tier4_validation.json` 和 `weather_tier4_validation.md`。
+语义: 报告式验证 (report-only)，不设硬性精度提升阈值 (hard_threshold_applied=false)。
 ## 人工备注
 <!-- MANUAL_NOTES_START -->
 <!-- MANUAL_NOTES_END -->
