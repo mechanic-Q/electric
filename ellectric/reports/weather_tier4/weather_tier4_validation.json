@@ -1,0 +1,76 @@
+{
+  "status": "ok",
+  "metadata": {
+    "generated_at": "2026-06-29T13:09:15Z",
+    "data_source": "shandong",
+    "data_version": "1",
+    "weather_source": "degraded",
+    "input_rows": 96,
+    "report_scope": "full_dataset",
+    "log_path": null,
+    "time_config": {
+      "freq": "15min",
+      "points_per_day": 96
+    },
+    "start": null,
+    "end": null
+  },
+  "weather_quality": {
+    "weather_source": "degraded",
+    "weather_columns": [],
+    "weather_column_count": 0,
+    "weather_features_available": false,
+    "missing_rate_by_column": {},
+    "overall_missing_rate": 0.0,
+    "time_range": {
+      "start": "2026-01-01 00:00:00+00:00",
+      "end": "2026-01-01 23:45:00+00:00",
+      "freq": "15min"
+    },
+    "timezone": "UTC",
+    "coverage": {
+      "total_points": 96,
+      "weather_covered_points": 0,
+      "coverage_ratio": 0.0
+    },
+    "notes": [
+      "Weather source is degraded: no weather data available",
+      "No weather columns found in feature_df after merge"
+    ]
+  },
+  "experiments": {
+    "baseline_tier3": {
+      "feature_count": 30,
+      "input_rows": 96,
+      "sample_count": 86,
+      "metrics": {
+        "mae": 10.0,
+        "rmse": 15.0,
+        "mape": 5.0
+      }
+    },
+    "weather_tier4": {
+      "feature_count": 35,
+      "input_rows": 96,
+      "sample_count": 0,
+      "metrics": {
+        "mae": null,
+        "rmse": null,
+        "mape": null
+      }
+    },
+    "delta": {
+      "mae_delta": null,
+      "rmse_delta": null,
+      "mape_delta": null,
+      "mae_delta_pct": null
+    },
+    "notes": [
+      "No weather data available"
+    ]
+  },
+  "interpretation": {
+    "hard_threshold_applied": false,
+    "summary": "Ablation: degraded (weather features unavailable or training failed)"
+  }
+}

@@ -55,7 +55,11 @@ def _minimal_report_dict() -> dict:
     return {
         "metadata": {
             "generated_at": "2026-06-28T01:11:57Z",
-            "data_source": "explicit",
+            "data_source": "shandong",
+            "weather_source": "explicit",
+            "input_rows": 96,
+            "report_scope": "full_dataset",
+            "log_path": None,
             "data_version": "1",
             "time_config": {"freq": "15min", "points_per_day": 96},
             "start": None,
@@ -88,6 +92,7 @@ def _minimal_report_dict() -> dict:
                 "feature_count": 35,
                 "input_rows": 96,
                 "sample_count": 86,
+                "weather_columns": ["temp_jinan", "ghi_jinan"],
                 "metrics": {"mae": 8.0, "rmse": 12.0, "mape": 4.0},
             },
             "delta": {
@@ -280,6 +285,8 @@ def test_report_schema_experiment_subkeys(mod):
         assert "input_rows" in sub
         assert "sample_count" in sub
         assert "metrics" in sub
+        if key == "weather_tier4":
+            assert "weather_columns" in sub
         assert set(sub["metrics"].keys()) == {"mae", "rmse", "mape"}
 
 
@@ -294,6 +301,7 @@ def test_report_schema_metadata_keys(mod):
     expected = {
         "generated_at", "data_source", "data_version",
         "time_config", "start", "end",
+        "weather_source", "input_rows", "report_scope", "log_path",
     }
     assert set(report["metadata"].keys()) == expected
 
@@ -307,6 +315,25 @@ def test_report_schema_interpretation_keys(mod):
 def test_report_hard_threshold_false(mod):
     report = _minimal_report_dict()
     assert report["interpretation"]["hard_threshold_applied"] is False
+
+
+def test_weather_cols_not_in_baseline(mod):
+    report = _minimal_report_dict()
+    b = report["experiments"]["baseline_tier3"]
+    w = report["experiments"]["weather_tier4"]
+    assert "weather_columns" not in b
+    assert "weather_columns" in w
+    assert w["weather_columns"] == ["temp_jinan", "ghi_jinan"]
+
+
+def test_metadata_weather_source_equals_quality(mod):
+    report = _minimal_report_dict()
+    assert report["metadata"]["weather_source"] == report["weather_quality"]["weather_source"]
+
+
+def test_metadata_log_path_none_in_test(mod):
+    report = _minimal_report_dict()
+    assert report["metadata"]["log_path"] is None
 
 
 # =====================================================================
@@ -344,7 +371,7 @@ def test_weather_degraded_with_source_degraded(mod):
     assert len(report["notes"]) >= 1
 
 
-def test_weather_degraded_does_not_block_experiment(mod, monkeypatch):
+def test_weather_degraded_does_not_block_experiment(mod, monkeypatch, tmp_path):
     import ellectric.pipeline.forecaster as _fxmod
 
     n = 96
@@ -362,7 +389,7 @@ def test_weather_degraded_does_not_block_experiment(mod, monkeypatch):
 
     result = mod.run_ablation_experiment(
         load_df,
-        weather_cache=Path("/nonexistent_test_cache.parquet"),
+        weather_cache=tmp_path / "missing.parquet",
         fetch_if_missing=False,
     )
     assert "baseline_tier3" in result
@@ -417,6 +444,16 @@ def test_write_reports_creates_directory(mod, tmp_path):
     mod.write_reports(report, nested)
     assert nested.exists()
     assert (nested / "weather_tier4_validation.json").exists()
+
+
+def test_markdown_includes_impact_conclusion(mod, tmp_path):
+    report = _minimal_report_dict()
+    mod.write_reports(report, tmp_path)
+    md_path = tmp_path / "weather_tier4_validation.md"
+    content = md_path.read_text("utf-8")
+    assert "## Impact Conclusion" in content
+    assert "MAE delta" in content or "delta 为正" in content or "delta 为负" in content
+    assert "hard_threshold_applied" in content or "report-only" in content or "report_only" in content
 
 
 # =====================================================================
@@ -487,7 +524,7 @@ def test_run_validation_data_load_failure(mod, monkeypatch):
     assert "error" in result
 
 
-def test_run_validation_degraded_path(mod, monkeypatch):
+def test_run_validation_degraded_path(mod, monkeypatch, tmp_path):
     import ellectric.pipeline.shandong_loader as _smod
 
     n = 96
@@ -522,13 +559,9 @@ def test_run_validation_degraded_path(mod, monkeypatch):
     monkeypatch.setattr(
         mod, "run_ablation_experiment", lambda *a, **kw: fake_experiment
     )
-    monkeypatch.setattr(
-        mod, "write_reports",
-        lambda *a, **kw: {"json": "/fake/report.json", "markdown": "/fake/report.md"},
-    )
 
     result = mod.run_validation(
-        weather_cache="/nonexistent_test_cache.parquet"
+        weather_cache=tmp_path / "missing.parquet"
     )
     assert result["weather_quality"]["weather_features_available"] is False
     assert "experiments" in result

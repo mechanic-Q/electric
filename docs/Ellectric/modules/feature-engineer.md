@@ -30,8 +30,15 @@ module_id: feature-engineer
 - Open-Meteo 网络失败不会阻断管道，Tier4 降级为无 weather 特征（记录 warning）
 - weather 列命名格式 {var}_{city}，城市源自 SHANDONG_CITIES（jinan, qingdao）
 ### Weather Tier4 验证
-验证脚本: `python ellectric/scripts/validate_weather_tier4.py` — 验证 Weather Tier4 特征接入正确性并输出 JSON/Markdown 报告。
-产物路径: `ellectric/reports/weather_tier4/weather_tier4_validation.json` 和 `weather_tier4_validation.md`。
+验证脚本: `python ellectric/scripts/validate_weather_tier4.py` — 运行 Ablation 实验对比 Tier1-3 baseline 与添加 Tier4 气象特征后的负荷预测精度。
+
+**Ablation 隔离策略**: baseline 使用 `prepare_features(tiers=["tier1","tier2","tier3"])`，weather 分支使用独立的 `FeatureEngineer` 实例手动构建 Tier1-3 + Tier4 特征，确保仅 tier3 列 + weather 列进入模型，不含原始 Shandong 数据列（rt_price/da_price/wind_actual_mw 等）。
+
+产物路径:
+- `ellectric/reports/weather_tier4/weather_tier4_validation.json` — 结构化指标与 metadata
+- `ellectric/reports/weather_tier4/weather_tier4_validation.md` — 可读报告（含 Impact Conclusion 段落）
+- `ellectric/reports/weather_tier4/weather_tier4_impact.log` — full-run 终端日志
+
 语义: 报告式验证 (report-only)，不设硬性精度提升阈值 (hard_threshold_applied=false)。
 ## 人工备注
 <!-- MANUAL_NOTES_START -->

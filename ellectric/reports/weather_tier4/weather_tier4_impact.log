@@ -1,0 +1,36 @@
+WARNING | epftoolbox 未安装。使用模拟数据运行 DM/GW 检验。安装方法: pip install git+https://github.com/jeslago/epftoolbox.git
+INFO | 加载山东 15min 数据: ellectric/data/shandong/山东_2024-2026_15min.csv
+INFO | rt_price 含 88 个空值 (/ 71520)
+INFO | da_price 含 53424 个空值 (/ 71520, 75%)
+INFO | 山东数据加载完成: 71520 行, 23 列, 2024-01-01 00:15:00+00:00 ~ 2026-01-15 00:00:00+00:00
+INFO | Loaded 71520 rows, range 2024-01-01 00:15:00+00:00 ~ 2026-01-15 00:00:00+00:00
+INFO | Weather source: cache (/home/lmr/projects/Electric/.sillyspec/.runtime/worktrees/2026-06-29-weather-tier4-impact-quantification/ellectric/data/shandong/weather_2024-2026.parquet)
+INFO | Tier 1 特征已添加: hour, day_of_week, month, is_weekend, lag_24h (71520 行)
+INFO | Tier 2 特征已添加: is_holiday, lag_168h
+INFO | Tier 3 特征已添加: rolling_mean, rolling_std, hour_sin, hour_cos
+INFO | 使用直接传入的 weather_df (12 列)
+INFO | Tier4 气象特征已添加: ['temp_jinan', 'ghi_jinan', 'wind_speed_jinan', 'precip_jinan', 'humidity_jinan', 'cloud_jinan', 'temp_qingdao', 'ghi_qingdao', 'wind_speed_qingdao', 'precip_qingdao', 'humidity_qingdao', 'cloud_qingdao'] (12 列)
+INFO | Tier 1 特征已添加: hour, day_of_week, month, is_weekend, lag_24h (71520 行)
+INFO | Tier 2 特征已添加: is_holiday, lag_168h
+INFO | Tier 3 特征已添加: rolling_mean, rolling_std, hour_sin, hour_cos
+INFO |   Fold 1: MAE=5378, 训练集 11824 行 → 测试集 11920 行
+INFO |   Fold 2: MAE=3275, 训练集 23744 行 → 测试集 11920 行
+INFO |   Fold 3: MAE=2647, 训练集 35664 行 → 测试集 11920 行
+INFO |   Fold 4: MAE=2860, 训练集 47584 行 → 测试集 11920 行
+INFO |   Fold 5: MAE=2681, 训练集 59504 行 → 测试集 11920 行
+INFO | XGBoost 训练完成: MAE=3368
+INFO | Tier 1 特征已添加: hour, day_of_week, month, is_weekend, lag_24h (71520 行)
+INFO | Tier 2 特征已添加: is_holiday, lag_168h
+INFO | Tier 3 特征已添加: rolling_mean, rolling_std, hour_sin, hour_cos
+INFO | 从 cache 读取气象数据: /home/lmr/projects/Electric/.sillyspec/.runtime/worktrees/2026-06-29-weather-tier4-impact-quantification/ellectric/data/shandong/weather_2024-2026.parquet
+INFO | Tier4 气象特征已添加: ['temp_jinan', 'ghi_jinan', 'wind_speed_jinan', 'precip_jinan', 'humidity_jinan', 'cloud_jinan', 'temp_qingdao', 'ghi_qingdao', 'wind_speed_qingdao', 'precip_qingdao', 'humidity_qingdao', 'cloud_qingdao'] (12 列)
+INFO |   Fold 1: MAE=4891, 训练集 11824 行 → 测试集 11920 行
+INFO |   Fold 2: MAE=2183, 训练集 23744 行 → 测试集 11920 行
+INFO |   Fold 3: MAE=1878, 训练集 35664 行 → 测试集 11920 行
+INFO |   Fold 4: MAE=2357, 训练集 47584 行 → 测试集 11920 行
+INFO |   Fold 5: MAE=2000, 训练集 59504 行 → 测试集 11920 行
+INFO | XGBoost 训练完成: MAE=2662
+Reports generated:
+  json
+  markdown
+Validation status: ok

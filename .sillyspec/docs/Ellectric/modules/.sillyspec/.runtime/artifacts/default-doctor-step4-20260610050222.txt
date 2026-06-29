@@ -1,1 +1,0 @@
-Step 4: _module-map.yaml 16模块 ✅ | needs_review 全 false ✅ | 8模块缺 MANUAL_NOTES (assume-configs/simulation/verify, epftoolbox-install, grafana-dashboard, price-forecaster/loader, statistical-tests) | forecaster.md 不在map中是孤儿卡片

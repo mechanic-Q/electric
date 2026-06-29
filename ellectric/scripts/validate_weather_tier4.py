@@ -211,8 +211,8 @@ def run_ablation_experiment(
     from ellectric.pipeline.forecaster import XGBoostForecaster
 
     notes: list[str] = []
-    engineer = FeatureEngineer()
-    tier3_cols = engineer.get_feature_columns("tier3")
+    baseline_engineer = FeatureEngineer()
+    tier3_cols = baseline_engineer.get_feature_columns("tier3")
 
     # ── Baseline: Tier1-3 features ──
     baseline_feature_df = prepare_features(
@@ -244,6 +244,7 @@ def run_ablation_experiment(
                 "input_rows": input_rows,
                 "sample_count": 0,
                 "metrics": {"mae": None, "rmse": None, "mape": None},
+                "weather_columns": [],
             },
             "delta": {
                 "mae_delta": None,
@@ -264,20 +265,27 @@ def run_ablation_experiment(
         "metrics": baseline_metrics,
     }
 
-    # ── Weather: Tier1-4 features ──
-    weather_feature_df = prepare_features(
-        load_df,
-        tiers=["tier1", "tier2", "tier3", "tier4"],
+    # ── Weather: Tier1-3 + Tier4 weather columns ONLY ──
+    # 显式重建 Tier1-3 + Tier4 特征，避免 raw columns（rt_price/da_price/wind_actual_mw 等）
+    # 通过 prepare_features 输入 DataFrame 残留泄漏到 weather 训练特征。
+    weather_engineer = FeatureEngineer()
+    weather_feature_df = weather_engineer.add_tier1_features(load_df)
+    weather_feature_df = weather_engineer.add_tier2_features(weather_feature_df)
+    weather_feature_df = weather_engineer.add_tier3_features(weather_feature_df)
+    weather_feature_df = weather_engineer.add_tier4_weather_features(
+        weather_feature_df,
         weather_cache_path=weather_cache,
         fetch_if_missing=fetch_if_missing,
     )
 
-    tier3_cols_set = set(tier3_cols)
-    weather_all_cols = [
-        c for c in weather_feature_df.columns if c not in ("timestamp", "load_mw")
+    weather_cols_detected = [
+        c for c in weather_engineer._weather_columns
+        if c in weather_feature_df.columns
     ]
-    weather_cols_detected = [c for c in weather_all_cols if c not in tier3_cols_set]
-    weather_feature_count = len(weather_all_cols)
+    weather_feature_count = len(tier3_cols) + len(weather_cols_detected)
+    notes.append(
+        "Weather X isolated to tier3 + weather columns; raw Shandong columns excluded"
+    )
 
     if not weather_cols_detected:
         notes.append(
@@ -288,9 +296,11 @@ def run_ablation_experiment(
             "input_rows": input_rows,
             "sample_count": 0,
             "metrics": {"mae": None, "rmse": None, "mape": None},
+            "weather_columns": [],
         }
     else:
-        X_weather = weather_feature_df[weather_all_cols].copy()
+        weather_feature_cols = tier3_cols + weather_cols_detected
+        X_weather = weather_feature_df[weather_feature_cols].copy()
         try:
             forecaster_weather = XGBoostForecaster()
             weather_result = forecaster_weather.train_evaluate(X_weather, y)
@@ -306,6 +316,7 @@ def run_ablation_experiment(
                 "input_rows": input_rows,
                 "sample_count": len(weather_result["actuals"]),
                 "metrics": weather_metrics,
+                "weather_columns": list(weather_cols_detected),
             }
         except Exception as e:
             notes.append(f"Weather training failed: {e}")
@@ -314,6 +325,7 @@ def run_ablation_experiment(
                 "input_rows": input_rows,
                 "sample_count": 0,
                 "metrics": {"mae": None, "rmse": None, "mape": None},
+                "weather_columns": list(weather_cols_detected),
             }
 
     # ── Delta ──
@@ -353,6 +365,7 @@ def run_validation(
     output_dir: str = "ellectric/reports/weather_tier4",
     weather_cache: str | None = None,
     fetch_if_missing: bool = True,
+    log_path: str | None = None,
 ) -> dict:
     from ellectric.pipeline.shandong_loader import ShandongDataLoader
     from ellectric.pipeline.features import FeatureEngineer
@@ -420,7 +433,7 @@ def run_validation(
     w_mae = w_entry["metrics"]["mae"]
     delta = experiments["delta"]
 
-    if w_mae is not None:
+    if w_mae is not None and b_mae is not None and delta.get("mae_delta_pct") is not None:
         summary = (
             f"Ablation: baseline MAE={b_mae:.2f}, "
             f"weather MAE={w_mae:.2f}, "
@@ -431,12 +444,17 @@ def run_validation(
 
     from ellectric.config import TimeConfig
 
+    report_scope = "full_dataset" if (start is None and end is None) else "custom_range"
     metadata = {
         "generated_at": datetime.datetime.now(datetime.timezone.utc).strftime(
             "%Y-%m-%dT%H:%M:%SZ"
         ),
-        "data_source": quality.get("weather_source", "degraded"),
+        "data_source": "shandong",
         "data_version": "1",
+        "weather_source": source_label,
+        "input_rows": int(len(load_df)),
+        "report_scope": report_scope,
+        "log_path": str(log_path) if log_path is not None else None,
         "time_config": {
             "freq": TimeConfig.freq,
             "points_per_day": TimeConfig.points_per_day,
@@ -571,7 +589,24 @@ def _write_markdown_report(result: dict, path: Path):
         )
     )
     lines.append("- **start**: %s" % _escape_md(str(meta.get("start", "N/A"))))
-    lines.append("- **end**: %s\n" % _escape_md(str(meta.get("end", "N/A"))))
+    lines.append("- **end**: %s" % _escape_md(str(meta.get("end", "N/A"))))
+    lines.append(
+        "- **weather_source**: %s"
+        % _escape_md(str(meta.get("weather_source", "N/A")))
+    )
+    lines.append(
+        "- **input_rows**: %s"
+        % _escape_md(str(meta.get("input_rows", "N/A")))
+    )
+    lines.append(
+        "- **report_scope**: %s"
+        % _escape_md(str(meta.get("report_scope", "N/A")))
+    )
+    log_path_val = meta.get("log_path")
+    lines.append(
+        "- **log_path**: %s\n"
+        % _escape_md(str(log_path_val) if log_path_val is not None else "—")
+    )
 
     # ── Weather Quality ──
     lines.append("## Weather Quality\n")
@@ -711,6 +746,15 @@ def _write_markdown_report(result: dict, path: Path):
                 _escape_md(str(w.get("sample_count", "—"))),
             )
         )
+        weather_cols_listed = w.get("weather_columns") or []
+        weather_cols_str = (
+            _escape_md(", ".join(weather_cols_listed))
+            if weather_cols_listed
+            else "—"
+        )
+        lines.append(
+            "| Weather Columns | — | %s |" % weather_cols_str
+        )
         lines.append("")
 
     # ── Delta ──
@@ -772,6 +816,46 @@ def _write_markdown_report(result: dict, path: Path):
     else:
         lines.append("No significant improvement observed in this run.")
     lines.append("")
+
+    # ── Impact Conclusion ──
+    lines.append("## Impact Conclusion\n")
+    if experiments is not None:
+        b_exp_ic = experiments.get("baseline_tier3", {}) or {}
+        w_exp_ic = experiments.get("weather_tier4", {}) or {}
+        d_exp_ic = experiments.get("delta", {}) or {}
+        bm_ic = b_exp_ic.get("metrics", {}) or {}
+        wm_ic = w_exp_ic.get("metrics", {}) or {}
+        mae_b_ic = bm_ic.get("mae")
+        mae_w_ic = wm_ic.get("mae")
+        mae_delta_ic = d_exp_ic.get("mae_delta")
+        if mae_b_ic is not None and mae_w_ic is not None and mae_delta_ic is not None:
+            if mae_delta_ic < 0:
+                direction = (
+                    "MAE delta 为负，表示加入 weather 特征后预测误差下降，"
+                    "Weather Tier4 在本次实验中改善了负荷预测精度。"
+                )
+            elif mae_delta_ic > 0:
+                direction = (
+                    "MAE delta 为正，表示加入 weather 特征后预测误差上升，"
+                    "Weather Tier4 在本次实验中未改善（甚至退化）负荷预测精度。"
+                )
+            else:
+                direction = (
+                    "MAE delta 为 0，表示加入 weather 特征对预测误差无明显影响。"
+                )
+            lines.append(direction)
+        else:
+            lines.append(
+                "Weather 分支不可用或训练失败，Impact 无法量化；baseline 结果仍可用作参考。"
+            )
+    else:
+        lines.append(
+            "Experiments 数据缺失，Impact 无法量化。"
+        )
+    lines.append(
+        "本报告为 report-only：不设硬性精度提升阈值（hard_threshold_applied=false），"
+        "delta 正负如实呈现，结论仅描述本次实验观察到的事实。\n"
+    )
 
     # ── Interpretation ──
     lines.append("## Interpretation\n")
@@ -879,6 +963,9 @@ def main() -> None:
     parser.add_argument(
         "--no-fetch", action="store_true", help="Skip fetching missing weather data"
     )
+    parser.add_argument(
+        "--log-path", default=None, help="Path to the full-run log file for metadata"
+    )
     args = parser.parse_args()
 
     result = run_validation(
@@ -887,6 +974,7 @@ def main() -> None:
         output_dir=args.output_dir,
         weather_cache=args.weather_cache,
         fetch_if_missing=not args.no_fetch,
+        log_path=args.log_path,
     )
     if result.get("report_paths"):
         print("Reports generated:")

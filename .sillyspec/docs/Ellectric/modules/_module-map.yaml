@@ -89,7 +89,7 @@ modules:
     needs_review: false
     concerns: []
     review_reasons: []
-   forecaster:
+  forecaster:
     status: active
     doc: modules/forecaster.md
     paths:
