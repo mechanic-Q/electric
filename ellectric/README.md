@@ -133,7 +133,7 @@ ellectric/
 
 ### Phase 4: 持续改进
 - [x] WeatherFetcher 气象特征集成到 features（已接入，验证待完成）
-- [ ] 完整 96 维 RL training on full dataset
+- [x] 完整 96 维 RL training on full dataset — `python -m ellectric.scripts.train_rl_full_dataset`（见 `ellectric/reports/rl_full_dataset/`）
 - [ ] 中长期合约/新能源预测特征
 
 **本轮显式排除：**

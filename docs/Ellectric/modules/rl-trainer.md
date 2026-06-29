@@ -36,6 +36,38 @@ module_id: rl-trainer
 - predict() 前必须 train() → RuntimeError
 - save() 目标路径不存在时自动创建目录
 
+## full-dataset 训练入口
+
+完整 96 维 RL training on full dataset 的 CLI 入口：
+
+```bash
+# 默认：PPO+SAC+TD3 各 50k steps（山东 15min 全量数据）
+python -m ellectric.scripts.train_rl_full_dataset
+
+# 单算法子集
+python -m ellectric.scripts.train_rl_full_dataset --algos ppo --timesteps 10000
+
+# 装配 smoke 验证（不调 sb3 .learn()）
+python -m ellectric.scripts.train_rl_full_dataset --dry-run
+
+# 显式指定 weather tier
+python -m ellectric.scripts.train_rl_full_dataset --tier tier3
+```
+
+### 输出
+
+| 路径 | 说明 |
+|---|---|
+| `ellectric/reports/rl_full_dataset/training_report.json` | JSON 主报告（metadata/training/backtest/interpretation 4 字段） |
+| `ellectric/reports/rl_full_dataset/training_report.md` | Markdown 人类可读报告 |
+| `ellectric/reports/rl_full_dataset/cumulative_pnl.html` | Plotly 累计 P&L 对比图 |
+| `models/rl_full_dataset/{ppo,sac,td3}.zip` | sb3 模型 checkpoint |
+| `tb_logs/rl_full_dataset_{algo}/` | TensorBoard 训练日志 |
+
+### 设计文档
+
+变更细节与决策追踪：`.sillyspec/changes/2026-06-29-rl-full-dataset-training/`
+
 ## 人工备注
 
 <!-- MANUAL_NOTES_START -->

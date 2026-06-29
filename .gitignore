@@ -27,6 +27,18 @@ ellectric/data/*.xls
 .DS_Store
 Thumbs.db
 
+# Reports
+ellectric/reports/rl_full_dataset/*.json
+ellectric/reports/rl_full_dataset/*.md
+ellectric/reports/rl_full_dataset/*.html
+!ellectric/reports/rl_full_dataset/.gitkeep
+
+# RL models / checkpoints
+models/rl_full_dataset/
+
+# TensorBoard logs
+tb_logs/rl_full_dataset_*/
+
 # Environment
 .env
 .env.*
