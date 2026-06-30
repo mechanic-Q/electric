@@ -31,7 +31,7 @@ import logging
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +49,8 @@ class ForecastRequest(BaseModel):
     horizon 支持 1-168 小时（1 周），默认 24 对应日前预测。
     """
 
-    model_type: Literal['load', 'price', 'wind', 'solar'] = Field(
-        description="模型类型: load=XGBoost 负荷预测, price=LEAR 电价预测",
+    model_type: Literal["load", "price", "wind", "solar", "price_dnn"] = Field(
+        description="模型类型: load=XGBoost 负荷预测, price=LEAR 电价预测, price_dnn=PyTorch DNN 电价预测",
     )
     horizon: int = Field(
         default=24,
