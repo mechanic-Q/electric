@@ -919,7 +919,7 @@ add_text(slide, Inches(1.5), Inches(6.8), Inches(10.3), Inches(0.3),
          font_size=10, color=MID_GREY)
 
 # ═══════════════════════ 保存 ═══════════════════════
-output_dir = "/mnt/e/Ellectric"
+output_dir = os.getcwd()
 output_path = os.path.join(output_dir, "Ellectric_技术讲解.pptx")
 prs.save(output_path)
 print(f"✅ PPT 已生成: {output_path}")

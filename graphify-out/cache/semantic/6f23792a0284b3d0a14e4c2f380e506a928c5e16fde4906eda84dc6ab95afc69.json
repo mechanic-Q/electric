@@ -1,0 +1,1 @@
+{"nodes": [], "edges": [{"source": "sillyspec_workflow_templates", "target": "sillyspec_archives_phase4_integration_llm", "relation": "structures", "confidence": "INFERRED", "confidence_score": 0.65, "source_file": ".spec-workflow/templates/design-template.md", "source_location": null, "weight": 1.0}], "hyperedges": []}
