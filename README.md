@@ -134,9 +134,8 @@
 ### 一键安装
 
 ```bash
-cd ellectric
-chmod +x setup.sh
-./setup.sh
+# 在 ellectric 子目录下创建虚拟环境 .venv（不在仓库根目录混入）
+(cd ellectric && chmod +x setup.sh && ./setup.sh)
 ```
 
 脚本自动：检查 Python 版本 → 创建虚拟环境 → 安装所有依赖（国内网络自动使用清华镜像）
@@ -146,6 +145,9 @@ chmod +x setup.sh
 ```bash
 source ellectric/.venv/bin/activate
 ```
+
+> ⚠️ 必须从**仓库根目录**（`Electric/`）激活环境，之后所有命令也在根目录执行。
+> 勿 `cd ellectric` 后再激活——Python 包导入会失败。
 
 ### 启动服务
 

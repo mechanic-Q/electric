@@ -73,12 +73,15 @@ def test_add_tier4_handles_timestamp_index():
     assert "temp_jinan" in result.columns
 
 
-def test_add_tier4_no_weather_df_warns(caplog):
+def test_add_tier4_no_weather_df_warns(caplog, tmp_path):
     """weather_df 与 cache 均未提供时记录 warning 而非抛异常。"""
     df = _sample_load_df(96)
     eng = FeatureEngineer()
     with caplog.at_level(logging.WARNING):
-        result = eng.add_tier4_weather_features(df, weather_df=None, fetch_if_missing=False)
+        result = eng.add_tier4_weather_features(
+            df, weather_df=None, weather_cache_path=tmp_path / "missing.parquet",
+            fetch_if_missing=False,
+        )
     assert len(caplog.records) > 0
     assert "weather" in caplog.text.lower()
     assert list(result.columns) == list(df.columns)

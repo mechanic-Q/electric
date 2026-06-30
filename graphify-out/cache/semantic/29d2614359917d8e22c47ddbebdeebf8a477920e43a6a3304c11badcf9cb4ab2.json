@@ -1,0 +1,1 @@
+{"nodes": [], "edges": [{"source": "ellectric_pipeline_shandong_loader", "target": "ellectric_shanxi_data_source", "relation": "breaks_dependency", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": ".sillyspec/changes/archive/2026-06-24-2026-06-25-shandong-mvp/verify-result.md", "source_location": null, "weight": 1.0}], "hyperedges": []}

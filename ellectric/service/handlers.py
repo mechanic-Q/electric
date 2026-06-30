@@ -85,18 +85,70 @@ def _load_price_data(data_source: str):
     return PriceDataLoader(os.path.join(_get_data_dir(), "price_data.xlsx")).load_data()
 
 
+def _run_renewable_forecast(req: ForecastRequest) -> ForecastResponse:
+    from ellectric.pipeline.renewable_forecaster import (
+        WindPowerForecaster,
+        SolarPowerForecaster,
+    )
+    if req.model_type == "wind":
+        forecaster = WindPowerForecaster()
+    else:
+        forecaster = SolarPowerForecaster()
+
+    from ellectric.pipeline.shandong_loader import ShandongDataLoader
+    from ellectric.pipeline.features import FeatureEngineer
+
+    df = ShandongDataLoader().load_data()
+    target_col = forecaster.target_col
+    if target_col not in df.columns:
+        raise ValueError(
+            f"目标列 '{target_col}' 不在山东数据中。"
+            f"可用列: {[c for c in df.columns if 'wind' in c.lower() or 'solar' in c.lower()]}"
+        )
+
+    engineer = FeatureEngineer()
+    df_feat = engineer.add_tier1_features(df)
+    df_feat = engineer.add_tier2_features(df_feat)
+    df_feat = engineer.add_tier3_features(df_feat)
+    try:
+        df_feat = engineer.add_tier4_weather_features(df_feat, fetch_if_missing=False)
+    except Exception:
+        logger.warning("Weather features unavailable; using Tier1-3 only")
+
+    tier3_cols = engineer.get_feature_columns("tier3")
+    weather_cols = [c for c in getattr(engineer, '_weather_columns', []) if c in df_feat.columns]
+    feature_cols = tier3_cols + weather_cols if weather_cols else tier3_cols
+
+    X = df_feat[feature_cols].copy()
+    y = df_feat[target_col].copy()
+
+    horizon_points = _horizon_to_points(req.horizon)
+    result = forecaster.train_evaluate(X, y, n_splits=5)
+    predictions = result["predictions"][-horizon_points:]
+    timestamps = df_feat["timestamp"].iloc[-horizon_points:].tolist()
+    metrics = ForecastMetrics(mae=result["metrics"]["mae"], rmse=result["metrics"]["rmse"])
+
+    return ForecastResponse(
+        timestamps=timestamps,
+        predictions=predictions.tolist(),
+        metrics=metrics,
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════
 # 1. run_forecast
 # ═══════════════════════════════════════════════════════════════════
 
 
 def run_forecast(req: ForecastRequest) -> ForecastResponse:
-    if req.model_type not in ("load", "price"):
+    if req.model_type not in ("load", "price", "wind", "solar"):
         raise ValueError(
             f"Unsupported model_type: {req.model_type}. Valid: load, price"
         )
     if req.model_type == "load":
         return _run_load_forecast(req)
+    if req.model_type in ("wind", "solar"):
+        return _run_renewable_forecast(req)
     return _run_price_forecast(req)
 
 

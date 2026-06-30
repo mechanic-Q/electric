@@ -1,0 +1,1 @@
+{"nodes": [], "edges": [{"source": "ellectric_cli_main", "target": "ellectric_llm_agent", "relation": "uses_ask_command", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": ".sillyspec/changes/archive/2026-06-07-2026-06-07-phase4-integration-llm/tasks/task-10.md", "source_location": null, "weight": 1.0}], "hyperedges": []}

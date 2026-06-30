@@ -234,7 +234,7 @@ class ShandongDataLoader(DataLoader):
         if self.data_path.exists():
             return
         # 尝试项目根目录相对路径
-        alt = Path("/mnt/e/Electric") / self.data_path
+        alt = Path(__file__).resolve().parent.parent.parent / self.data_path
         if alt.exists():
             self.data_path = alt
             return
