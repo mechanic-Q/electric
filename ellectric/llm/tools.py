@@ -28,7 +28,7 @@ def query_forecast(model_type: str, horizon: int = 24) -> str:
     时间粒度由 TimeConfig 决定（默认 15min），horizon 表示小时跨度。
 
     Args:
-        model_type: 预测类型 — 'load'（负荷预测）或 'price'（电价预测）
+        model_type: 预测类型 — 'load'（负荷预测）、'price'（电价预测）、'wind'（风电出力预测）、'solar'（光伏出力预测）
         horizon: 预测小时数，默认 24 小时。范围建议 1-168
 
     Returns:

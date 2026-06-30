@@ -49,7 +49,7 @@ class ForecastRequest(BaseModel):
     horizon 支持 1-168 小时（1 周），默认 24 对应日前预测。
     """
 
-    model_type: Literal["load", "price"] = Field(
+    model_type: Literal['load', 'price', 'wind', 'solar'] = Field(
         description="模型类型: load=XGBoost 负荷预测, price=LEAR 电价预测",
     )
     horizon: int = Field(
