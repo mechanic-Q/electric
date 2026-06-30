@@ -16,8 +16,10 @@ import json
 import logging
 import os
 import re
+import statistics
 import subprocess
 import time
+from datetime import date, datetime
 
 from ellectric.config import TimeConfig
 from ellectric.service.schemas import (
@@ -31,6 +33,9 @@ from ellectric.service.schemas import (
     ExplainRequest,
     ExplainResponse,
     FeatureImportance,
+    RecommendRequest,
+    RecommendResponse,
+    TradeAction,
 )
 
 _DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -486,3 +491,244 @@ def _build_explain_response(waterfall_fig, importance_df) -> ExplainResponse:
         feature_importance=feature_importance_list,
         waterfall_json=waterfall_json,
     )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 5. run_recommend_trade  — LLM Tool 交易建议
+# ═══════════════════════════════════════════════════════════════════
+
+
+def run_recommend_trade(req: RecommendRequest) -> RecommendResponse:
+    """生成结构化交易建议，聚合预测/回测/可解释性证据。"""
+    evidence: dict[str, str] = {}
+    forecast_data: dict | None = None
+    backtest_data: dict | None = None
+    explain_data: dict | None = None
+
+    # 1. Forecast
+    try:
+        forecast_req = ForecastRequest(model_type="load", horizon=req.horizon_hours)
+        forecast_resp = run_forecast(forecast_req)
+        evidence["forecast"] = "available"
+        if forecast_resp.predictions:
+            forecast_data = {
+                "timestamps": forecast_resp.timestamps,
+                "predictions": forecast_resp.predictions,
+            }
+    except Exception as e:
+        evidence["forecast"] = f"unavailable: {e}"
+
+    # 2. Backtest
+    try:
+        bt_req = BacktestRequest(
+            start_date=date.fromisoformat(req.date),
+            end_date=date.fromisoformat(req.date),
+            strategy="oracle",
+        )
+        bt_resp = run_backtest(bt_req)
+        evidence["backtest"] = "available"
+        backtest_data = {
+            "cumulative_pnl": bt_resp.cumulative_pnl,
+            "sharpe_ratio": bt_resp.sharpe_ratio,
+            "comparison": bt_resp.comparison,
+        }
+    except Exception:
+        evidence["backtest"] = "unavailable"
+
+    # 3. Explain
+    try:
+        explain_req = ExplainRequest(model_type="xgboost", sample_index=0)
+        explain_resp = run_explain(explain_req)
+        evidence["explain"] = "available"
+        explain_data = {
+            "top_features": [
+                {"name": fi.name, "importance": fi.importance}
+                for fi in explain_resp.feature_importance[:5]
+            ],
+        }
+    except Exception:
+        evidence["explain"] = "unavailable"
+
+    # 4. Confidence
+    confidence = _determine_confidence(evidence)
+
+    # 5. Actions
+    actions = _generate_actions(
+        forecast_data=forecast_data,
+        backtest_data=backtest_data,
+        explain_data=explain_data,
+        evidence=evidence,
+        confidence=confidence,
+        max_actions=req.max_actions,
+    )
+
+    summary = _build_summary(evidence, actions, req.date)
+    disclaimer = (
+        "⚠️ 此为学习平台生成的模拟交易建议，不构成任何真实交易建议。请勿据此进行实际电力交易。"
+    )
+
+    return RecommendResponse(
+        summary=summary,
+        actions=actions,
+        confidence=confidence,
+        evidence=evidence,
+        disclaimer=disclaimer,
+    )
+
+
+def _determine_confidence(evidence: dict[str, str]) -> str:
+    forecast_ok = evidence.get("forecast") == "available"
+    backtest_ok = evidence.get("backtest") == "available"
+    explain_ok = evidence.get("explain") == "available"
+
+    if forecast_ok and backtest_ok and explain_ok:
+        return "high"
+    if forecast_ok and (backtest_ok or explain_ok):
+        return "medium"
+    return "low"
+
+
+def _generate_actions(
+    forecast_data: dict | None,
+    backtest_data: dict | None,
+    explain_data: dict | None,
+    evidence: dict[str, str],
+    confidence: str,
+    max_actions: int,
+) -> list[TradeAction]:
+    actions: list[TradeAction] = []
+
+    if confidence == "low":
+        actions.append(TradeAction(
+            action="hold",
+            timestamp=datetime.now().isoformat(),
+            price_limit=0.0,
+            quantity_mwh=0.0,
+            reason="证据不足（预测/回测/可解释性数据均不可用），建议观望",
+            confidence="low",
+        ))
+        return actions
+
+    # Forecast-based actions
+    if forecast_data and evidence.get("forecast") == "available":
+        predictions = forecast_data["predictions"]
+        timestamps = forecast_data["timestamps"]
+        if len(predictions) >= 4:
+            half = len(predictions) // 2
+            first_half_avg = statistics.mean(predictions[:half])
+            second_half_avg = statistics.mean(predictions[half:])
+            if second_half_avg > first_half_avg * 1.02:
+                trend = "up"
+            elif second_half_avg < first_half_avg * 0.98:
+                trend = "down"
+            else:
+                trend = "flat"
+
+            peak_idx = max(range(len(predictions)), key=lambda i: predictions[i])
+            trough_idx = min(range(len(predictions)), key=lambda i: predictions[i])
+
+            if trend == "up":
+                peak_time = timestamps[peak_idx]
+                base_qty = 30.0 if confidence == "high" else 15.0
+                actions.append(TradeAction(
+                    action="sell",
+                    timestamp=peak_time.isoformat(),
+                    price_limit=predictions[peak_idx],
+                    quantity_mwh=base_qty,
+                    reason=(
+                        f"预测价格呈上升趋势，在 {peak_time.isoformat()} 附近达峰值 "
+                        f"{predictions[peak_idx]:.2f} 元/MWh，建议卖出"
+                    ),
+                    confidence=confidence,
+                ))
+            elif trend == "down":
+                trough_time = timestamps[trough_idx]
+                base_qty = 40.0 if confidence == "high" else 20.0
+                actions.append(TradeAction(
+                    action="buy",
+                    timestamp=trough_time.isoformat(),
+                    price_limit=predictions[trough_idx],
+                    quantity_mwh=base_qty,
+                    reason=(
+                        f"预测价格呈下降趋势，在 {trough_time.isoformat()} 附近达谷值 "
+                        f"{predictions[trough_idx]:.2f} 元/MWh，建议买入"
+                    ),
+                    confidence=confidence,
+                ))
+            else:
+                mid = len(predictions) // 2
+                mid_time = timestamps[mid]
+                actions.append(TradeAction(
+                    action="hold",
+                    timestamp=mid_time.isoformat(),
+                    price_limit=predictions[mid],
+                    quantity_mwh=0.0,
+                    reason="预测价格平稳无明显趋势，建议观望",
+                    confidence="medium",
+                ))
+
+    # Backtest context action
+    if backtest_data and evidence.get("backtest") == "available" and len(actions) < max_actions:
+        comparison = backtest_data.get("comparison", {})
+        oracle_pnl = comparison.get("oracle", 0.0)
+        if oracle_pnl > 0:
+            actions.append(TradeAction(
+                action="hold",
+                timestamp=datetime.now().isoformat(),
+                price_limit=0.0,
+                quantity_mwh=0.0,
+                reason=(
+                    f"回测 oracle 策略累计收益 {oracle_pnl:+.2f}，"
+                    f"夏普比率 {backtest_data.get('sharpe_ratio', 'N/A')}，市场环境运行正常"
+                ),
+                confidence=confidence,
+            ))
+
+    # Explain-based insight
+    if explain_data and evidence.get("explain") == "available" and len(actions) < max_actions:
+        top = explain_data.get("top_features", [])
+        if top:
+            feature_names = ", ".join(f["name"] for f in top[:3])
+            actions.append(TradeAction(
+                action="hold",
+                timestamp=datetime.now().isoformat(),
+                price_limit=0.0,
+                quantity_mwh=0.0,
+                reason=f"关键影响因素: {feature_names}，建议结合基本面分析",
+                confidence="medium",
+            ))
+
+    if not actions:
+        actions.append(TradeAction(
+            action="hold",
+            timestamp=datetime.now().isoformat(),
+            price_limit=0.0,
+            quantity_mwh=0.0,
+            reason="无可用交易信号，建议观望",
+            confidence=confidence,
+        ))
+
+    return actions[:max_actions]
+
+
+def _build_summary(
+    evidence: dict[str, str],
+    actions: list[TradeAction],
+    date_str: str,
+) -> str:
+    forecast_status = evidence.get("forecast", "不可用")
+    backtest_status = evidence.get("backtest", "不可用")
+    explain_status = evidence.get("explain", "不可用")
+
+    action_count = len([a for a in actions if a.action != "hold"])
+    total_qty = sum(a.quantity_mwh for a in actions)
+
+    lines = [
+        f"目标日期: {date_str}",
+        f"预测: {forecast_status} | 回测: {backtest_status} | 可解释性: {explain_status}",
+    ]
+    if action_count > 0:
+        lines.append(f"建议交易 {action_count} 笔，合计 {total_qty:.1f} MWh")
+    else:
+        lines.append("当前无活跃交易信号，建议观望")
+    return "\n".join(lines)

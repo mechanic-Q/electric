@@ -19,19 +19,19 @@ created_at: 2026-06-30 04:10:00
 
 ## Wave 1（schema/service）
 
-- [ ] task-01: 新增 recommend request/response schema（覆盖：FR-01, FR-02, FR-03, D-001@v1, D-002@v1）
-- [ ] task-02: 实现 `run_recommend_trade()` service handler（覆盖：FR-04, FR-06, FR-07, D-003@v1, D-004@v1）
-- [ ] task-03: 新增 recommend handler 单元测试（覆盖：FR-01~FR-08）
+- [x] task-01: 新增 recommend request/response schema（覆盖：FR-01, FR-02, FR-03, D-001@v1, D-002@v1）
+- [x] task-02: 实现 `run_recommend_trade()` service handler（覆盖：FR-04, FR-06, FR-07, D-003@v1, D-004@v1）
+- [x] task-03: 新增 recommend handler 单元测试（覆盖：FR-01~FR-08）
 
 ## Wave 2（interfaces）
 
-- [ ] task-04: 新增 `/recommend` FastAPI endpoint（覆盖：FR-05）
-- [ ] task-05: 新增 CLI `recommend` 子命令（覆盖：FR-05）
-- [ ] task-06: 新增 LangChain `recommend_trade` tool 并注册到 agent（覆盖：FR-05, D-003@v1）
+- [x] task-04: 新增 `/recommend` FastAPI endpoint（覆盖：FR-05）
+- [x] task-05: 新增 CLI `recommend` 子命令（覆盖：FR-05）
+- [x] task-06: 新增 LangChain `recommend_trade` tool 并注册到 agent（覆盖：FR-05, D-003@v1）
 
 ## Wave 3（evidence/docs）
 
-- [ ] task-07: 生成 sample output 与模块文档（覆盖：FR-07）
+- [x] task-07: 生成 sample output 与模块文档（覆盖：FR-07）
 
 ## 验收
 

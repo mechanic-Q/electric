@@ -28,12 +28,14 @@ from ellectric.service.schemas import (
     BacktestRequest,
     ExplainRequest,
     ForecastRequest,
+    RecommendRequest,
     SimulateRequest,
 )
 from ellectric.service.handlers import (
     run_backtest,
     run_explain,
     run_forecast,
+    run_recommend_trade,
     run_simulate,
 )
 
@@ -302,6 +304,65 @@ def ask(
     except Exception as e:
         print(f"错误: {e}", file=sys.stderr)
         raise typer.Exit(1)
+
+
+@app.command()
+def recommend(
+    date: str = typer.Argument(..., help="交易日期 YYYY-MM-DD"),
+    horizon: int = typer.Option(24, help="预测时长（小时）"),
+    market: str = typer.Option("shandong", help="数据源标识"),
+    risk_preference: str = typer.Option("balanced", help="风险偏好: conservative|balanced|aggressive"),
+    max_actions: int = typer.Option(5, help="最多返回动作数"),
+    json_output: bool = typer.Option(False, "--json", help="JSON 格式输出"),
+):
+    """生成结构化交易建议"""
+    try:
+        req = RecommendRequest(
+            date=date,
+            horizon_hours=horizon,
+            market=market,
+            risk_preference=risk_preference,
+            max_actions=max_actions,
+        )
+        result = run_recommend_trade(req)
+    except Exception as e:
+        _print_error(f"{type(e).__name__}: {e}")
+
+    if json_output:
+        _print_json(result)
+        return
+
+    Console, _ = _try_import_rich()
+    if Console:
+        from rich.panel import Panel
+
+        console = Console()
+        console.print(Panel(result.summary, title="交易建议"))
+    else:
+        print(f"[交易建议]\n{result.summary}")
+
+    if result.actions:
+        headers = ["时间", "动作", "限价(元/MWh)", "电量(MWh)", "原因", "置信度"]
+        rows = [
+            [
+                a.timestamp,
+                a.action,
+                f"{a.price_limit:.2f}" if a.price_limit is not None else "-",
+                f"{a.quantity_mwh:.1f}" if a.quantity_mwh is not None else "-",
+                a.reason,
+                a.confidence,
+            ]
+            for a in result.actions
+        ]
+        _output_table_or_json(headers, rows, False, result)
+    else:
+        if Console:
+            console.print("[dim]无具体交易动作[/dim]")
+        else:
+            print("(无具体交易动作)")
+
+    print(f"\n置信度: {result.confidence}")
+    print(f"免责声明: {result.disclaimer}")
 
 
 def main():

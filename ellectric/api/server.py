@@ -45,12 +45,15 @@ from ellectric.service.schemas import (
     BacktestResponse,
     ExplainRequest,
     ExplainResponse,
+    RecommendRequest,
+    RecommendResponse,
 )
 from ellectric.service.handlers import (
     run_forecast,
     run_simulate,
     run_backtest,
     run_explain,
+    run_recommend_trade,
 )
 
 logger = logging.getLogger(__name__)
@@ -96,7 +99,7 @@ app = FastAPI(
 
 @app.on_event("startup")
 def _log_startup():
-    logger.info("Ellectric API v0.2.0 启动 — 端点: /predict, /simulate, /backtest, /explain, /chat/stream")
+    logger.info("Ellectric API v0.2.0 启动 — 端点: /predict, /simulate, /backtest, /explain, /recommend, /chat/stream")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -172,6 +175,16 @@ def backtest(req: BacktestRequest):
 @app.post("/explain", response_model=ExplainResponse)
 def explain(req: ExplainRequest):
     return run_explain(req)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 端点：交易建议
+# ═══════════════════════════════════════════════════════════════════
+
+
+@app.post("/recommend", response_model=RecommendResponse)
+def recommend(req: RecommendRequest):
+    return run_recommend_trade(req)
 
 
 # ═══════════════════════════════════════════════════════════════════

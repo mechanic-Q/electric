@@ -272,3 +272,49 @@ class ExplainResponse(BaseModel):
         description="SHAP waterfall Plotly JSON (可选)",
     )
     error_message: str | None = Field(default=None)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 交易建议 (Recommend)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TradeAction(BaseModel):
+    """结构化交易动作。由 service 层生成，LLM 只做解释不修改数值。"""
+
+    timestamp: str = Field(description="ISO 格式时间戳")
+    action: Literal["buy", "sell", "hold"] = Field(description="交易动作")
+    price_limit: float | None = Field(default=None, description="限价 (元/MWh)")
+    quantity_mwh: float | None = Field(default=None, description="建议电量 (MWh)")
+    reason: str = Field(description="中文原因说明")
+    confidence: Literal["high", "medium", "low"] = Field(description="单条建议置信度")
+
+
+class RecommendRequest(BaseModel):
+    """交易建议请求。指定日期和市场参数，service 层聚合预测/回测/解释证据。"""
+
+    date: str = Field(description="交易日期 YYYY-MM-DD")
+    horizon_hours: int = Field(default=24, ge=1, le=72, description="预测时长（小时）")
+    market: str = Field(default="shandong", description="数据源标识")
+    risk_preference: str = Field(
+        default="balanced",
+        description="风险偏好: conservative/balanced/aggressive",
+    )
+    max_actions: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        description="最多返回的动作数",
+    )
+
+
+class RecommendResponse(BaseModel):
+    """交易建议响应：含结构化动作列表、总体置信度、证据摘要和免责声明。"""
+
+    model_config = {"exclude_none": True}
+
+    summary: str = Field(description="中文交易建议总结")
+    actions: list[TradeAction] = Field(default_factory=list, description="交易动作列表")
+    confidence: Literal["high", "medium", "low"] = Field(description="总体置信度")
+    evidence: dict = Field(default_factory=dict, description="证据摘要")
+    disclaimer: str = Field(description="学习用途免责声明")

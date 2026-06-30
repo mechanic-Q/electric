@@ -140,3 +140,45 @@ def run_backtest(start_date: str, end_date: str, strategy: str = "oracle") -> st
         return f"API 服务不可用: HTTP {e.response.status_code} — {e.response.text[:200]}"
     except (httpx.RequestError, httpx.HTTPError) as e:
         return f"API 服务不可用: {type(e).__name__} — {e}"
+
+
+@tool
+def recommend_trade(date: str, horizon: int = 24, risk_preference: str = "balanced", max_actions: int = 5) -> str:
+    """生成并解释结构化电力交易建议。
+
+    调用 Ellectric `/recommend` API，聚合负荷预测、历史回测和模型可解释性证据，
+    生成可操作的结构化交易动作。LLM 只负责转述结构化结果，不修改数值。
+
+    Args:
+        date: 交易日期，格式 YYYY-MM-DD
+        horizon: 预测时长（小时），默认 24。范围建议 1-72
+        risk_preference: 风险偏好，可选 'conservative'、'balanced'（默认）、'aggressive'
+        max_actions: 最多返回的动作数，默认 5
+
+    Returns:
+        JSON 字符串，包含 summary（中文总结）、actions（交易动作列表）、
+        confidence（总体置信度）、evidence（证据摘要）、disclaimer（免责声明）。
+        如果 API 不可用，返回错误描述。
+
+    Example:
+        >>> result = recommend_trade(date="2026-01-15", horizon=24)
+        >>> # result 包含 2026-01-15 的交易建议 JSON
+    """
+    try:
+        resp = _CLIENT.post(
+            f"{_API_BASE}/recommend",
+            json={
+                "date": date,
+                "horizon_hours": horizon,
+                "risk_preference": risk_preference,
+                "max_actions": max_actions,
+            },
+        )
+        resp.raise_for_status()
+        return json.dumps(resp.json(), indent=2, ensure_ascii=False)
+    except httpx.TimeoutException:
+        return f"API 服务不可用: 请求超时 ({_API_BASE}/recommend)"
+    except httpx.HTTPStatusError as e:
+        return f"API 服务不可用: HTTP {e.response.status_code} — {e.response.text[:200]}"
+    except (httpx.RequestError, httpx.HTTPError) as e:
+        return f"API 服务不可用: {type(e).__name__} — {e}"
