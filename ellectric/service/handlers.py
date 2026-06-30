@@ -141,14 +141,16 @@ def _run_renewable_forecast(req: ForecastRequest) -> ForecastResponse:
 
 
 def run_forecast(req: ForecastRequest) -> ForecastResponse:
-    if req.model_type not in ("load", "price", "wind", "solar"):
+    if req.model_type not in ("load", "price", "wind", "solar", "price_dnn"):
         raise ValueError(
-            f"Unsupported model_type: {req.model_type}. Valid: load, price"
+            f"Unsupported model_type: {req.model_type}. Valid: load, price, wind, solar, price_dnn"
         )
     if req.model_type == "load":
         return _run_load_forecast(req)
     if req.model_type in ("wind", "solar"):
         return _run_renewable_forecast(req)
+    if req.model_type == "price_dnn":
+        return _run_price_dnn_forecast(req)
     return _run_price_forecast(req)
 
 
@@ -195,6 +197,40 @@ def _run_price_forecast(req: ForecastRequest) -> ForecastResponse:
     df = _load_price_data(req.data_source)
 
     df_feat = forecaster.add_price_features(df, "tier3")
+    horizon_points = _horizon_to_points(req.horizon)
+    X = df_feat[forecaster._feature_cols].iloc[-horizon_points:]
+    predictions = forecaster.predict(X)
+    timestamps = df_feat["timestamp"].iloc[-horizon_points:].tolist()
+
+    return ForecastResponse(
+        timestamps=timestamps,
+        predictions=predictions.tolist(),
+        metrics=ForecastMetrics(),
+    )
+
+
+def _run_price_dnn_forecast(req: ForecastRequest) -> ForecastResponse:
+    from ellectric.pipeline.price_forecaster import LEARForecaster
+    from ellectric.pipeline.price_forecaster_dnn import DNNPriceForecaster
+
+    model_path = os.path.join(_get_model_dir(), "dnn_model.joblib")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(
+            f"DNN 电价模型文件未找到: {model_path}。请先训练 DNN 模型。"
+        )
+
+    import joblib
+
+    data = joblib.load(model_path)
+    forecaster = DNNPriceForecaster()
+    forecaster._model = data["model"]
+    forecaster._feature_cols = data["feature_cols"]
+    forecaster._scaler = data.get("scaler", None)
+
+    df = _load_price_data(req.data_source)
+
+    lear = LEARForecaster()
+    df_feat = lear.add_price_features(df, "tier3")
     horizon_points = _horizon_to_points(req.horizon)
     X = df_feat[forecaster._feature_cols].iloc[-horizon_points:]
     predictions = forecaster.predict(X)
@@ -307,7 +343,9 @@ def run_backtest(req: BacktestRequest) -> BacktestResponse:
     load_df = _load_forecast_data(req.data_source)
     price_df = _load_price_data(req.data_source)
 
-    env_factory = lambda: ElectricityMarketEnv(load_df, price_df, None, None)
+    def _make_env() -> ElectricityMarketEnv:
+        return ElectricityMarketEnv(load_df, price_df, None, None)
+    env_factory = _make_env
     runner = BacktestRunner(env_factory)
 
     if req.strategy in _RL_STRATEGIES:

@@ -1,469 +1,209 @@
-schema_version: 1
-project: Ellectric
-source_commit: 53bf8ae
-generated_at: 2026-06-07 12:40:00
-generator: sillyspec-scan
+schema_version: 2
+generated_at: 2026-06-30 14:18:43
+generator: sillyspec-modules-rebuild
+source_commit: 999e821
+
+# Module Context Index — 机器可读的模块上下文索引
+# scan 阶段自动生成，brainstorm/plan/execute 阶段按任务命中模块精准注入上下文
+
 modules:
   data-loader:
     status: active
     doc: modules/data-loader.md
-    paths:
-      - ellectric/pipeline/data_loader.py
-    tags:
-      - data
-      - ingestion
-      - owid
-      - china
-      - etl
-    aliases:
-      - loader
-      - data-source
-      - DataLoader
-    entrypoints:
-      - create_loader
-    main_symbols:
-      - DataLoader
-      - OWIDChinaLoader
-      - ChineseDataLoader
-      - create_loader
-      - _safe_float
-      - _twh_to_daily_mw
-      - _standardize_columns
-    depends_on: []
-    used_by: []
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "电力数据加载抽象层 —— 通过 ABC 统一接口屏蔽 OWID 远程拉取与本地文件读取的差异，工厂函数按 source 参数创建对应实例。边界仅到 `pd.DataFrame(timestamp, load_mw, region)` 产出，不涉及清洗/特征工程。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   cleaner:
     status: active
     doc: modules/cleaner.md
-    paths:
-      - ellectric/pipeline/cleaner.py
-    tags:
-      - cleaning
-      - preprocessing
-      - validation
-      - outlier-detection
-      - timezone
-    aliases:
-      - data-cleaning
-      - ETL
-    entrypoints:
-      - clean_data
-      - validate_schema
-    main_symbols:
-      - clean_data
-      - validate_schema
-      - REQUIRED_COLUMNS
-      - OPTIONAL_COLUMNS
-    depends_on: []
-    used_by: []
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "电力时序数据预处理模块：对 DataFrame 执行 schema 校验、缺失值修复、IQR 异常值检测（只报告不删除）、UTC 时区标准化。边界：仅处理结构化列（timestamp, load_mw），不做领域级纠错或数据补全。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   feature-engineer:
     status: active
     doc: modules/feature-engineer.md
-    paths:
-      - ellectric/pipeline/features.py
-    tags:
-      - feature-engineering
-      - time-series
-      - lag-features
-      - cyclic-encoding
-      - rolling-statistics
-    aliases:
-      - features
-      - FeatureEngineer
-    entrypoints:
-      - prepare_features
-    main_symbols:
-      - FeatureEngineer
-      - prepare_features
-      - add_tier1_features
-      - add_tier2_features
-      - add_tier3_features
-      - get_feature_columns
-    depends_on: []
-    used_by: []
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "时序特征工程模块，提供3层渐进式特征构造器（Tier1基础 → Tier2节日 + 周滞后 → Tier3滚动统计 + 循环编码）。纯特征变换，不涉及模型训练与数据清洗。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   forecaster:
     status: active
     doc: modules/forecaster.md
-    paths:
-      - ellectric/pipeline/forecaster.py
-    tags:
-      - prediction
-      - xgboost
-      - persistence
-      - pnl
-      - time-series
-    aliases:
-      - prediction
-      - model
-      - XGBoostForecaster
-    entrypoints:
-      - persistence_forecast
-      - calculate_pnl
-      - plot_pnl
-    main_symbols:
-      - XGBoostForecaster
-      - persistence_forecast
-      - calculate_pnl
-      - plot_pnl
-    depends_on: []
-    used_by: [trading-env, shap-explainer, notebooks]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "负荷预测引擎 — 持久法基线 + XGBoost 时序回归 + P&L 模拟交易评估"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   price-loader:
     status: active
     doc: modules/price-loader.md
-    paths:
-      - ellectric/pipeline/price_loader.py
-    tags:
-      - data
-      - electricity-price
-      - xlsx
-      - china
-      - etl
-    aliases:
-      - PriceDataLoader
-      - price-loader
-    entrypoints:
-      - create_price_loader
-    main_symbols:
-      - PriceDataLoader
-      - create_price_loader
-      - _standardize_columns
-      - _safe_float
-    depends_on: []
-    used_by: [price-forecaster]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "电价数据接入层 — 加载 ZionLuo xlsx，标准化列名，统一时区"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   price-forecaster:
     status: active
     doc: modules/price-forecaster.md
-    paths:
-      - ellectric/pipeline/price_forecaster.py
-    tags:
-      - prediction
-      - lasso
-      - lear
-      - electricity-price
-      - time-series
-    aliases:
-      - LEARForecaster
-      - price-forecast
-    entrypoints:
-      - LEARForecaster
-    main_symbols:
-      - LEARForecaster
-      - add_price_features
-      - train_evaluate
-      - predict
-      - save_model
-      - load_model
-      - plot_price_forecast
-      - plot_coefficients
-      - get_feature_columns
-    depends_on: [price-loader]
-    used_by: [trading-env, shap-explainer, notebooks]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "电价预测与模型对比模块。核心默认模型仍是 LEAR（Lasso + 滞后特征 + 日历特征 + 滚动统计），新增 PyTorch MLP DNN baseline 和山东电价模型对比报告能力。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   statistical-tests:
     status: active
     doc: modules/statistical-tests.md
-    paths:
-      - ellectric/pipeline/statistical_tests.py
-    tags:
-      - statistics
-      - dm-test
-      - gw-test
-      - evaluation
-    aliases:
-      - DM
-      - GW
-      - Diebold-Mariano
-      - Giacomini-White
-    entrypoints:
-      - run_statistical_tests
-    main_symbols:
-      - run_statistical_tests
-    depends_on: []
-    used_by: [notebooks]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "DM/GW 统计检验封装，用于比较预测误差序列是否存在显著差异。主要支持 LEAR 与基准模型对比，也被 price comparison 脚本复用做四模型 pairwise 检验。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
+  service-api:
+    status: active
+    doc: modules/service-api.md
+    needs_review: false
+    review_reasons: []
+    role: "服务层和 CLI 接口模块，负责把 Pydantic 请求/响应 schema 映射到数据加载、预测、回测、解释等 pipeline 能力。FastAPI、CLI、LLM tools 共用同一批 service handlers。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   assume-configs:
     status: active
     doc: modules/assume-configs.md
-    paths:
-      - ellectric/assume/configs/*.yaml
-    tags:
-      - assume
-      - simulation
-      - china-market
-      - yaml
-    aliases:
-      - ASSUME config
-      - china-config
-    entrypoints: []
-    main_symbols: []
-    depends_on: []
-    used_by: [assume-simulation]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "ASSUME 中国省间现货市场 YAML 配置"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   assume-simulation:
     status: active
     doc: modules/assume-simulation.md
-    paths:
-      - ellectric/assume/run_simulation.py
-      - ellectric/assume/verify_simulation.py
-    tags:
-      - assume
-      - simulation
-      - market-clearing
-      - cli
-    aliases:
-      - ASSUME runner
-      - simulation runner
-    entrypoints:
-      - run_simulation.py
-      - verify_simulation.py
-    main_symbols: []
-    depends_on: [assume-configs]
-    used_by: [grafana-dashboard]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "ASSUME 7 天仿真运行 + 结果验证"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   grafana-dashboard:
     status: active
     doc: modules/grafana-dashboard.md
-    paths:
-      - ellectric/assume/grafana/**
-      - ellectric/docker-compose.yml
-    tags:
-      - grafana
-      - visualization
-      - dashboard
-      - timescaledb
-    aliases:
-      - Grafana
-      - dashboard
-    entrypoints: []
-    main_symbols: []
-    depends_on: [assume-simulation]
-    used_by: []
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "Grafana 仪表板可视化 — ASSUME 仿真结果展示"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   epftoolbox-install:
     status: active
     doc: modules/epftoolbox-install.md
-    paths:
-      - ellectric/install_epftoolbox.sh
-    tags:
-      - epftoolbox
-      - benchmark
-      - installation
-    aliases:
-      - epftoolbox
-    entrypoints: []
-    main_symbols: []
-    depends_on: []
-    used_by: []
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "epftoolbox 独立 venv 安装脚本"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   assume-verify:
     status: active
     doc: modules/assume-verify.md
-    paths:
-      - ellectric/scripts/verify_assume.py
-      - ellectric/requirements-assume.txt
-    tags:
-      - assume
-      - verification
-      - installation
-    aliases:
-      - ASSUME verify
-    entrypoints:
-      - verify_assume.py
-    main_symbols:
-      - check_imports
-      - check_version
-      - run_minimal_simulation
-    depends_on: []
-    used_by: []
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "ASSUME 安装验证 — 确保框架可用"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   trading-env:
     status: active
     doc: modules/trading-env.md
-    paths:
-      - ellectric/pipeline/trading_env.py
-    tags:
-      - rl
-      - environment
-      - gymnasium
-      - trading
-    aliases:
-      - ElectricityMarketEnv
-      - trading environment
-    entrypoints:
-      - ElectricityMarketEnv
-      - RewardRegistry
-    main_symbols:
-      - ElectricityMarketEnv
-      - RewardRegistry
-      - RewardFunction
-      - _profit_only
-      - _risk_adjusted
-      - _volume_penalty
-    depends_on: [forecaster, price-forecaster]
-    used_by: [rl-trainer, backtester, notebooks]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "自建 gymnasium.Env 电力市场交易环境。将预测结果（负荷+电价）转化为交易决策的观察/动作/奖励闭环。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   rl-trainer:
     status: active
     doc: modules/rl-trainer.md
-    paths:
-      - ellectric/pipeline/rl_trainer.py
-    tags:
-      - rl
-      - ppo
-      - td3
-      - sac
-      - training
-    aliases:
-      - RLAgentFactory
-      - BaseRLAgent
-    entrypoints:
-      - RLAgentFactory
-      - BaseRLAgent
-    main_symbols:
-      - RLAgentFactory
-      - BaseRLAgent
-      - _SB3Adapter
-    depends_on: [trading-env]
-    used_by: [backtester, notebooks]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "强化学习训练框架，提供 PPO、TD3、SAC 三种算法的统一接口。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   backtester:
     status: active
     doc: modules/backtester.md
-    paths:
-      - ellectric/pipeline/backtester.py
-    tags:
-      - backtesting
-      - pnl
-      - strategy
-      - evaluation
-    aliases:
-      - BacktestRunner
-      - backtest
-    entrypoints:
-      - BacktestRunner
-    main_symbols:
-      - BacktestRunner
-      - baseline_persistence
-      - baseline_mean
-      - oracle_strategy
-    depends_on: [trading-env, rl-trainer]
-    used_by: [notebooks]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "回测引擎，在历史负荷和电价数据上回放交易策略，支持基线策略和 RL 智能体，"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   shap-explainer:
     status: active
     doc: modules/shap-explainer.md
-    paths:
-      - ellectric/pipeline/shap_explainer.py
-    tags:
-      - shap
-      - explainability
-      - xgboost
-      - lear
-      - interpretation
-    aliases:
-      - SHAP
-      - model interpretation
-    entrypoints:
-      - explain_xgboost_sample
-      - explain_lear_sample
-      - feature_importance_ranking
-    main_symbols:
-      - explain_xgboost_sample
-      - explain_lear_sample
-      - feature_importance_ranking
-    depends_on: [forecaster, price-forecaster]
-    used_by: [notebooks]
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "SHAP 模型可解释性模块。使用 TreeExplainer (XGBoost) 和"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   ember-loader:
     status: active
     doc: modules/ember-loader.md
-    paths:
-      - ellectric/pipeline/ember_loader.py
-    tags:
-      - data
-      - ember
-      - climate
-      - hourly
-    aliases:
-      - ember
-      - climate-data
-    entrypoints:
-      - EmberLoader
-    main_symbols:
-      - EmberLoader
-      - _standardize_ember_columns
-    depends_on:
-      - data-loader
-    used_by: []
-    needs_review: true
-    concerns: ["探索性模块，Ember API 可能需要 key"]
-    review_reasons: ["新增模块，需验证 Ember API 可用性"]
+    needs_review: false
+    review_reasons: []
+    role: "Ember Climate 数据加载器 — 中国小时级/日级电力数据探索（实验性）"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
+  renewable-forecaster:
+    status: active
+    doc: modules/renewable-forecaster.md
+    needs_review: false
+    review_reasons: []
+    role: "风/光功率独立预测模块 — 基于 XGBoost 的轻量风电/光伏出力预测，复用 Tier1-4 特征工程，不接入 RL observation space。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+
   notebooks:
     status: active
     doc: modules/notebooks.md
-    paths:
-      - ellectric/notebooks/*.ipynb
-    tags:
-      - jupyter
-      - tutorial
-      - learning
-      - demo
-      - walkthrough
-    aliases:
-      - tutorial
-      - workbook
-    entrypoints: []
-    main_symbols: []
-    depends_on:
-      - data-loader
-      - cleaner
-      - feature-engineer
-      - forecaster
-      - price-loader
-      - price-forecaster
-      - statistical-tests
-      - assume-simulation
-      - trading-env
-      - rl-trainer
-      - backtester
-      - shap-explainer
-    used_by: []
     needs_review: false
-    concerns: []
     review_reasons: []
+    role: "学习入口 — 5 个交互式 Jupyter Notebook，按数据管道顺序由上到下渐进编排：数据获取 → 清洗 → 特征工程 → 预测 → 端到端验证。每个 notebook 包含 Markdown 讲解 + 代码 Cell + 内联可视化 + 思考题，可独立运行（产出 parquet 接力）。"
+    verify_commands: []
+    risk_level: low
+    related_docs: []
+

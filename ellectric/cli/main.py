@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import date, datetime
+from datetime import date
 from typing import Any
 
 import typer
@@ -120,7 +120,7 @@ def _output_table_or_json(
 
 @app.command()
 def forecast(
-    model: str = typer.Argument(..., help="预测模型: load|price|wind|solar"),
+    model: str = typer.Argument(..., help="预测模型: load=XGBoost 负荷预测, price=LEAR 电价预测, price_dnn=PyTorch DNN 电价预测, wind=风电, solar=光伏"),
     horizon: int = typer.Argument(24, help="预测时长（小时跨度；15min 点数由 TimeConfig 决定）"),
     json_output: bool = typer.Option(False, "--json", help="JSON 格式输出"),
 ):

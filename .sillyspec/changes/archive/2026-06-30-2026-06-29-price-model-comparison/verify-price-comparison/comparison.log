@@ -1,0 +1,41 @@
+INFO | Full comparison run starting...
+INFO | Tier 1 特征: hour, day_of_week, month, is_weekend, lag_24h_price, lag_168h_price
+INFO | Tier 2 特征: lag_24h_load, lag_24h_wind, lag_24h_solar, rolling_mean_24h_price, rolling_std_24h_price
+INFO | Tier 3 特征: hour_sin, hour_cos, price_trend_7d
+INFO | price_features(tier3) 完成: 71520 行, 14 个特征
+WARNING | price_da 含 53424 行 (74.7%) NaN/Inf 值，已丢弃
+WARNING | 特征列含 576 行 NaN/Inf，已丢弃
+INFO |   Fold 1: MAE=88.93, 训练 2824 行 → 测试 2920 行
+INFO |   Fold 2: MAE=102.55, 训练 5744 行 → 测试 2920 行
+INFO |   Fold 3: MAE=102.70, 训练 8664 行 → 测试 2920 行
+INFO |   Fold 4: MAE=72.75, 训练 11584 行 → 测试 2920 行
+INFO |   Fold 5: MAE=95.69, 训练 14504 行 → 测试 2920 行
+INFO | LEAR 训练完成: MAE=92.53, RMSE=126.34
+INFO | Tier 1 特征: hour, day_of_week, month, is_weekend, lag_24h_price, lag_168h_price
+INFO | Tier 2 特征: lag_24h_load, lag_24h_wind, lag_24h_solar, rolling_mean_24h_price, rolling_std_24h_price
+INFO | Tier 3 特征: hour_sin, hour_cos, price_trend_7d
+INFO | price_features(tier3) 完成: 71520 行, 14 个特征
+WARNING | price_da 含 53424 行 (74.7%) NaN/Inf 值，已丢弃
+INFO |   Fold 1: MAE=371.39, train 2824 rows
+INFO |   Fold 2: MAE=320.12, train 5744 rows
+INFO |   Fold 3: MAE=275.57, train 8664 rows
+INFO |   Fold 4: MAE=328.74, train 11584 rows
+INFO |   Fold 5: MAE=329.14, train 14504 rows
+INFO | Model evaluation complete. Metrics: {'lear': {'mae': 92.52617858803323, 'rmse': 126.34001831991371, 'mape': 117.09216532161729}, 'dnn': {'mae': 324.9922582235985, 'rmse': 361.29938565798835, 'mape': 100.67456257513719}, 'persistence': {'mae': 131.11918958333334, 'rmse': 188.82688617026452, 'mape': 231.508951214036}, 'weekly_avg': {'mae': 97.13806045145331, 'rmse': 143.7424831256067, 'mape': 103.91549842298757}}
+WARNING | Error series lengths differ: 14600 vs 3360, truncating to 3360
+WARNING | Error series lengths differ: 14600 vs 3360, truncating to 3360
+WARNING | Error series lengths differ: 14600 vs 3696, truncating to 3696
+WARNING | Error series lengths differ: 14600 vs 3696, truncating to 3696
+WARNING | Error series lengths differ: 14600 vs 3360, truncating to 3360
+WARNING | Error series lengths differ: 14600 vs 3360, truncating to 3360
+WARNING | Error series lengths differ: 14600 vs 3696, truncating to 3696
+WARNING | Error series lengths differ: 14600 vs 3696, truncating to 3696
+WARNING | Error series lengths differ: 3360 vs 3696, truncating to 3360
+WARNING | Error series lengths differ: 3360 vs 3696, truncating to 3360
+INFO | Statistical tests complete.
+INFO | Result container built.
+INFO | JSON report saved to .sillyspec/changes/2026-06-29-price-model-comparison/verify-price-comparison/comparison.json
+INFO | Markdown report saved to .sillyspec/changes/2026-06-29-price-model-comparison/verify-price-comparison/comparison.md
+INFO | HTML residual report saved to .sillyspec/changes/2026-06-29-price-model-comparison/verify-price-comparison/residuals.html
+INFO | All reports generated: {'json': '.sillyspec/changes/2026-06-29-price-model-comparison/verify-price-comparison/comparison.json', 'md': '.sillyspec/changes/2026-06-29-price-model-comparison/verify-price-comparison/comparison.md', 'html': '.sillyspec/changes/2026-06-29-price-model-comparison/verify-price-comparison/residuals.html'}
+INFO | Reports saved to .sillyspec/changes/2026-06-29-price-model-comparison/verify-price-comparison
