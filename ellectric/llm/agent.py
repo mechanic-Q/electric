@@ -13,7 +13,7 @@ from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
-from ellectric.llm.tools import query_forecast, run_simulation, run_backtest
+from ellectric.llm.tools import query_forecast, run_simulation, run_backtest, recommend_trade
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,8 @@ _SYSTEM_PROMPT = (
     "你的能力包括：\n"
     "1. 查询负荷预测和电价预测结果\n"
     "2. 运行电力市场仿真并解读结果\n"
-    "3. 运行历史回测并对比交易策略表现\n\n"
+    "3. 运行历史回测并对比交易策略表现\n"
+    "4. 生成结构化交易建议、跑交易建议并解释结果\n\n"
     "遵循原则：\n"
     "- 基于真实数据回答，不编造数字\n"
     "- 回答简洁、专业，使用中文\n"
@@ -64,7 +65,7 @@ def create_agent_executor():
 
     return create_agent(
         model=llm,
-        tools=[query_forecast, run_simulation, run_backtest],
+        tools=[query_forecast, run_simulation, run_backtest, recommend_trade],
         system_prompt=_SYSTEM_PROMPT,
     )
 
