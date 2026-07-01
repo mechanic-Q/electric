@@ -1,13 +1,13 @@
 {
   "status": "ok",
   "metadata": {
-    "generated_at": "2026-06-30T15:12:08Z",
+    "generated_at": "2026-07-01T05:11:22Z",
     "data_source": "shandong",
     "data_version": "1",
-    "weather_source": "degraded",
-    "input_rows": 96,
+    "weather_source": "cache",
+    "input_rows": 71520,
     "report_scope": "full_dataset",
-    "log_path": null,
+    "log_path": "ellectric/reports/weather_tier4/weather_tier4_impact.log",
     "time_config": {
       "freq": "15min",
       "points_per_day": 96
@@ -16,61 +16,98 @@
     "end": null
   },
   "weather_quality": {
-    "weather_source": "degraded",
-    "weather_columns": [],
-    "weather_column_count": 0,
-    "weather_features_available": false,
-    "missing_rate_by_column": {},
+    "weather_source": "cache",
+    "weather_columns": [
+      "temp_jinan",
+      "ghi_jinan",
+      "wind_speed_jinan",
+      "precip_jinan",
+      "humidity_jinan",
+      "cloud_jinan",
+      "temp_qingdao",
+      "ghi_qingdao",
+      "wind_speed_qingdao",
+      "precip_qingdao",
+      "humidity_qingdao",
+      "cloud_qingdao"
+    ],
+    "weather_column_count": 12,
+    "weather_features_available": true,
+    "missing_rate_by_column": {
+      "temp_jinan": 0.0,
+      "ghi_jinan": 0.0,
+      "wind_speed_jinan": 0.0,
+      "precip_jinan": 0.0,
+      "humidity_jinan": 0.0,
+      "cloud_jinan": 0.0,
+      "temp_qingdao": 0.0,
+      "ghi_qingdao": 0.0,
+      "wind_speed_qingdao": 0.0,
+      "precip_qingdao": 0.0,
+      "humidity_qingdao": 0.0,
+      "cloud_qingdao": 0.0
+    },
     "overall_missing_rate": 0.0,
     "time_range": {
-      "start": "2026-01-01 00:00:00+00:00",
-      "end": "2026-01-01 23:45:00+00:00",
+      "start": "2024-01-01 00:15:00+00:00",
+      "end": "2026-01-15 00:00:00+00:00",
       "freq": "15min"
     },
     "timezone": "UTC",
     "coverage": {
-      "total_points": 96,
-      "weather_covered_points": 0,
-      "coverage_ratio": 0.0
+      "total_points": 71520,
+      "weather_covered_points": 71520,
+      "coverage_ratio": 1.0
     },
-    "notes": [
-      "Weather source is degraded: no weather data available",
-      "No weather columns found in feature_df after merge"
-    ]
+    "notes": []
   },
   "experiments": {
     "baseline_tier3": {
-      "feature_count": 30,
-      "input_rows": 96,
-      "sample_count": 86,
+      "feature_count": 11,
+      "input_rows": 71520,
+      "sample_count": 59600,
       "metrics": {
-        "mae": 10.0,
-        "rmse": 15.0,
-        "mape": 5.0
+        "mae": 3368.165921151426,
+        "rmse": 4958.650572717306,
+        "mape": 5.182110487617698
       }
     },
     "weather_tier4": {
-      "feature_count": 35,
-      "input_rows": 96,
-      "sample_count": 0,
+      "feature_count": 23,
+      "input_rows": 71520,
+      "sample_count": 59600,
       "metrics": {
-        "mae": null,
-        "rmse": null,
-        "mape": null
-      }
+        "mae": 2661.7840560355494,
+        "rmse": 4057.299026452132,
+        "mape": 4.034560349014898
+      },
+      "weather_columns": [
+        "temp_jinan",
+        "ghi_jinan",
+        "wind_speed_jinan",
+        "precip_jinan",
+        "humidity_jinan",
+        "cloud_jinan",
+        "temp_qingdao",
+        "ghi_qingdao",
+        "wind_speed_qingdao",
+        "precip_qingdao",
+        "humidity_qingdao",
+        "cloud_qingdao"
+      ]
     },
     "delta": {
-      "mae_delta": null,
-      "rmse_delta": null,
-      "mape_delta": null,
-      "mae_delta_pct": null
+      "mae_delta": -706.3818651158767,
+      "rmse_delta": -901.3515462651744,
+      "mape_delta": -1.1475501386028002,
+      "mae_delta_pct": -20.97230010789956
     },
     "notes": [
-      "No weather data available"
+      "Weather X isolated to tier3 + weather columns; raw Shandong columns excluded"
     ]
   },
   "interpretation": {
     "hard_threshold_applied": false,
-    "summary": "Ablation: degraded (weather features unavailable or training failed)"
+    "summary": "Ablation: baseline MAE=3368.17, weather MAE=2661.78, delta=-706.38 (-20.97%)"
   }
 }
