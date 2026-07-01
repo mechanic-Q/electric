@@ -34,6 +34,9 @@ module_id: backtester
 - 不修改传入 DataFrame
 - 缺失值: ffill + bfill
 
+## 变更索引
+- 2026-07-01-shandong-rl-evaluation | 新增统一评估层：英文指标 `profit_factor`/`volatility`/`oracle_gap`/`baseline_delta`/`rank`/`status`；`write_evaluation_report` 产出 `evaluation_report.json`/`evaluation_metrics.csv`/`evaluation_report.md`/`cumulative_pnl.html`；旧 `compare()` 中文列名保留。
+
 ## 人工备注
 
 <!-- MANUAL_NOTES_START -->

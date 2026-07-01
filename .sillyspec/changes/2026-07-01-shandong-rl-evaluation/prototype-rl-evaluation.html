@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="author" content="lmr">
+  <meta name="created_at" content="2026-07-01 00:00:00">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shandong RL Evaluation Prototype</title>
+  <style>
+    body { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; margin: 24px; background: #f7f7f2; color: #1f2933; }
+    h1, h2 { margin: 0 0 12px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 18px 0; }
+    .card { border: 2px solid #1f2933; background: white; padding: 14px; box-shadow: 4px 4px 0 #c9d6df; }
+    .wide { grid-column: 1 / -1; }
+    .flow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .node { border: 1px solid #1f2933; padding: 10px; background: #eef5ff; }
+    .arrow { font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { border: 1px solid #1f2933; padding: 8px; text-align: left; }
+    th { background: #e5e7eb; }
+    button { font: inherit; border: 2px solid #1f2933; background: #fff; padding: 8px 10px; margin-right: 8px; cursor: pointer; }
+    button.active { background: #1f2933; color: white; }
+    .panel { display: none; margin-top: 12px; white-space: pre-wrap; border: 1px dashed #1f2933; padding: 12px; background: #fff; }
+    .panel.active { display: block; }
+  </style>
+</head>
+<body>
+  <h1>山东 RL 策略统一对比评估</h1>
+  <p>目标：同一数据切分、同一回测路径、同一指标口径，对比 PPO / SAC / TD3 与 persistence / mean / oracle。</p>
+
+  <section class="card wide">
+    <h2>评估流水线</h2>
+    <div class="flow">
+      <div class="node">Shandong 15min data</div><div class="arrow">→</div>
+      <div class="node">EvaluationProtocol</div><div class="arrow">→</div>
+      <div class="node">Strategy Registry</div><div class="arrow">→</div>
+      <div class="node">BacktestRunner</div><div class="arrow">→</div>
+      <div class="node">Metrics</div><div class="arrow">→</div>
+      <div class="node">Report Builder</div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Protocol</h2>
+      <p>固定 train/test 时间窗、seed、timesteps、评估策略列表、输出目录。</p>
+    </div>
+    <div class="card">
+      <h2>Strategies</h2>
+      <p>baseline: persistence / mean / oracle<br>RL: PPO / SAC / TD3 loaded model or trained agent</p>
+    </div>
+    <div class="card">
+      <h2>Reports</h2>
+      <p>输出 markdown / json / csv / chart 到 ellectric/reports/rl_full_dataset/。</p>
+    </div>
+  </section>
+
+  <section class="card wide">
+    <h2>指标表草案</h2>
+    <table>
+      <thead>
+        <tr><th>strategy</th><th>total_pnl</th><th>sharpe</th><th>win_rate</th><th>max_drawdown</th><th>oracle_gap</th><th>status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>oracle</td><td>upper bound</td><td>—</td><td>—</td><td>—</td><td>0%</td><td>baseline</td></tr>
+        <tr><td>persistence</td><td>baseline</td><td>computed</td><td>computed</td><td>computed</td><td>computed</td><td>baseline</td></tr>
+        <tr><td>ppo</td><td>computed</td><td>computed</td><td>computed</td><td>computed</td><td>computed</td><td>rl</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card wide">
+    <h2>交互确认</h2>
+    <button class="active" data-panel="smoke">Smoke Run</button>
+    <button data-panel="full">Full Run</button>
+    <button data-panel="failure">Failure Diagnostics</button>
+    <div id="smoke" class="panel active">小样本/短 timestep：验证数据加载、策略注册、指标计算、报告生成。</div>
+    <div id="full" class="panel">完整山东数据：加载训练产物，执行全窗口回测，生成最终 markdown/json/csv/chart。</div>
+    <div id="failure" class="panel">任一策略失败不阻断整体报告；记录 error、artifact、fallback 与可复现命令。</div>
+  </section>
+
+  <script>
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        button.classList.add('active');
+        document.getElementById(button.dataset.panel).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

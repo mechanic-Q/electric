@@ -35,6 +35,9 @@ module_id: rl-trainer
 - predict() 前必须 train() → RuntimeError
 - save() 目标路径不存在时自动创建目录
 
+## 变更索引
+- 2026-07-01-shandong-rl-evaluation | 评估层通过 `RLAgentFactory.load()` 加载 checkpoint 供 `BacktestRunner.replay()`；评估路径不调用 `.learn()`，checkpoint 缺失时 `status=error` 不阻断。
+
 ## 人工备注
 
 <!-- MANUAL_NOTES_START -->

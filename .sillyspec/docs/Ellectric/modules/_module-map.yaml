@@ -207,3 +207,17 @@ modules:
     risk_level: low
     related_docs: []
 
+  rl-evaluation:
+    status: active
+    doc: modules/rl-evaluation.md
+    needs_review: false
+    review_reasons: []
+    role: "评估框架模块 — 提供评估协议（EvaluationProtocol）、策略评估（evaluate_baselines / evaluate_rl_agents）、英文指标表（compute_strategy_metrics）和评估报告生成（write_evaluation_report / generate_cumulative_pnl_html）。纯函数，不依赖 ASSUME 或真实市场环境。"
+    verify_commands:
+      - python -m pytest tests/test_rl_evaluation.py -q
+    risk_level: low
+    related_docs:
+      - modules/backtester.md
+      - modules/rl-trainer.md
+      - modules/trading-env.md
+

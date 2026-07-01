@@ -36,6 +36,9 @@ module_id: trading-env
 - step() 前必须 reset()
 - 动作空间自动 clip 到 [0, 1]
 
+## 变更索引
+- 2026-07-01-shandong-rl-evaluation | D-003@v1: reward/action/obs 不变，环境作为评估框架固定输入。评估层仅复用 `reset()`/`step()`。
+
 ## 人工备注
 
 <!-- MANUAL_NOTES_START -->

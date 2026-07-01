@@ -223,10 +223,17 @@ def train_one(algo: str, env, *, timesteps: int, seed: int,
 def run_backtest(
     train_results: dict, test_load: pd.DataFrame, test_price: pd.DataFrame,
     *, test_start: str, test_end: str, checkpoint_dir: str, report_dir: str,
+    train_start: str = "", train_end: str = "",
+    tier: str = "tier4", seed: int = 42, timesteps: int = 50000,
 ) -> dict:
     """返回 {metrics: list[dict], cumulative_pnl_html_path: str}."""
     from ellectric.pipeline.backtester import BacktestRunner, SUPPORTED_STRATEGIES
     from ellectric.pipeline.rl_trainer import RLAgentFactory
+    from ellectric.pipeline.rl_evaluation import (
+        EvaluationProtocol, StrategyEvaluation,
+        evaluate_baselines, evaluate_rl_agents,
+        compute_strategy_metrics,
+    )
 
     env_factory = lambda: make_env(test_load, test_price)
     runner = BacktestRunner(env_factory)
@@ -274,7 +281,47 @@ def run_backtest(
         except Exception as e:
             logger.warning("回测对比/绘图失败: %s", e)
 
-    return {"metrics": metrics_list, "cumulative_pnl_html_path": cumulative_pnl_html}
+    # 统一评估通路
+    _protocol: EvaluationProtocol | None = None
+    _evaluations: dict[str, StrategyEvaluation] | None = None
+    _metrics_df: pd.DataFrame | None = None
+    try:
+        _protocol = EvaluationProtocol(
+            train_start=train_start,
+            train_end=train_end,
+            test_start=test_start,
+            test_end=test_end,
+            algos=tuple(sorted(train_results.keys())),
+            baselines=tuple(SUPPORTED_STRATEGIES),
+            seed=seed,
+            timesteps=timesteps,
+            tier=tier,
+            checkpoint_dir=checkpoint_dir,
+            report_dir=report_dir,
+        )
+        _evaluations = {}
+        _ev = evaluate_baselines(
+            runner, SUPPORTED_STRATEGIES, test_load, test_price,
+            test_start, test_end,
+        )
+        _evaluations.update(_ev)
+        ok_algos = [a for a, v in train_results.items() if v.get("status") == "ok"]
+        if ok_algos:
+            _ev = evaluate_rl_agents(
+                runner, ok_algos, checkpoint_dir,
+                test_load, test_price, test_start, test_end,
+            )
+            _evaluations.update(_ev)
+        _metrics_df = compute_strategy_metrics(_evaluations)
+    except Exception as exc:
+        logger.warning("统一评估通路异常: %s", exc)
+
+    result = {"metrics": metrics_list, "cumulative_pnl_html_path": cumulative_pnl_html}
+    if _protocol is not None:
+        result["_evaluation_protocol"] = _protocol
+        result["_evaluations"] = _evaluations
+        result["_evaluation_metrics_df"] = _metrics_df
+    return result
 
 
 def write_reports(report: dict, report_dir: str | Path) -> tuple[str, str]:
@@ -447,6 +494,8 @@ def main(argv: list[str] | None = None) -> int:
         training, test_load, test_price,
         test_start=args.test_start, test_end=args.test_end,
         checkpoint_dir=args.checkpoint_dir, report_dir=args.report_dir,
+        train_start=args.train_start, train_end=args.train_end,
+        tier=args.tier, seed=args.seed, timesteps=args.timesteps,
     )
 
     report = {
@@ -467,6 +516,22 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as e:
         logger.error("报告写入失败: %s", e)
         return 2
+
+    # 统一评估报告
+    _proto = bt_results.get("_evaluation_protocol")
+    _evals = bt_results.get("_evaluations")
+    _mdf = bt_results.get("_evaluation_metrics_df")
+    if _proto is not None and _evals is not None and _mdf is not None:
+        try:
+            from ellectric.pipeline.rl_evaluation import write_evaluation_report
+            write_evaluation_report(
+                _proto, training, _evals, _mdf,
+                args.report_dir,
+                cumulative_pnl_html_path=bt_results.get("cumulative_pnl_html_path", ""),
+            )
+            logger.info("统一评估报告已写入: %s/evaluation_report.*", args.report_dir)
+        except Exception as e:
+            logger.warning("统一评估报告写入失败: %s", e)
 
     logger.info("✅ 完成。报告: %s/training_report.{json,md}", args.report_dir)
     return 0
