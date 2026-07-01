@@ -144,8 +144,10 @@ def forecast(
     if result.metrics and result.metrics.mae is not None:
         headers += ["MAE", "RMSE", "MAPE"]
         m = result.metrics
+        def _fmt(val):
+            return f"{val:.2f}" if val is not None else "N/A"
         rows = [
-            r + [f"{m.mae:.2f}", f"{m.rmse:.2f}", f"{m.mape:.2f}"]
+            r + [f"{m.mae:.2f}", f"{m.rmse:.2f}", _fmt(m.mape)]
             for r in rows
         ]
 
