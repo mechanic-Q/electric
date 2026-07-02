@@ -318,3 +318,86 @@ class RecommendResponse(BaseModel):
     confidence: Literal["high", "medium", "low"] = Field(description="总体置信度")
     evidence: dict = Field(default_factory=dict, description="证据摘要")
     disclaimer: str = Field(description="学习用途免责声明")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Catalog (Capabilities / Datasets / Reports)
+# ═══════════════════════════════════════════════════════════════════
+
+
+CapabilityCategory = Literal[
+    "forecast",
+    "simulation",
+    "backtest",
+    "explain",
+    "trade",
+    "report",
+    "dataset",
+]
+
+
+class CapabilityItem(BaseModel):
+    """能力目录项：一个可问/可运行能力的元信息，供 WebUI 与 Agent 引导。"""
+
+    id: str = Field(description="稳定能力 ID，如 forecast_load、report_price_comparison")
+    title: str = Field(description="中文标题")
+    category: CapabilityCategory = Field(description="能力分类")
+    description: str = Field(description="能力说明")
+    example_questions: list[str] = Field(
+        default_factory=list, description="示例问题（AI 引导用）"
+    )
+    endpoint: str | None = Field(default=None, description="对应 REST 端点，若适用")
+    tool_name: str | None = Field(default=None, description="对应 LLM tool 名称，若适用")
+    supports_offline_fallback: bool = Field(
+        default=False, description="是否支持模型缺失时的离线报告 fallback"
+    )
+    available: bool = Field(default=True, description="能力当前是否可用")
+
+
+class DatasetInfo(BaseModel):
+    """数据集元信息：数据源标识、时间范围、字段等，用于面板展示与 Agent 查询。"""
+
+    id: str = Field(description="数据源 ID，如 shandong / owid / chinese_hourly")
+    title: str = Field(description="中文标题")
+    description: str = Field(description="来源与用途说明")
+    source: str = Field(description="来源标签，如 shandong / owid / chinese")
+    frequency: str | None = Field(default=None, description="时间频率，如 15min / hourly / daily")
+    rows: int | None = Field(default=None, description="行数（若可获取）")
+    start: str | None = Field(default=None, description="起始时间 ISO 字符串")
+    end: str | None = Field(default=None, description="结束时间 ISO 字符串")
+    columns: list[str] = Field(default_factory=list, description="字段列表")
+    available: bool = Field(default=True, description="数据是否可加载")
+    note: str | None = Field(default=None, description="补充说明或错误摘要")
+
+
+ReportStatus = Literal["ok", "missing", "error", "degraded"]
+
+
+class ReportSummary(BaseModel):
+    """离线报告摘要：ID、标题、类型、状态、关键指标、资产路径。"""
+
+    id: str = Field(description="稳定报告 ID，如 weather_tier4/validation")
+    title: str = Field(description="中文标题")
+    report_type: str = Field(description="报告类型：weather_tier4/renewable/price_comparison/rl_evaluation/full_real_run/recommend")
+    status: ReportStatus = Field(description="报告状态")
+    generated_at: str | None = Field(default=None, description="生成时间 ISO 字符串")
+    summary: str = Field(default="", description="中文摘要")
+    metrics: dict[str, float | int | str] = Field(
+        default_factory=dict, description="标量关键指标"
+    )
+    metrics_meta: dict[str, dict[str, str]] = Field(
+        default_factory=dict,
+        description="指标元信息 {metric_key: {label, unit, description}}",
+    )
+    paths: dict[str, str] = Field(
+        default_factory=dict, description="项目内相对路径 {json,md,html,csv}"
+    )
+
+
+class ReportDetail(ReportSummary):
+    """离线报告详情：在摘要之上附带 content（可能是 JSON dict 或纯文本）。"""
+
+    content: dict | str | None = Field(
+        default=None, description="报告主体内容；JSON 报告为 dict，其他为文本"
+    )
+

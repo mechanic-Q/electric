@@ -732,3 +732,132 @@ def _build_summary(
     else:
         lines.append("当前无活跃交易信号，建议观望")
     return "\n".join(lines)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 6. Catalog handlers (capabilities / datasets / reports) + forecast fallback
+# ═══════════════════════════════════════════════════════════════════
+
+
+_MODEL_MISSING_HINTS = (
+    "model",
+    "joblib",
+    ".zip",
+    "checkpoint",
+    "load_model",
+    "未找到",
+    "文件不存在",
+    "文件未找到",
+)
+
+_MODEL_TO_REPORT: dict[str, str] = {
+    "load": "weather_tier4/validation",
+    "price": "price_comparison/latest",
+    "price_dnn": "price_comparison/latest",
+    "wind": "renewable_forecaster/validation",
+    "solar": "renewable_forecaster/validation",
+}
+
+
+def _looks_like_model_missing(exc: BaseException) -> bool:
+    if isinstance(exc, FileNotFoundError):
+        return True
+    msg = str(exc).lower()
+    return any(hint in msg for hint in _MODEL_MISSING_HINTS)
+
+
+def _resolve_price_comparison_id() -> str | None:
+    """价格模型对比报告使用 timestamped 目录；选最新一个作为 fallback 目标。"""
+    from ellectric.service import catalog as _catalog
+
+    latest = None
+    for item in _catalog.list_reports(report_type="price_comparison"):
+        if item.status != "ok":
+            continue
+        if latest is None or item.id > latest.id:
+            latest = item
+    return latest.id if latest else None
+
+
+def list_capabilities():
+    """委托至 catalog registry。"""
+    from ellectric.service import catalog as _catalog
+
+    return _catalog.list_capabilities()
+
+
+def list_datasets():
+    """委托至 catalog registry。"""
+    from ellectric.service import catalog as _catalog
+
+    return _catalog.list_datasets()
+
+
+def list_reports(report_type: str | None = None):
+    """委托至 catalog registry。"""
+    from ellectric.service import catalog as _catalog
+
+    return _catalog.list_reports(report_type=report_type)
+
+
+def get_report(report_id: str):
+    """委托至 catalog registry；异常降级为 status=error。"""
+    from ellectric.service import catalog as _catalog
+    from ellectric.service.schemas import ReportDetail
+
+    try:
+        return _catalog.get_report(report_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("get_report failed for %s: %s", report_id, exc)
+        return ReportDetail(
+            id=report_id,
+            title="",
+            report_type="unknown",
+            status="error",
+            summary=f"读取报告失败: {type(exc).__name__}: {exc}",
+        )
+
+
+def build_forecast_fallback(model_type: str, error: BaseException) -> dict | None:
+    """当实时预测因模型缺失失败时，构造结构化 fallback dict。
+
+    返回 None 表示：非模型缺失类错误，或找不到匹配的离线报告。
+    """
+    if not _looks_like_model_missing(error):
+        return None
+    report_id = _MODEL_TO_REPORT.get(model_type)
+    if model_type in ("price", "price_dnn"):
+        resolved = _resolve_price_comparison_id()
+        if resolved:
+            report_id = resolved
+    if report_id is None:
+        return None
+    try:
+        detail = get_report(report_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("fallback get_report failed: %s", exc)
+        return None
+    if detail.status not in ("ok", "degraded"):
+        return None
+    note = (
+        f"实时 {model_type} 预测不可用（{type(error).__name__}），"
+        "回退到最近离线报告结论。"
+    )
+    if detail.status == "degraded":
+        note += " 注意：该离线报告标记为 degraded，指标可能不完整。"
+    payload: dict = {
+        "status": "fallback",
+        "source": "offline_report",
+        "fallback_reason": "model_missing",
+        "report_status": detail.status,
+        "model_type": model_type,
+        "report_id": detail.id,
+        "report_title": detail.title,
+        "summary": detail.summary,
+        "metrics": detail.metrics,
+        "paths": detail.paths,
+        "note": note,
+    }
+    if detail.metrics_meta:
+        payload["metrics_meta"] = detail.metrics_meta
+    return payload
