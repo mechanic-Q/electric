@@ -112,11 +112,106 @@ body::after {
 #app {
   position: relative;
   z-index: 1;
+  height: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) 380px;
+  gap: 18px;
+  height: 100%;
+}
+
+.chat {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   height: 100%;
-  max-width: 900px;
-  margin: 0 auto;
+}
+
+.data {
+  margin: 18px 0;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: rgba(15, 22, 41, 0.82);
+  backdrop-filter: blur(16px);
+}
+
+.data-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-section:last-child { border-bottom: none; }
+
+.data-section h3 {
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-card, .result-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(20, 30, 51, 0.72);
+  padding: 12px;
+}
+
+.panel-card-title, .result-title {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.panel-card-meta, .result-meta, .source-note {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.result-card {
+  margin-top: 12px;
+}
+
+.metric-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.metric-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.metric-table td:first-child {
+  color: var(--text-secondary);
+}
+
+.metric-table td:last-child {
+  color: var(--accent);
+  text-align: right;
+}
+
+.source-note {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 8px;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -596,8 +691,11 @@ footer {
 /* ═══════════════════════════════════════════════════════════════
    Responsive
    ═══════════════════════════════════════════════════════════════ */
-@media (max-width: 640px) {
-  #app { max-width: 100%; }
+@media (max-width: 860px) {
+  #app { max-width: 100%; padding: 0; }
+  .shell { display: block; }
+  .chat { height: 100%; }
+  .data { display: none; }
 
   header { padding: 12px 16px; }
   .header-subtitle { display: none; }
@@ -614,6 +712,8 @@ footer {
 <body>
 
 <div id="app">
+  <div class="shell">
+    <main class="chat">
   <!-- ═══════════════ HEADER ═══════════════ -->
   <header>
     <div class="header-icon">⚡</div>
@@ -659,6 +759,35 @@ footer {
       <kbd>Enter</kbd> 发送 &nbsp; <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行
     </div>
   </footer>
+    </main>
+
+    <aside class="data" aria-label="数据面板">
+      <section class="data-section">
+        <h3>Capabilities</h3>
+        <div id="capabilityPanel" class="panel-list">
+          <div class="panel-card"><div class="panel-card-meta">加载能力清单中…</div></div>
+        </div>
+      </section>
+      <section class="data-section">
+        <h3>Datasets</h3>
+        <div id="datasetPanel" class="panel-list">
+          <div class="panel-card"><div class="panel-card-meta">加载数据集元信息中…</div></div>
+        </div>
+      </section>
+      <section class="data-section">
+        <h3>Reports</h3>
+        <div id="reportPanel" class="panel-list">
+          <div class="panel-card"><div class="panel-card-meta">加载报告清单中…</div></div>
+        </div>
+      </section>
+      <section class="data-section">
+        <h3>Latest Tool Result</h3>
+        <div id="resultPanel" class="panel-list">
+          <div class="panel-card"><div class="panel-card-meta">工具结果会同步到这里。</div></div>
+        </div>
+      </section>
+    </aside>
+  </div>
 </div>
 
 <script>
@@ -683,6 +812,10 @@ const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
 const welcomeState = document.getElementById('welcomeState');
+const capabilityPanel = document.getElementById('capabilityPanel');
+const datasetPanel = document.getElementById('datasetPanel');
+const reportPanel = document.getElementById('reportPanel');
+const resultPanel = document.getElementById('resultPanel');
 
 // ── State ──
 let isStreaming = false;
@@ -757,6 +890,104 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function pickEventName(event) {
+  return event.name || event.tool || 'TOOL';
+}
+
+function pickEventKey(event) {
+  return event.tool_id || event.name || event.tool || 'TOOL';
+}
+
+function renderPanelCard(item, meta) {
+  return `
+    <div class="panel-card">
+      <div class="panel-card-title">${escapeHtml(item.title || item.id || item.name || '未命名')}</div>
+      <div class="panel-card-meta">${escapeHtml(meta || item.description || item.summary || '')}</div>
+    </div>
+  `;
+}
+
+function renderMetrics(metrics, metricsMeta) {
+  if (!metrics || typeof metrics !== 'object' || Array.isArray(metrics)) return '';
+  const rows = Object.entries(metrics).slice(0, 8).map(([key, value]) => {
+    const meta = metricsMeta && metricsMeta[key];
+    const label = meta ? meta.label || key : key;
+    const unit = meta ? meta.unit || '' : '';
+    const display = unit ? `${escapeHtml(String(value))} ${escapeHtml(unit)}` : escapeHtml(String(value));
+    return `<tr><td>${escapeHtml(label)}</td><td>${display}</td></tr>`;
+  }).join('');
+  if (!rows) return '';
+  return `<table class="metric-table"><tbody>${rows}</tbody></table>`;
+}
+
+function renderResultCard(toolName, payload, content) {
+  const data = payload && typeof payload === 'object' ? payload : null;
+  const title = data?.report_title || data?.title || data?.id || toolName;
+  const summary = data?.summary || data?.note || (content || '').slice(0, 240);
+  const source = data?.source || data?.status || 'tool_result';
+  const fallback = data?.fallback_reason ? ` · ${data.fallback_reason}` : '';
+  const degraded = data?.report_status === 'degraded' ? ' · 报告降级' : '';
+  return `
+    <div class="result-card">
+      <div class="result-title">${escapeHtml(title)}</div>
+      <div class="result-meta">${escapeHtml(summary || '')}</div>
+      ${renderMetrics(data?.metrics, data?.metrics_meta)}
+      <div class="source-note">source=${escapeHtml(source)}${escapeHtml(fallback)}${escapeHtml(degraded)}</div>
+    </div>
+  `;
+}
+
+function appendToolResult(event) {
+  if (!currentAssistantBubble) {
+    const row = createMessageRow('assistant');
+    currentAssistantBubble = row.querySelector('.bubble');
+    currentAssistantBubble.dataset.raw = '';
+  }
+  const html = renderResultCard(pickEventName(event), event.payload, event.content || '');
+  const cards = (currentAssistantBubble.dataset.cards || '') + html;
+  currentAssistantBubble.dataset.cards = cards;
+  currentAssistantBubble.innerHTML = marked.parse(currentAssistantBubble.dataset.raw || '') + cards;
+  if (resultPanel) resultPanel.innerHTML = html;
+  scrollToBottom();
+}
+
+async function fetchJson(path) {
+  const resp = await fetch(path);
+  if (!resp.ok) throw new Error(`${path} HTTP ${resp.status}`);
+  return resp.json();
+}
+
+function renderCatalogPanel(panel, items, metaBuilder) {
+  if (!panel) return;
+  panel.innerHTML = items.map((item) => renderPanelCard(item, metaBuilder(item))).join('');
+}
+
+function renderSuggestionChips(items) {
+  const chips = document.querySelector('.suggestion-chips');
+  if (!chips || !items.length) return;
+  const preferred = ['forecast_load', 'forecast_price', 'backtest_strategy', 'reports_offline', 'datasets_info'];
+  const selected = preferred.map((id) => items.find((item) => item.id === id)).filter(Boolean);
+  chips.innerHTML = selected.flatMap((item) => item.example_questions.slice(0, 1).map((question) => (
+    `<button class="chip" data-query="${escapeHtml(question)}">${escapeHtml(item.title)}</button>`
+  ))).join('');
+}
+
+async function loadDataPanel() {
+  try {
+    const [capabilities, datasets, reports] = await Promise.all([
+      fetchJson('/capabilities'),
+      fetchJson('/datasets'),
+      fetchJson('/reports'),
+    ]);
+    renderCatalogPanel(capabilityPanel, capabilities, (item) => `${item.category} · ${item.endpoint || item.tool_name || ''}`);
+    renderCatalogPanel(datasetPanel, datasets, (item) => `${item.frequency || 'unknown'} · ${item.rows ?? 'unknown'} rows · ${item.source}`);
+    renderCatalogPanel(reportPanel, reports.slice(0, 6), (item) => `${item.report_type} · ${item.status}`);
+    renderSuggestionChips(capabilities);
+  } catch (err) {
+    if (capabilityPanel) capabilityPanel.innerHTML = renderPanelCard({ title: '目录加载失败' }, err.message);
+  }
+}
+
 // ── Streaming: append token to current bubble ──
 function appendToken(token) {
   if (!currentAssistantBubble) {
@@ -768,15 +999,15 @@ function appendToken(token) {
   // Append raw markdown — render on done
   const current = currentAssistantBubble.dataset.raw || '';
   currentAssistantBubble.dataset.raw = current + token;
-  // Render markdown progressively
-  currentAssistantBubble.innerHTML = marked.parse(currentAssistantBubble.dataset.raw) + '<span class="streaming-cursor"></span>';
+  const cards = currentAssistantBubble.dataset.cards || '';
+  currentAssistantBubble.innerHTML = marked.parse(currentAssistantBubble.dataset.raw) + cards + '<span class="streaming-cursor"></span>';
   scrollToBottom();
 }
 
 function finishAssistantMessage() {
   if (!currentAssistantBubble) return;
   // Final render
-  currentAssistantBubble.innerHTML = marked.parse(currentAssistantBubble.dataset.raw || '');
+  currentAssistantBubble.innerHTML = marked.parse(currentAssistantBubble.dataset.raw || '') + (currentAssistantBubble.dataset.cards || '');
   currentAssistantBubble.classList.remove('streaming-cursor');
 
   conversation.push({ role: 'assistant', content: currentAssistantBubble.dataset.raw || '' });
@@ -839,24 +1070,22 @@ async function sendMessage(query) {
               break;
 
             case 'tool_call':
-              // Create tool status indicator
               const ts = createToolStatus();
-              ts.querySelector('.tool-label').textContent = event.tool || 'TOOL';
-              toolCallMap.set(event.tool_id || event.tool, ts);
+              ts.querySelector('.tool-label').textContent = pickEventName(event);
+              toolCallMap.set(pickEventKey(event), ts);
               scrollToBottom();
               break;
 
             case 'tool_result':
-              // Mark tool complete
-              const tEl = toolCallMap.get(event.tool_id || event.tool);
+              const tEl = toolCallMap.get(pickEventKey(event));
               if (tEl) {
-                setToolComplete(tEl, event.tool || 'TOOL');
+                setToolComplete(tEl, pickEventName(event));
               }
-              scrollToBottom();
+              appendToolResult(event);
               break;
 
             case 'error':
-              createErrorCard(event.content || '未知错误');
+              createErrorCard(event.message || event.content || '未知错误');
               break;
 
             case 'done':
@@ -924,6 +1153,7 @@ document.addEventListener('click', (e) => {
 });
 
 // ── Init ──
+loadDataPanel();
 inputEl.focus();
 </script>
 

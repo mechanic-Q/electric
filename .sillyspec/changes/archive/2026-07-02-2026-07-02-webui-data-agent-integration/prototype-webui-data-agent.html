@@ -1,0 +1,138 @@
+<!--
+author: lmr
+created_at: 2026-07-02T16:48:43+0800
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ellectric WebUI Data Agent Prototype</title>
+<style>
+  :root { --bg:#07111f; --panel:#101d30; --line:#29425f; --text:#e7edf5; --muted:#91a4b8; --accent:#00c6ff; --green:#2ecc71; --amber:#f0a800; --red:#e74c3c; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  .shell { height:100vh; display:grid; grid-template-columns: minmax(420px, 1fr) 380px; gap:1px; background: var(--line); }
+  .chat, .data { background: var(--bg); display:flex; flex-direction:column; min-width:0; }
+  header { padding:16px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+  h1, h2, h3 { margin:0; }
+  h1 { font-size:18px; }
+  h2 { font-size:15px; color:var(--accent); }
+  .status { font-family:monospace; font-size:12px; color:var(--green); }
+  .messages { flex:1; overflow:auto; padding:20px; display:flex; flex-direction:column; gap:16px; }
+  .bubble { border:1px solid var(--line); background:var(--panel); border-radius:14px; padding:14px; max-width:82%; }
+  .user { align-self:flex-end; background:#14375c; }
+  .assistant { align-self:flex-start; }
+  .tool { border:1px dashed var(--amber); color:var(--amber); padding:10px 12px; border-radius:10px; max-width:82%; font-family:monospace; font-size:12px; }
+  .card { border:1px solid var(--line); border-radius:10px; margin-top:10px; padding:10px; background:#0b1728; }
+  .card strong { color:var(--accent); }
+  table { width:100%; border-collapse:collapse; margin-top:8px; font-size:12px; }
+  th, td { border-bottom:1px solid var(--line); padding:6px; text-align:left; }
+  th { color:var(--accent); }
+  footer { border-top:1px solid var(--line); padding:14px; display:flex; gap:8px; }
+  textarea { flex:1; min-height:44px; border-radius:12px; border:1px solid var(--line); background:var(--panel); color:var(--text); padding:10px; resize:none; }
+  button { border:0; border-radius:12px; padding:0 16px; background:var(--accent); color:#00111f; font-weight:700; cursor:pointer; }
+  .data-body { flex:1; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+  .section { border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--panel); }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:7px 10px; font-size:12px; color:var(--muted); cursor:pointer; }
+  .chip:hover { border-color:var(--accent); color:var(--accent); }
+  .source { font-size:11px; color:var(--muted); margin-top:8px; font-family:monospace; }
+  .fallback { border-color:var(--amber); }
+  .fallback h3 { color:var(--amber); }
+  .link { color:var(--accent); text-decoration:underline; cursor:pointer; }
+  .flow { white-space:pre; font-family:monospace; color:var(--muted); font-size:12px; line-height:1.45; }
+  @media (max-width: 860px) { .shell { grid-template-columns: 1fr; } .data { display:none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <main class="chat">
+    <header>
+      <div><h1>⚡ Ellectric AI</h1><div class="source">Chat + Tools + Reports</div></div>
+      <div class="status">ONLINE · SSE</div>
+    </header>
+    <div class="messages" id="messages">
+      <div class="bubble user">山东电价模型对比结果怎么样？</div>
+      <div class="tool">tool_call · query_reports({ type: "price_comparison" })</div>
+      <div class="bubble assistant">
+        已读取最近一次离线报告。LEAR 当前表现最好，MAE 约 92.53，优于 persistence 和 DNN。
+        <div class="card">
+          <strong>电价模型对比摘要</strong>
+          <table>
+            <tr><th>模型</th><th>MAE</th><th>RMSE</th><th>数据源</th></tr>
+            <tr><td>LEAR</td><td>92.53</td><td>126.34</td><td>full_real_run</td></tr>
+            <tr><td>DNN</td><td>324.44</td><td>360.66</td><td>full_real_run</td></tr>
+            <tr><td>Persistence</td><td>131.12</td><td>188.83</td><td>full_real_run</td></tr>
+          </table>
+          <div class="source">source=offline_report · report_id=full_real_run/latest</div>
+        </div>
+      </div>
+      <div class="bubble user">如果模型文件不存在，能查负荷预测吗？</div>
+      <div class="tool">tool_call · query_forecast({ model_type: "load", horizon: 24 })</div>
+      <div class="bubble assistant">
+        实时模型不可用时会自动 fallback 到最近离线报告，并明确标注来源。
+        <div class="card fallback">
+          <h3>Fallback: 离线报告</h3>
+          <p>原因：xgboost_model.joblib 缺失或加载失败。</p>
+          <p>最近可用结论：Weather Tier4 负荷预测 MAE 相比基线下降约 19.24%。</p>
+          <div class="source">fallback_reason=model_missing · source=offline_report</div>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <textarea placeholder="问：天气 Tier4 对预测提升多少？"></textarea>
+      <button>发送</button>
+    </footer>
+  </main>
+
+  <aside class="data">
+    <header><h2>数据面板</h2><span class="status">CAPABILITIES</span></header>
+    <div class="data-body">
+      <section class="section">
+        <h3>能问什么</h3>
+        <div class="grid">
+          <div class="chip">负荷/电价预测</div>
+          <div class="chip">风光出力预测</div>
+          <div class="chip">Weather Tier4</div>
+          <div class="chip">RL 策略评估</div>
+          <div class="chip">SHAP 解释</div>
+          <div class="chip">交易建议</div>
+        </div>
+      </section>
+      <section class="section">
+        <h3>最近报告</h3>
+        <table>
+          <tr><th>报告</th><th>状态</th></tr>
+          <tr><td class="link">full_real_run/latest</td><td>ok</td></tr>
+          <tr><td class="link">rl_full_dataset/evaluation</td><td>ok</td></tr>
+          <tr><td class="link">weather_tier4/validation</td><td>ok</td></tr>
+          <tr><td class="link">renewable_forecaster/validation</td><td>ok</td></tr>
+        </table>
+      </section>
+      <section class="section">
+        <h3>数据流</h3>
+        <div class="flow">User question
+  ↓
+/chat/stream SSE
+  ↓
+LangChain + DeepSeek
+  ↓
+Tools: API or Report Registry
+  ↓
+AI bubble summary + Data panel detail</div>
+      </section>
+      <section class="section">
+        <h3>验收信号</h3>
+        <ul>
+          <li>/capabilities 返回可问问题</li>
+          <li>/datasets 返回数据源元信息</li>
+          <li>/reports 返回离线报告目录</li>
+          <li>tool_result 同时渲染气泡卡片和右侧面板</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+</div>
+</body>
+</html>
