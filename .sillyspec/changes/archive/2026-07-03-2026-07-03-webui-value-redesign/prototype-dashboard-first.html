@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ellectric Dashboard-first Prototype</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: #0f1d32;
+      --panel2: #13243d;
+      --line: #29415f;
+      --text: #eaf1f8;
+      --muted: #8ea4b8;
+      --accent: #28d8ff;
+      --green: #53d18a;
+      --amber: #ffc857;
+      --red: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #10233e, var(--bg) 52%);
+      color: var(--text);
+    }
+    .shell { max-width: 1440px; margin: 0 auto; padding: 18px; }
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: rgba(15, 29, 50, 0.88);
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 28px; letter-spacing: -0.02em; }
+    h2 { font-size: 15px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
+    .muted { color: var(--muted); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #0b1728;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .badge strong { color: var(--text); }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .main {
+      display: grid;
+      gap: 18px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .card, .panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(15, 29, 50, 0.86);
+      padding: 16px;
+    }
+    .metric { font-size: 28px; font-weight: 800; margin-top: 8px; }
+    .metric small { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .flow-step {
+      min-height: 86px;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #0b1728;
+      position: relative;
+    }
+    .flow-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: 32px;
+      color: var(--accent);
+      font-weight: 800;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .mini-table td, .mini-table th {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 4px;
+      text-align: left;
+    }
+    .mini-table th { color: var(--muted); font-weight: 600; }
+    .source {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    aside {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+    .chat-box {
+      display: grid;
+      gap: 10px;
+      min-height: 360px;
+    }
+    .bubble {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #0b1728;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .bubble.ai { border-color: #1e7890; color: var(--text); }
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel2);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .tab[aria-selected="true"] { background: #0e5064; border-color: var(--accent); }
+    .hidden { display: none; }
+    .warning { color: var(--amber); }
+    .good { color: var(--green); }
+    @media (max-width: 980px) {
+      .grid, header, .section-grid, .flow { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: 1fr 1fr; }
+      .flow-step::after { display: none; }
+    }
+    @media (max-width: 560px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <h1>Ellectric 山东电力预测与策略评估台</h1>
+        <p class="muted">Dashboard-first WebUI：展示可复现技术闭环，不展示真实交易能力。</p>
+      </div>
+      <div class="badge"><strong>学习原型</strong><span>非交易建议 · 无实盘下单 · 无准实时调度</span></div>
+    </header>
+
+    <div class="grid">
+      <main class="main">
+        <section class="cards" aria-label="data asset summary">
+          <div class="card"><h2>Dataset</h2><div class="metric">71,520 <small>rows</small></div><p class="muted">山东 15min · 745 天 · 96 点/日</p></div>
+          <div class="card"><h2>Forecast</h2><div class="metric good">XGBoost</div><p class="muted">负荷/风电/光伏 + LEAR 电价</p></div>
+          <div class="card"><h2>Strategy</h2><div class="metric">PPO/SAC/TD3</div><p class="muted">统一回测 vs baseline/oracle</p></div>
+          <div class="card"><h2>Source</h2><div class="metric warning">Reports</div><p class="muted">所有数字标注 API 或离线报告</p></div>
+        </section>
+
+        <section class="panel">
+          <h2>End-to-End Value Chain</h2>
+          <div class="flow">
+            <div class="flow-step"><h3>公开数据</h3><p class="muted">山东 15min 出清价、负荷、风光核水出力</p></div>
+            <div class="flow-step"><h3>预测</h3><p class="muted">负荷、电价、风电、光伏，展示基线提升</p></div>
+            <div class="flow-step"><h3>回测</h3><p class="muted">策略在历史窗口回放，输出 P&L 曲线</p></div>
+            <div class="flow-step"><h3>RL 评估</h3><p class="muted">PPO/SAC/TD3 与 persistence/mean/oracle 同口径比较</p></div>
+            <div class="flow-step"><h3>解释/溯源</h3><p class="muted">SHAP、Weather Tier4、report_id、generated_at</p></div>
+          </div>
+        </section>
+
+        <section class="section-grid">
+          <div class="panel">
+            <h2>Forecast Lab</h2>
+            <div class="tabs" role="tablist">
+              <button class="tab" aria-selected="true" data-target="forecast-load">负荷</button>
+              <button class="tab" data-target="forecast-price">电价</button>
+              <button class="tab" data-target="forecast-renewable">风光</button>
+            </div>
+            <div id="forecast-load" class="tab-panel">
+              <table class="mini-table"><tr><th>模型</th><th>展示指标</th></tr><tr><td>XGBoost + Tier4</td><td>MAE / RMSE / MAPE / baseline delta</td></tr></table>
+              <div class="source">source: /reports/weather_tier4/validation 或 /predict fallback</div>
+            </div>
+            <div id="forecast-price" class="tab-panel hidden">
+              <table class="mini-table"><tr><th>模型</th><th>展示指标</th></tr><tr><td>LEAR Lasso</td><td>MAE / residuals / DM-GW comparison</td></tr></table>
+              <div class="source">source: price comparison report</div>
+            </div>
+            <div id="forecast-renewable" class="tab-panel hidden">
+              <table class="mini-table"><tr><th>模型</th><th>展示指标</th></tr><tr><td>Wind/Solar XGBoost</td><td>nRMSE / daily shape / report status</td></tr></table>
+              <div class="source">source: renewable_forecaster report</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>Strategy Evaluation</h2>
+            <table class="mini-table">
+              <tr><th>策略</th><th>核心指标</th><th>状态</th></tr>
+              <tr><td>baseline_persistence</td><td>total_pnl / sharpe</td><td class="good">ok</td></tr>
+              <tr><td>rl_ppo / rl_sac / rl_td3</td><td>oracle_gap / baseline_delta</td><td class="warning">artifact-driven</td></tr>
+            </table>
+            <div class="source">source: /reports/rl_full_dataset/evaluation · no real trading</div>
+          </div>
+        </section>
+
+        <section class="section-grid">
+          <div class="panel">
+            <h2>Explainability</h2>
+            <p class="muted">SHAP 特征重要性、Lasso 系数、Weather Tier4 贡献解释。这里展示“为什么模型这么预测”，不是只展示曲线。</p>
+            <div class="source">source: /reports + /explain</div>
+          </div>
+          <div class="panel">
+            <h2>Reports & Data</h2>
+            <p class="muted">固定入口读取 /capabilities、/datasets、/reports。每张卡必须展示 report_id、generated_at、fallback_reason 或 API source。</p>
+            <div class="source">source: /capabilities /datasets /reports</div>
+          </div>
+        </section>
+      </main>
+
+      <aside>
+        <section class="panel">
+          <h2>Copilot</h2>
+          <div class="chat-box">
+            <div class="bubble">用户：山东负荷预测中天气特征有帮助吗？</div>
+            <div class="bubble ai">AI：我会先读取 Weather Tier4 验证报告，再回答，并标注 report_id 与指标来源。</div>
+            <div class="bubble">tool_call: read_report(weather_tier4/validation)</div>
+            <div class="bubble ai">tool_result card: MAE delta、weather columns、generated_at、source=offline_report</div>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Guardrails</h2>
+          <p class="muted">页面文案统一使用“策略评估 / 回测 / 假设分析”。禁止“下单、实盘、收益保证、交易建议”。</p>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.tab-panel');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((item) => item.setAttribute('aria-selected', 'false'));
+        panels.forEach((panel) => panel.classList.add('hidden'));
+        tab.setAttribute('aria-selected', 'true');
+        document.getElementById(tab.dataset.target).classList.remove('hidden');
+      });
+    });
+  </script>
+</body>
+</html>
