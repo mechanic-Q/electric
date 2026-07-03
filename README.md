@@ -29,7 +29,7 @@
 | **REST API** | FastAPI + Pydantic v2 | 5 个端点: /predict, /simulate, /backtest, /explain, /chat/stream |
 | **CLI 工具** | Typer + Rich 表格 | 5 个子命令: forecast, simulate, backtest, explain, ask |
 | **LLM 对话助手** | LangChain + DeepSeek API + SSE 流式 | 自然语言查询电力数据，工具调用本地 API |
-| **Web Chat UI** | 纯 HTML/CSS/JS 静态界面 | SSE 流式对话，Markdown 渲染，会话管理 |
+| **Dashboard-first WebUI** | Vite + React + TypeScript | Dashboard-first layout, Copilot sidebar, SSE streaming, all API endpoints accessible |
 | **学习 Notebooks** | 11 个渐进式 Jupyter notebooks | 从数据获取到模型可解释性，逐步动手 |
 
 ---
@@ -152,9 +152,15 @@ source ellectric/.venv/bin/activate
 ### 启动服务
 
 ```bash
-# 启动 FastAPI 服务
+# Install frontend dependencies and build
+cd ellectric/web
+npm install
+npm run build          # → outputs to ellectric/api/static/
+
+# Start the API (serves both API and built dashboard)
+cd ../..
 uvicorn ellectric.api.server:app --host 0.0.0.0 --port 8000
-# 访问 http://localhost:8000 打开 Web Chat UI
+# 访问 http://localhost:8000 打开 Dashboard
 # 访问 http://localhost:8000/docs 查看 API 文档
 
 # CLI 命令
@@ -169,6 +175,15 @@ python -m ellectric.cli.main ask "中国电力负荷有什么季节性特征？"
 # 启动 Jupyter Notebooks
 jupyter notebook ellectric/notebooks/
 ```
+
+### Frontend 开发（热重载模式）
+
+```bash
+cd ellectric/web
+npm run dev            # 启动 Vite 开发服务器（热重载，独立端口）
+```
+
+> `GET /` 返回 Dashboard 页面。所有已有 API 端点（`/predict`, `/simulate`, `/backtest`, `/explain`, `/chat/stream`）保持不变。前端构建产物输出至 `ellectric/api/static/`。前端本身是学习原型，不涉及真实交易或资金。
 
 ### Notebooks 学习顺序
 
@@ -207,7 +222,18 @@ ellectric/
 │   └── ember_loader.py    #   Ember 碳排放数据加载
 ├── api/
 │   ├── server.py          #   FastAPI app (5 路由 + SSE streaming)
-│   └── static/            #   Web Chat UI 静态文件
+│   └── static/            #   Dashboard build output (from web/ npm run build)
+├── web/                   # → Dashboard-first WebUI (Vite + React + TypeScript)
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   ├── index.html
+│   └── src/
+│       ├── main.tsx
+│       ├── App.tsx         # Dashboard + Copilot
+│       ├── api.ts          # FastAPI client + SSE stream
+│       ├── types.ts        # TypeScript type definitions
+│       └── styles.css      # Dark theme, responsive
 ├── service/
 │   ├── schemas.py         #   Pydantic v2 请求/响应模型
 │   └── handlers.py        #   4 个业务 handler (API/CLI/LLM 共用)
