@@ -1,5 +1,5 @@
 schema_version: 2
-generated_at: 2026-06-30 14:18:43
+generated_at: 2026-07-04 20:40:59
 generator: sillyspec-modules-rebuild
 source_commit: 999e821
 
@@ -83,7 +83,8 @@ modules:
     needs_review: false
     review_reasons: []
     role: "服务层和 CLI 接口模块，负责把 Pydantic 请求/响应 schema 映射到数据加载、预测、回测、解释等 pipeline 能力。FastAPI、CLI、LLM tools 共用同一批 service handlers。"
-    verify_commands: []
+    verify_commands:
+      - python -m pytest tests/test_dashboard_rolling_demo.py -q
     risk_level: low
     related_docs: []
 
