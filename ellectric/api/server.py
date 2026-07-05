@@ -37,8 +37,13 @@ from pydantic import BaseModel, Field
 from typing import Literal
 
 from ellectric.service.schemas import (
+    CapabilityItem,
+    DatasetInfo,
     ForecastRequest,
     ForecastResponse,
+    ReportDetail,
+    ReportSummary,
+    RollingDemoResponse,
     SimulateRequest,
     SimulateResponse,
     BacktestRequest,
@@ -48,7 +53,12 @@ from ellectric.service.schemas import (
     RecommendRequest,
     RecommendResponse,
 )
+from ellectric.service.dashboard import build_rolling_demo
 from ellectric.service.handlers import (
+    get_report,
+    list_capabilities,
+    list_datasets,
+    list_reports,
     run_forecast,
     run_simulate,
     run_backtest,
@@ -185,6 +195,52 @@ def explain(req: ExplainRequest):
 @app.post("/recommend", response_model=RecommendResponse)
 def recommend(req: RecommendRequest):
     return run_recommend_trade(req)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 端点：能力目录（Capabilities / Datasets / Reports）
+# 必须在 app.mount("/") 之前注册，避免被 StaticFiles 捕获。
+# ═══════════════════════════════════════════════════════════════════
+
+
+@app.get("/capabilities", response_model=list[CapabilityItem])
+def capabilities():
+    """返回能力目录：预测、仿真、回测、解释、交易建议、报告、数据集。"""
+    return list_capabilities()
+
+
+@app.get("/datasets", response_model=list[DatasetInfo])
+def datasets():
+    """返回数据源元信息：山东、OWID、Chinese Hourly。"""
+    return list_datasets()
+
+
+@app.get("/reports", response_model=list[ReportSummary])
+def reports(report_type: str | None = None):
+    """返回离线报告清单，可选按 report_type 过滤。"""
+    return list_reports(report_type=report_type)
+
+
+@app.get("/reports/{report_id:path}", response_model=ReportDetail)
+def report_detail(report_id: str):
+    """按稳定 ID 读取报告详情；未知 ID 返回 status='missing'。"""
+    return get_report(report_id)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 端点：滚动仿真看板
+# ═══════════════════════════════════════════════════════════════════
+
+
+@app.get("/dashboard/rolling-demo", response_model=RollingDemoResponse)
+def rolling_demo(start: str = "2025-10-01", days: int = 30):
+    """GET /dashboard/rolling-demo — 构建滚动仿真看板数据。
+
+    Query params:
+        start (str, default="2025-10-01"): 起始日期 YYYY-MM-DD。
+        days  (int, default=30): 滚动窗口天数。
+    """
+    return build_rolling_demo(start=start, days=days)
 
 
 # ═══════════════════════════════════════════════════════════════════

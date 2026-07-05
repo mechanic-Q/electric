@@ -1,4 +1,4 @@
-import type { CapabilityItem, DatasetInfo, ReportDetail, ReportSummary } from "./types";
+import type { CapabilityItem, DatasetInfo, ReportDetail, ReportSummary, RollingDemoResponse } from "./types";
 
 async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal });
@@ -30,6 +30,10 @@ export function fetchReportDetail(
 ): Promise<ReportDetail> {
   const encoded = reportId.split("/").map(encodeURIComponent).join("/");
   return fetchJson(`/reports/${encoded}`, signal);
+}
+
+export function fetchRollingDemo(signal?: AbortSignal): Promise<RollingDemoResponse> {
+  return fetchJson("/dashboard/rolling-demo", signal);
 }
 
 async function* readSSE(
