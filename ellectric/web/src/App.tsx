@@ -155,6 +155,16 @@ function bilingualMetric(key: string): string {
   return metricLabels[key] ?? `${key} / ${key.replace(/_/g, " ")}`;
 }
 
+function formatPnL(value: number): string {
+  if (value == null) return "";
+  const abs = Math.abs(value);
+  if (abs < 1000) return `${value.toFixed(1)} 元`;
+  if (abs < 1e4) return `${(value / 1e3).toFixed(1)} 千元`;
+  if (abs < 1e6) return `${(value / 1e4).toFixed(1)} 万元`;
+  if (abs < 1e8) return `${(value / 1e6).toFixed(2)} 百万元`;
+  return `${(value / 1e8).toFixed(2)} 亿元`;
+}
+
 function bilingualValue(value: unknown): string {
   return typeof value === "string" && statusLabels[value] ? bilingualStatus(value) : String(value);
 }
@@ -479,8 +489,12 @@ export default function App() {
                     return (
                       <div key={i} className="bar-row">
                         <span className="bar-label">{bilingualStrategy(name)}</span>
-                        <div className="bar-track"><i className="bar-fill" style={{ width: `${rankVal}%` }} /></div>
-                        <span className="bar-rank">#{i + 1}</span>
+                        <div className="bar-track-wrap">
+                          <span className="bar-scale">低 / low</span>
+                          <div className="bar-track"><i className="bar-fill" style={{ width: `${rankVal}%` }} /></div>
+                          <span className="bar-scale">高 / high</span>
+                        </div>
+                        <span className="bar-rank">#{i + 1} · {formatPnL(r.total_pnl as number)}</span>
                       </div>
                     );
                   }) : <div style={{ textAlign: "center", color: "#8aa4c2", fontSize: "12px", padding: "12px 0" }}>RL 策略评估 CSV 未找到 / No RL evaluation data</div>}
