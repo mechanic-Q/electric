@@ -429,6 +429,11 @@ export default function App() {
               <div style={s.tl}>
                 <div style={{ position: "absolute", top: "14px", bottom: "14px", width: "2px", background: "#2dd4bf", boxShadow: "0 0 18px #2dd4bf", left: `${progressPct}%`, transition: "left 0.3s ease" }} />
                 <LoadChartSVG series={data!.series} tick={currentTick} />
+                <div style={{display:"flex",gap:"14px",fontSize:"11px",color:"#94a3b8",marginTop:"6px",flexWrap:"wrap",padding:"0 2px"}}>
+                  <span><span style={{display:"inline-block",width:"16px",height:"2.5px",background:"#2dd4bf",verticalAlign:"middle",marginRight:"5px",borderRadius:"1px"}} /> 实际负荷 / actual</span>
+                  <span><span style={{display:"inline-block",width:"16px",borderTop:"1.5px dashed #f59e0b",verticalAlign:"middle",marginRight:"5px"}} /> 预测负荷 / forecast</span>
+                  <span><span style={{display:"inline-block",width:"2px",height:"12px",background:"#2dd4bf",verticalAlign:"middle",marginRight:"5px",borderRadius:"1px"}} /> 播放指针 / playhead</span>
+                </div>
                 <div style={s.mono}>
                   {`当前点 / current_tick = ${String(currentTick).padStart(4, "0")} / ${totalPoints}\n时间戳 / timestamp    = ${currentTs}\n粒度 / granularity    = ${data?.meta.frequency}\n来源 / source         = ${data?.meta.source}`}
                 </div>
@@ -455,7 +460,13 @@ export default function App() {
             </article>
             <article style={s.pn}>
               <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>风电 + 光伏 / Wind + Solar</h3><span className="badge badge-shandong" style={{ margin: 0 }}>面积 / area</span></div>
-                <div style={s.pb}><RenewableChartSVG series={data!.series} /></div>
+                <div style={s.pb}>
+                  <RenewableChartSVG series={data!.series} />
+                  <div style={{display:"flex",gap:"14px",fontSize:"11px",color:"#94a3b8",marginTop:"6px"}}>
+                    <span><span style={{display:"inline-block",width:"16px",height:"12px",background:"rgba(45,212,191,0.34)",verticalAlign:"middle",marginRight:"5px",borderRadius:"2px"}} /> 风电 / wind</span>
+                    <span><span style={{display:"inline-block",width:"16px",height:"12px",background:"rgba(245,158,11,0.34)",verticalAlign:"middle",marginRight:"5px",borderRadius:"2px"}} /> 光伏 / solar</span>
+                  </div>
+                </div>
             </article>
             <article style={s.pn}>
               <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>策略回放 / Strategy Replay</h3><span className="badge badge-shandong" style={{ margin: 0 }}>收益 / P&L</span></div>
