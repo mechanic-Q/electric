@@ -401,3 +401,81 @@ class ReportDetail(ReportSummary):
         default=None, description="报告主体内容；JSON 报告为 dict，其他为文本"
     )
 
+
+# ═══════════════════════════════════════════════════════════════════
+# 滚动展示 DTO (Rolling Dashboard)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class RollingDemoMeta(BaseModel):
+    """滚动展示数据元信息。"""
+
+    source: str = Field(description="数据源标识")
+    start: str = Field(description="窗口起始时间 (ISO)")
+    end: str = Field(description="窗口结束时间 (ISO)")
+    frequency: str = Field(description="时间粒度")
+    points_per_day: int = Field(description="每日点数")
+    rows: int = Field(description="总行数")
+
+
+class RollingDemoSeries(BaseModel):
+    """滚动展示时序数据，按时间戳对齐。"""
+
+    timestamps: list[str] = Field(default_factory=list, description="ISO 格式时间戳")
+    load_actual: list[float | None] = Field(default_factory=list, description="实际负荷 (MW)")
+    load_forecast: list[float | None] = Field(default_factory=list, description="预测负荷 (MW)")
+    price_rt: list[float | None] = Field(default_factory=list, description="实时电价 (元/MWh)")
+    price_da: list[float | None] = Field(default_factory=list, description="日前电价 (元/MWh)")
+    wind_actual: list[float | None] = Field(default_factory=list, description="风电出力 (MW)")
+    solar_actual: list[float | None] = Field(default_factory=list, description="光伏出力 (MW)")
+    tie_line: list[float | None] = Field(default_factory=list, description="省间联络线 (MW)")
+    pumped_storage: list[float | None] = Field(default_factory=list, description="抽水蓄能 (MW)")
+
+
+class RollingDemoPanel(BaseModel):
+    """滚动展示面板元信息。"""
+
+    id: str = Field(description="面板 ID")
+    title: str = Field(description="面板标题")
+    chart_type: str = Field(description="图表类型: line/heatmap/area/bar")
+    summary: str = Field(default="", description="文字摘要")
+    metrics: dict[str, float | int | str] = Field(default_factory=dict, description="关键指标")
+    warning_ids: list[str] = Field(default_factory=list, description="关联警告 ID")
+
+
+class RollingDemoStrategy(BaseModel):
+    """滚动展示策略排名与 P&L 曲线。"""
+
+    ranking: list[dict] = Field(default_factory=list, description="策略排名 [{name, score, ...}]")
+    pnl_curves: dict[str, list[float]] = Field(
+        default_factory=dict, description="策略 P&L 曲线 {name: [pnl_values]}"
+    )
+
+
+class RollingDemoReportEvidence(BaseModel):
+    """滚动展示报告证据条目。"""
+
+    id: str = Field(description="报告 ID")
+    title: str = Field(description="报告标题")
+    status: str = Field(description="状态: ok/missing/error/degraded")
+    summary: str = Field(default="", description="摘要")
+    metrics: dict[str, float | int | str] = Field(default_factory=dict, description="关键指标")
+
+
+class RollingDemoRequest(BaseModel):
+    """滚动展示请求参数。"""
+
+    start: str = Field(default="2025-10-01", description="窗口起始日期 (YYYY-MM-DD)")
+    days: int = Field(default=30, ge=1, le=30, description="展示天数 (1-30)")
+
+
+class RollingDemoResponse(BaseModel):
+    """滚动展示响应 payload。"""
+
+    meta: RollingDemoMeta = Field(description="数据元信息")
+    series: RollingDemoSeries = Field(default_factory=RollingDemoSeries, description="时序数据")
+    panels: list[RollingDemoPanel] = Field(default_factory=list, description="面板列表")
+    strategy: RollingDemoStrategy = Field(default_factory=RollingDemoStrategy, description="策略信息")
+    reports: list[RollingDemoReportEvidence] = Field(default_factory=list, description="报告证据列表")
+    warnings: list[str] = Field(default_factory=list, description="降级/缺失警告")
+
