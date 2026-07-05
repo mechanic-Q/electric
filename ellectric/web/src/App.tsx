@@ -468,7 +468,7 @@ export default function App() {
                   </div>
                 </div>
             </article>
-            <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
+            <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr", gap: "18px" }}>
               <article style={s.pn}>
                 <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>策略回放 / Strategy Replay</h3><span className="badge badge-shandong" style={{ margin: 0 }}>收益 / P&L</span></div>
                 <div className="bars-list">
