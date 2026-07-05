@@ -472,18 +472,18 @@ export default function App() {
               <article style={s.pn}>
                 <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>策略回放 / Strategy Replay</h3><span className="badge badge-shandong" style={{ margin: 0 }}>收益 / P&L</span></div>
                 <div className="bars-list">
-                  {data?.strategy.ranking.map((r, i) => {
-                    const entries = Object.entries(r);
-                    const name = typeof r.strategy === "string" ? r.strategy : entries[0]?.[0] ?? `#${i + 1}`;
-                    const val = Number(entries[0]?.[1]) || 0;
+                  {data?.strategy.ranking.length ? data.strategy.ranking.map((r, i) => {
+                    const name: string = (r.strategy as string) || `#${i + 1}`;
+                    const rank = r.rank as number | undefined;
+                    const rankVal = rank != null ? Math.max(0, 100 - (rank - 1) * 16) : 0;
                     return (
                       <div key={i} className="bar-row">
                         <span className="bar-label">{bilingualStrategy(name)}</span>
-                        <div className="bar-track"><i className="bar-fill" style={{ width: `${val}%` }} /></div>
+                        <div className="bar-track"><i className="bar-fill" style={{ width: `${rankVal}%` }} /></div>
                         <span className="bar-rank">#{i + 1}</span>
                       </div>
                     );
-                  })}
+                  }) : <div style={{ textAlign: "center", color: "#8aa4c2", fontSize: "12px", padding: "12px 0" }}>RL 策略评估 CSV 未找到 / No RL evaluation data</div>}
                 </div>
               </article>
               <article style={s.pn}>
