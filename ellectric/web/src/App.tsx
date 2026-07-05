@@ -468,24 +468,30 @@ export default function App() {
                   </div>
                 </div>
             </article>
-            <article style={s.pn}>
-              <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>策略回放 / Strategy Replay</h3><span className="badge badge-shandong" style={{ margin: 0 }}>收益 / P&L</span></div>
-              <div className="bars-list">
-                {data?.strategy.ranking.map((r, i) => {
-                  const entries = Object.entries(r);
-                  const name = typeof r.strategy === "string" ? r.strategy : entries[0]?.[0] ?? `#${i + 1}`;
-                  const val = Number(entries[0]?.[1]) || 0;
-                  return (
-                    <div key={i} className="bar-row">
-                      <span className="bar-label">{bilingualStrategy(name)}</span>
-                      <div className="bar-track"><i className="bar-fill" style={{ width: `${val}%` }} /></div>
-                      <span className="bar-rank">#{i + 1}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </article>
-            <article style={s.pn}>
+            <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
+              <article style={s.pn}>
+                <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>策略回放 / Strategy Replay</h3><span className="badge badge-shandong" style={{ margin: 0 }}>收益 / P&L</span></div>
+                <div className="bars-list">
+                  {data?.strategy.ranking.map((r, i) => {
+                    const entries = Object.entries(r);
+                    const name = typeof r.strategy === "string" ? r.strategy : entries[0]?.[0] ?? `#${i + 1}`;
+                    const val = Number(entries[0]?.[1]) || 0;
+                    return (
+                      <div key={i} className="bar-row">
+                        <span className="bar-label">{bilingualStrategy(name)}</span>
+                        <div className="bar-track"><i className="bar-fill" style={{ width: `${val}%` }} /></div>
+                        <span className="bar-rank">#{i + 1}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </article>
+              <article style={s.pn}>
+                <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>API 契约 / API Contract</h3><span className="badge badge-shandong" style={{ margin: 0 }}>只读 / readonly</span></div>
+                <div style={s.pb}><div style={s.mono}>GET /dashboard/rolling-demo{'\n'}返回 / returns: meta, series, panels, strategy, reports, warnings</div></div>
+              </article>
+            </div>
+            <article style={{ ...s.pn, gridColumn: "1 / -1" }}>
               <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>证据报告 / Evidence</h3><span className="badge badge-shandong" style={{ margin: 0 }}>报告 / reports</span></div>
                 <div style={{ padding: "12px 18px 18px" }}>
                   {data!.reports.map((r) => (
@@ -508,10 +514,6 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-            </article>
-            <article style={s.pn}>
-              <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>API 契约 / API Contract</h3><span className="badge badge-shandong" style={{ margin: 0 }}>只读 / readonly</span></div>
-              <div style={s.pb}><div style={s.mono}>GET /dashboard/rolling-demo{'\n'}返回 / returns: meta, series, panels, strategy, reports, warnings</div></div>
             </article>
           </section>
         </main>
