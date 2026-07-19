@@ -7533,5 +7533,30 @@
     "mtime": 1784462879.6715314,
     "ast_hash": "2913e6b6e4fe1f9150a515fa3de94707",
     "semantic_hash": ""
+  },
+  "ellectric/reports/rl_quick_validation/evaluation_report.json": {
+    "mtime": 1784467407.1278129,
+    "ast_hash": "ca0e89e05d27ff17fa53a15604001ff8",
+    "semantic_hash": ""
+  },
+  "ellectric/reports/rl_quick_validation/training_report.json": {
+    "mtime": 1784467407.1234796,
+    "ast_hash": "bb91b6e3f9758011fc4b62ac6832d44c",
+    "semantic_hash": ""
+  },
+  "ellectric/reports/rl_quick_validation/cumulative_pnl.html": {
+    "mtime": 1784467406.9111462,
+    "ast_hash": "76e2b8f12ede0dc874c10680b27935c7",
+    "semantic_hash": ""
+  },
+  "ellectric/reports/rl_quick_validation/evaluation_report.md": {
+    "mtime": 1784467407.1321461,
+    "ast_hash": "b738cb9d5fb0fd5b9332354024c3b876",
+    "semantic_hash": ""
+  },
+  "ellectric/reports/rl_quick_validation/training_report.md": {
+    "mtime": 1784467407.1234796,
+    "ast_hash": "b22147ac885e72d903dce9ce69de27af",
+    "semantic_hash": ""
   }
 }
