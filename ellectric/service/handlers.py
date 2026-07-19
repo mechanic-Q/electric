@@ -507,7 +507,7 @@ def run_recommend_trade(req: RecommendRequest) -> RecommendResponse:
 
     # 1. Forecast
     try:
-        forecast_req = ForecastRequest(model_type="load", horizon=req.horizon_hours)
+        forecast_req = ForecastRequest(model_type="price", horizon=req.horizon_hours)
         forecast_resp = run_forecast(forecast_req)
         evidence["forecast"] = "available"
         if forecast_resp.predictions:

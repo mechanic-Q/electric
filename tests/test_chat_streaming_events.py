@@ -74,11 +74,12 @@ def test_stream_chat_emits_tool_result_payload(monkeypatch):
     }
     assert events[2]["type"] == "tool_result"
     assert events[2]["name"] == "query_reports"
-    assert events[2]["payload"]["source"] == "offline_report"
-    assert events[2]["payload"]["fallback_reason"] == "model_missing"
-    assert events[2]["payload"]["report_status"] == "degraded"
-    assert events[2]["payload"]["metrics"] == {"mae_baseline_tier3": 3412.02}
-    assert events[2]["payload"]["metrics_meta"]["mae_baseline_tier3"]["unit"] == "MW"
+    payload = json.loads(events[2]["content"])
+    assert payload["source"] == "offline_report"
+    assert payload["fallback_reason"] == "model_missing"
+    assert payload["report_status"] == "degraded"
+    assert payload["metrics"] == {"mae_baseline_tier3": 3412.02}
+    assert payload["metrics_meta"]["mae_baseline_tier3"]["unit"] == "MW"
     assert events[-1] == {"type": "done"}
 
 
@@ -95,8 +96,20 @@ def test_stream_chat_sets_payload_none_for_plain_text(monkeypatch):
         "type": "tool_result",
         "name": "read_report",
         "content": "plain text report",
-        "payload": None,
     }
+
+
+def test_stream_chat_uses_resolved_key_without_env(monkeypatch):
+    from ellectric.chat import streaming
+
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    monkeypatch.setattr(streaming, "_resolve_deepseek_key", lambda: "test")
+    monkeypatch.setattr(streaming, "create_agent_executor", lambda: _PlainTextToolAgent())
+
+    events = [_parse(frame) for frame in asyncio.run(_collect(streaming.stream_chat("读报告")))]
+
+    assert not any(event["type"] == "error" for event in events)
+    assert next(event for event in events if event["type"] == "tool_result")["content"] == "plain text report"
 
 
 def test_stream_chat_empty_query_uses_message_field():

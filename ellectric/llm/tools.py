@@ -143,6 +143,101 @@ def run_backtest(start_date: str, end_date: str, strategy: str = "oracle") -> st
 
 
 @tool
+def query_capabilities() -> str:
+    """查询系统能力清单。
+
+    调用 Ellectric `/capabilities` API 获取所有可用能力元信息，
+    包括预测、仿真、回测、交易建议和报告查询。
+
+    Returns:
+        JSON 字符串，包含能力列表，每个条目含 id、title、category、example_questions 等。  # noqa: E501
+    """
+    try:
+        resp = _CLIENT.get(f"{_API_BASE}/capabilities")
+        resp.raise_for_status()
+        return json.dumps(resp.json(), indent=2, ensure_ascii=False)
+    except httpx.TimeoutException:
+        return f"API 服务不可用: 请求超时 ({_API_BASE}/capabilities)"
+    except httpx.HTTPStatusError as e:
+        return f"API 服务不可用: HTTP {e.response.status_code} — {e.response.text[:200]}"
+    except (httpx.RequestError, httpx.HTTPError) as e:
+        return f"API 服务不可用: {type(e).__name__} — {e}"
+
+
+@tool
+def query_datasets() -> str:
+    """查询数据源元信息。
+
+    调用 Ellectric `/datasets` API 查看所有注册数据源的元信息，
+    包括山东 15min、OWID 和中国小时级数据。
+
+    Returns:
+        JSON 字符串，包含数据集列表，每个条目含 id、title、frequency、start/end 等。  # noqa: E501
+    """
+    try:
+        resp = _CLIENT.get(f"{_API_BASE}/datasets")
+        resp.raise_for_status()
+        return json.dumps(resp.json(), indent=2, ensure_ascii=False)
+    except httpx.TimeoutException:
+        return f"API 服务不可用: 请求超时 ({_API_BASE}/datasets)"
+    except httpx.HTTPStatusError as e:
+        return f"API 服务不可用: HTTP {e.response.status_code} — {e.response.text[:200]}"
+    except (httpx.RequestError, httpx.HTTPError) as e:
+        return f"API 服务不可用: {type(e).__name__} — {e}"
+
+
+@tool
+def query_reports(report_type: str | None = None) -> str:
+    """查询离线报告目录。
+
+    调用 Ellectric `/reports` API 查看所有离线报告清单。
+    可选按 report_type 过滤（weather_tier4 / renewable / price_comparison / rl_evaluation 等）。  # noqa: E501
+
+    Args:
+        report_type: 可选报告类型过滤，如 'weather_tier4'。不传时返回全部。
+
+    Returns:
+        JSON 字符串，包含报告摘要列表，每个条目含 id、title、status、metrics 等。  # noqa: E501
+    """
+    try:
+        params = {"report_type": report_type} if report_type else {}
+        resp = _CLIENT.get(f"{_API_BASE}/reports", params=params)
+        resp.raise_for_status()
+        return json.dumps(resp.json(), indent=2, ensure_ascii=False)
+    except httpx.TimeoutException:
+        return f"API 服务不可用: 请求超时 ({_API_BASE}/reports)"
+    except httpx.HTTPStatusError as e:
+        return f"API 服务不可用: HTTP {e.response.status_code} — {e.response.text[:200]}"
+    except (httpx.RequestError, httpx.HTTPError) as e:
+        return f"API 服务不可用: {type(e).__name__} — {e}"
+
+
+@tool
+def read_report(report_id: str) -> str:
+    """读取离线报告详情。
+
+    调用 Ellectric `/reports/{report_id}` API 获取离线报告的详细内容。
+    兼容 weather_tier4/validation、price_comparison/latest 等报告 ID。
+
+    Args:
+        report_id: 报告稳定 ID，如 'weather_tier4/validation'、'price_comparison/latest'。  # noqa: E501
+
+    Returns:
+        JSON 字符串，包含报告详情，含主体内容、指标、meta 信息和资产路径。  # noqa: E501
+    """
+    try:
+        resp = _CLIENT.get(f"{_API_BASE}/reports/{report_id}")
+        resp.raise_for_status()
+        return json.dumps(resp.json(), indent=2, ensure_ascii=False)
+    except httpx.TimeoutException:
+        return f"API 服务不可用: 请求超时 ({_API_BASE}/reports/{report_id})"
+    except httpx.HTTPStatusError as e:
+        return f"API 服务不可用: HTTP {e.response.status_code} — {e.response.text[:200]}"
+    except (httpx.RequestError, httpx.HTTPError) as e:
+        return f"API 服务不可用: {type(e).__name__} — {e}"
+
+
+@tool
 def recommend_trade(date: str, horizon: int = 24, risk_preference: str = "balanced", max_actions: int = 5) -> str:
     """生成并解释结构化电力交易建议。
 

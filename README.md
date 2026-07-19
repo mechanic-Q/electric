@@ -1,7 +1,7 @@
 # ⚡ Ellectric — AI + 电力交易技术学习平台
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietary%20Source--Available-red.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Phase-4%20Complete-brightgreen.svg)]()
 
 **Ellectric** 是一个动手实践性质的 AI + 电力交易技术学习项目。跑通"公开电力数据接入 → 负荷/电价预测 → 电力市场仿真 → 自动交易策略"的端到端技术闭环。
@@ -298,4 +298,11 @@ ellectric/
 
 ## 📄 License
 
-MIT
+本项目采用 [Ellectric Proprietary Source-Available License](LICENSE)：
+
+- 允许查看源码，以及个人学习者下载未修改版本并在本人设备上非商业运行；
+- 未经 `mechanic-Q` 事先书面许可，不得修改、分发、再许可、公开部署、向他人提供服务或商用；
+- GitHub 公共仓库的查看与 Fork 仅适用 GitHub 服务条款所必需并允许的范围；
+- 第三方软件、数据和模型继续适用各自的许可证与归属声明。
+
+版权所有 © 2026 `mechanic-Q`。保留所有未明确授予的权利。

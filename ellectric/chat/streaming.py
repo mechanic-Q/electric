@@ -33,12 +33,11 @@ SSE 事件协议
 """
 import json
 import logging
-import os
 from collections.abc import AsyncGenerator
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from ellectric.llm.agent import create_agent_executor
+from ellectric.llm.agent import _resolve_deepseek_key, create_agent_executor
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +104,7 @@ async def stream_chat(
         return
 
     # ── 边界: API Key 缺失 ──
-    if not os.environ.get("DEEPSEEK_API_KEY"):
+    if not _resolve_deepseek_key():
         yield _sse_frame({
             "type": "error",
             "message": "DEEPSEEK_API_KEY 未设置，请先配置环境变量",
