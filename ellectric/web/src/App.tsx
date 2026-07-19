@@ -211,7 +211,7 @@ function CopilotPanel() {
     if (messages.length === 0) {
       setMessages([{
         role: "assistant",
-        content: "你好！我是 Ellectric Copilot，可以帮助你解读 Dashboard 上的学习指标和报告。\nHello! I am Ellectric Copilot. I can help explain the learning metrics and reports on this dashboard. All strategy evaluations and forecasts are for learning only.",
+        content: "你好！我是 Ellectric Copilot，可以用通俗语言解释这个展示页面、XGBoost/LEAR/RL 等术语，以及离线报告里的结果。\nHello! I am Ellectric Copilot. I can explain this showcase dashboard, core terms like XGBoost/LEAR/RL, and the offline report results in plain language.",
       }]);
     }
   }, []);
@@ -502,7 +502,7 @@ export default function App() {
               </article>
               <article style={s.pn}>
                 <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>API 契约 / API Contract</h3><span className="badge badge-shandong" style={{ margin: 0 }}>只读 / readonly</span></div>
-                <div style={s.pb}><div style={s.mono}>GET /dashboard/rolling-demo{'\n'}返回 / returns: meta, series, panels, strategy, reports, warnings</div></div>
+              <div style={s.pb}><div style={s.mono}>GET /rolling-demo.json{'\n'}返回 / returns: meta, series, panels, strategy, reports, warnings</div></div>
               </article>
             </div>
             <article style={{ ...s.pn, gridColumn: "1 / -1" }}>

@@ -199,6 +199,19 @@ def test_recommend_all_evidence_available():
     assert len(resp.actions) > 0
 
 
+def test_recommend_uses_price_forecast():
+    req = RecommendRequest(date="2026-06-15")
+    with patch("ellectric.service.handlers.run_forecast") as mock_f:
+        mock_f.return_value = _make_forecast_response()
+        with patch("ellectric.service.handlers.run_backtest", side_effect=RuntimeError("no data")):
+            with patch("ellectric.service.handlers.run_explain", side_effect=RuntimeError("no explain")):
+                from ellectric.service.handlers import run_recommend_trade
+                run_recommend_trade(req)
+
+    forecast_req = mock_f.call_args.args[0]
+    assert forecast_req.model_type == "price"
+
+
 def test_recommend_forecast_only():
     req = RecommendRequest(date="2026-06-15")
     with patch("ellectric.service.handlers.run_forecast") as mock_f:

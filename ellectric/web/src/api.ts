@@ -33,7 +33,7 @@ export function fetchReportDetail(
 }
 
 export function fetchRollingDemo(signal?: AbortSignal): Promise<RollingDemoResponse> {
-  return fetchJson("/dashboard/rolling-demo", signal);
+  return fetchJson("/rolling-demo.json", signal);
 }
 
 async function* readSSE(
