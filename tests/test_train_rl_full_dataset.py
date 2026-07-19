@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from ellectric.config import TimeConfig
 from ellectric.pipeline.rl_trainer import BaseRLAgent
 
 
@@ -166,13 +167,15 @@ def test_make_env_reward_fn(tiny_shandong_df, monkeypatch):
     assert env._reward_fn_name == "profit_only"
 
 
-def test_make_env_action_space(tiny_shandong_df, monkeypatch):
+def test_make_env_action_space(tiny_shandong_df):
     from ellectric.scripts.train_rl_full_dataset import make_env
-    monkeypatch.setattr("ellectric.pipeline.trading_env.ElectricityMarketEnv", _FakeEnv)
     load_df = tiny_shandong_df[["timestamp", "load_mw"]]
     price_df = tiny_shandong_df[["timestamp", "rt_price"]].rename(columns={"rt_price": "price_da"})
     env = make_env(load_df, price_df)
     assert env._max_capacity is not None
+    assert env.action_space.shape == (TimeConfig.points_per_day,)
+    assert (env.action_space.low == -1.0).all()
+    assert (env.action_space.high == 1.0).all()
 
 
 def test_train_one_success_with_fake(tiny_shandong_df, fake_agent_factory, tmp_path):

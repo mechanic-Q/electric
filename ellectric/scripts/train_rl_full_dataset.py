@@ -180,6 +180,12 @@ def train_one(algo: str, env, *, timesteps: int, seed: int,
     os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
 
+    algo_kwargs: dict = {
+        "ppo": {"learning_rate": 3e-5, "n_steps": 2048, "batch_size": 128},
+        "sac": {"learning_rate": 1e-4, "buffer_size": 100000},
+        "td3": {"learning_rate": 1e-4, "buffer_size": 100000},
+    }
+
     result: dict = {
         "algo": algo,
         "status": "ok",
@@ -200,6 +206,7 @@ def train_one(algo: str, env, *, timesteps: int, seed: int,
             tb_log = None
         agent = RLAgentFactory.create(
             algo, env, tensorboard_log=tb_log, seed=seed,
+            **algo_kwargs.get(algo, {}),
         )
         train_result = agent.train(total_timesteps=timesteps)
         agent.save(ckpt_path)
@@ -416,7 +423,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--train-end", default="2025-09-30")
     parser.add_argument("--test-start", default="2025-10-01")
     parser.add_argument("--test-end", default="2026-01-14")
-    parser.add_argument("--timesteps", type=int, default=50000)
+    parser.add_argument("--timesteps", type=int, default=200000)
     parser.add_argument("--algos", default="ppo,sac,td3",
                         help="以逗号分隔的算法列表")
     parser.add_argument("--tier", default="tier4", choices=["tier3", "tier4"])

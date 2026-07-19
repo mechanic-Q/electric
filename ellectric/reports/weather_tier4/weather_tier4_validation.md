@@ -1,10 +1,10 @@
 # Weather Tier4 Validation Report
 
-*Generated: 2026-07-03T13:12:43Z | Data source: shandong*
+*Generated: 2026-07-19T13:11:50Z | Data source: shandong*
 
 ## Metadata
 
-- **generated_at**: 2026-07-03T13:12:43Z
+- **generated_at**: 2026-07-19T13:11:50Z
 - **data_source**: shandong
 - **data_version**: 1
 - **time_config**: freq=15min, points_per_day=96

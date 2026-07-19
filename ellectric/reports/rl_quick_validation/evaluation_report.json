@@ -1,0 +1,141 @@
+{
+  "metadata": {
+    "generated_at": "2026-07-19T13:23:27Z",
+    "git_sha": "a05d580ff84257597860789b92849bf80ee79408",
+    "protocol_summary": {
+      "train_start": "2024-01-01",
+      "train_end": "2025-09-30",
+      "test_start": "2025-10-01",
+      "test_end": "2026-01-14",
+      "algos": [
+        "ppo"
+      ],
+      "baselines": [
+        "baseline_persistence",
+        "baseline_mean",
+        "oracle"
+      ],
+      "seed": 42,
+      "timesteps": 20000,
+      "tier": "tier4",
+      "price_proxy": "rt_price->price_da"
+    }
+  },
+  "protocol": {
+    "train_start": "2024-01-01",
+    "train_end": "2025-09-30",
+    "test_start": "2025-10-01",
+    "test_end": "2026-01-14",
+    "algos": [
+      "ppo"
+    ],
+    "baselines": [
+      "baseline_persistence",
+      "baseline_mean",
+      "oracle"
+    ],
+    "seed": 42,
+    "timesteps": 20000,
+    "tier": "tier4",
+    "price_proxy": "rt_price->price_da",
+    "checkpoint_dir": "models/rl_quick_validation",
+    "report_dir": "ellectric/reports/rl_quick_validation"
+  },
+  "training": {
+    "ppo": {
+      "algo": "ppo",
+      "status": "ok",
+      "final_reward": 1773.1253255064432,
+      "duration_s": 392.3,
+      "checkpoint_path": "models/rl_quick_validation/ppo.zip",
+      "tb_log_path": "tb_logs/rl_full_dataset_ppo",
+      "error": null
+    }
+  },
+  "evaluations": {
+    "baseline_persistence": {
+      "strategy": "baseline_persistence",
+      "status": "ok",
+      "error": null,
+      "artifact_path": null
+    },
+    "baseline_mean": {
+      "strategy": "baseline_mean",
+      "status": "ok",
+      "error": null,
+      "artifact_path": null
+    },
+    "oracle": {
+      "strategy": "oracle",
+      "status": "ok",
+      "error": null,
+      "artifact_path": null
+    },
+    "rl_ppo": {
+      "strategy": "rl_ppo",
+      "status": "error",
+      "error": "模型未训练，请先调用 train()",
+      "artifact_path": "models/rl_quick_validation/ppo.zip"
+    }
+  },
+  "metrics": [
+    {
+      "strategy": "baseline_persistence",
+      "total_pnl": 6041414.369733619,
+      "sharpe": 3.866900534914212,
+      "win_rate": 0.49236111111111114,
+      "max_drawdown": -4321051.341959741,
+      "profit_factor": 1.131684121971253,
+      "volatility": 14506.650366522164,
+      "oracle_gap": 0.9533455918079772,
+      "baseline_delta": 0.0,
+      "rank": 2.0,
+      "status": "ok"
+    },
+    {
+      "strategy": "baseline_mean",
+      "total_pnl": 0.0,
+      "sharpe": 0.0,
+      "win_rate": 0.0,
+      "max_drawdown": 0.0,
+      "profit_factor": null,
+      "volatility": 0.0,
+      "oracle_gap": 1.0,
+      "baseline_delta": -6041414.369733619,
+      "rank": 3.0,
+      "status": "ok"
+    },
+    {
+      "strategy": "oracle",
+      "total_pnl": 129492894.75215352,
+      "sharpe": 100.67493507323734,
+      "win_rate": 1.0,
+      "max_drawdown": 0.0,
+      "profit_factor": null,
+      "volatility": 11943.073421830208,
+      "oracle_gap": 0.0,
+      "baseline_delta": 123451480.3824199,
+      "rank": 1.0,
+      "status": "ok"
+    },
+    {
+      "strategy": "rl_ppo",
+      "total_pnl": null,
+      "sharpe": null,
+      "win_rate": null,
+      "max_drawdown": null,
+      "profit_factor": null,
+      "volatility": null,
+      "oracle_gap": null,
+      "baseline_delta": null,
+      "rank": null,
+      "status": "error"
+    }
+  ],
+  "artifacts": {
+    "json_path": "/home/lmr/projects/Electric-rl-reward/ellectric/reports/rl_quick_validation/evaluation_report.json",
+    "csv_path": "/home/lmr/projects/Electric-rl-reward/ellectric/reports/rl_quick_validation/evaluation_metrics.csv",
+    "md_path": "/home/lmr/projects/Electric-rl-reward/ellectric/reports/rl_quick_validation/evaluation_report.md",
+    "cumulative_pnl_html": "ellectric/reports/rl_quick_validation/cumulative_pnl.html"
+  }
+}
