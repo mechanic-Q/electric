@@ -1,16 +1,16 @@
-# Graph Report - Electric  (2026-06-27)
+# Graph Report - Electric-rl-reward  (2026-07-19)
 
 ## Corpus Check
-- 678 files · ~755,242 words
+- 1360 files · ~1,459,238 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 7011 nodes · 7064 edges · 787 communities (621 shown, 166 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 80 edges (avg confidence: 0.71)
+- 7130 nodes · 7263 edges · 790 communities (622 shown, 168 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 81 edges (avg confidence: 0.71)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `41424ea9`
+- Built from commit: `a05d580f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -723,20 +723,25 @@
 - [[_COMMUNITY_Community 710|Community 710]]
 - [[_COMMUNITY_Community 711|Community 711]]
 - [[_COMMUNITY_Community 712|Community 712]]
+- [[_COMMUNITY_Community 787|Community 787]]
+- [[_COMMUNITY_Community 788|Community 788]]
+- [[_COMMUNITY_Community 789|Community 789]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `GSD (Get Shit Done) Workflow System` - 35 edges
-2. `ElectricityMarketEnv` - 25 edges
+1. `ElectricityMarketEnv` - 35 edges
+2. `GSD (Get Shit Done) Workflow System` - 35 edges
 3. `TimeConfig` - 21 edges
 4. `LEARForecaster` - 21 edges
 5. `SillySpec Specification-Driven Development` - 20 edges
 6. `Animation Pitfalls：HTML 动画踩过的坑与规则` - 19 edges
 7. `Ellectric: AI+Electricity Trading Learning Platform` - 19 edges
-8. `ShandongDataLoader` - 18 edges
-9. `Core Workflow` - 18 edges
-10. `DeckStage` - 17 edges
+8. `BacktestRunner` - 18 edges
+9. `ShandongDataLoader` - 18 edges
+10. `Core Workflow` - 18 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `data_loader.py: DataLoader ABC + factory` --loads_from--> `OWID Energy Data (China)`  [EXTRACTED]
+  ellectric/pipeline/data_loader.py → AGENTS.md
 - `Module: data-loader` --documents--> `data_loader.py: DataLoader ABC + factory`  [EXTRACTED]
   .sillyspec/docs/Ellectric/modules/data-loader.md → ellectric/pipeline/data_loader.py
 - `Scan: Architecture` --documents--> `data_loader.py: DataLoader ABC + factory`  [EXTRACTED]
@@ -745,37 +750,35 @@
   .sillyspec/docs/Ellectric/scan/CONVENTIONS.md → ellectric/pipeline/data_loader.py
 - `Module: cleaner` --documents--> `cleaner.py: Data cleaning pipeline`  [EXTRACTED]
   .sillyspec/docs/Ellectric/modules/cleaner.md → ellectric/pipeline/cleaner.py
-- `Module: feature-engineer` --documents--> `features.py: FeatureEngineer`  [EXTRACTED]
-  .sillyspec/docs/Ellectric/modules/feature-engineer.md → ellectric/pipeline/features.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (787 total, 166 thin omitted)
+## Communities (790 total, 168 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.04
-Nodes (40): Codebase Concerns Template, File Template, gsd:thread command, gsd:ultraplan-phase command, gsd:undo command, gsd:update command, gsd:validate-phase command, gsd:verify-work command (+32 more)
+Cohesion: 0.03
+Nodes (43): Codebase Concerns Template, File Template, gsd:thread command, gsd:ultraplan-phase command, gsd:undo command, gsd:update command, gsd:validate-phase command, gsd:verify-work command (+35 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.10
-Nodes (41): backtest(), chat_stream(), ChatMessage, ChatRequest, predict(), Phase 4+5 — FastAPI REST API 服务 ==================================  5 个 POST 路由包, POST /chat/stream — SSE 流式对话。      Body: {"query": "..., "history": [...]}     R, simulate() (+33 more)
+Cohesion: 0.11
+Nodes (48): backtest(), chat_stream(), ChatMessage, ChatRequest, explain(), predict(), Phase 4+5 — FastAPI REST API 服务 ==================================  5 个 POST 路由包, POST /chat/stream — SSE 流式对话。      Body: {"query": "..., "history": [...]}     R (+40 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.07
 Nodes (28): GSD (Get Shit Done) Workflow System, GSD Health Workflow, GSD Help/Command Reference, GSD Import Workflow, GSD Inbox Triage Workflow, GSD Ingest Docs Workflow, GSD Insert Phase Workflow, GSD List Phase Assumptions Workflow (+20 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.10
-Nodes (20): ChineseDataLoader, create_loader(), DataLoader, 电力数据加载器 — 中国电力市场数据接入层 ===========================================  设计理念 (Design, 电力数据加载器抽象基类。      所有数据加载器必须实现 load_data() 方法，         返回一个包含 timestamp、load_mw 列, 加载电力数据。          Args:             start: 开始日期，格式 'YYYY-MM-DD'（可选）             e, 返回数据集的元信息。          Returns:             dict with:             - source:, 加载手动下载的中国电力日级/小时级数据。      设计意图:     ~~~~~~~~~     中国地方平台的电力数据需要手动浏览器下载（无法自动爬取）。 (+12 more)
+Cohesion: 0.06
+Nodes (40): ABC, DataFrame, ChineseDataLoader, create_loader(), DataLoader, OWIDChinaLoader, 电力数据加载器 — 中国电力市场数据接入层 ===========================================  设计理念 (Design, 电力数据加载器抽象基类。      所有数据加载器必须实现 load_data() 方法，         返回一个包含 timestamp、load_mw 列 (+32 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.07
 Nodes (30): SillySpec Specification-Driven Development, SillySpec Archive Skill, SillySpec Auto Skill, SillySpec Brainstorm Skill, SillySpec Commit Skill, SillySpec Continue Skill, SillySpec Execute Skill, SillySpec Explore Skill (+22 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.06
-Nodes (28): 电力时间分辨率全局配置 — Electric Time Resolution Config ==================================, 电力时间分辨率全局配置。      Attributes:         points_per_day: 每天时间点数。当前默认 96（15 分钟级）。, TimeConfig, backtester.py: BacktestRunner, rl_trainer.py: BaseRLAgent + RLAgentFactory, trading_env.py: ElectricityMarketEnv, FeatureEngineer, prepare_features() (+20 more)
+Cohesion: 0.07
+Nodes (24): 电力时间分辨率全局配置 — Electric Time Resolution Config ==================================, 电力时间分辨率全局配置。      Attributes:         points_per_day: 每天时间点数。当前默认 96（15 分钟级）。, TimeConfig, rl_trainer.py: BaseRLAgent + RLAgentFactory, Logger, 特征工程管道 — 从原始时序数据提取机器学习特征 ================================================  什么是特征, calculate_pnl(), plot_pnl() (+16 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.18
@@ -786,24 +789,24 @@ Cohesion: 0.08
 Nodes (37): Build style – AI 导航站: 圆角搜索框 + 精致白色工具卡片 + 药丸标签, Pentagram style – AI 导航站: 方角搜索框 + 编号工具列表 + 大写分类标签, Takram style – AI 导航站: 有机错位卡片布局 + 柔和分类标签 + 图表式连接, Build style – AI 写作工具: 漂浮编辑器卡片 + 暖金 CTA + 奢华写作体验, Pentagram style – AI 写作工具: 86px 大标题 + 线框编辑器模型 + 网格特性列, Takram style – AI 写作工具: 诗意衬线标题 + 有机编辑器 + 流程图, Huashu Design Skill Banner – dark theme with output surface grid (slides, prototype, animation, infographic), Build style – 公众号封面: 超细字重 Agent 悬浮于 70% 留白 + 暖金细线 (+29 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.31
-Nodes (8): SSE 流式 Agent 封装 —— 将 LangChain agent 输出转为 Server-Sent Events 流。 ================, 校验并过滤历史消息，仅保留 role 为 user/assistant 的消息。      Args:         history: 原始历史消息列表, SSE 流式对话生成器。      通过 astream_events() 逐事件产出 SSE 格式的 JSON 行。     事件类型：token / too, _sse_frame(), stream_chat(), _validate_history(), create_agent_executor(), 创建并返回一个 LangChain agent（CompiledStateGraph）。      使用 DeepSeek Chat API（兼容 OpenAI
+Cohesion: 0.17
+Nodes (13): SSE 流式 Agent 封装 —— 将 LangChain agent 输出转为 Server-Sent Events 流。 ================, 校验并过滤历史消息，仅保留 role 为 user/assistant 的消息。      Args:         history: 原始历史消息列表, SSE 流式对话生成器。      通过 astream_events() 逐事件产出 SSE 格式的 JSON 行。     事件类型：token / too, _sse_frame(), stream_chat(), _validate_history(), ask(), ask_agent() (+5 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.09
 Nodes (22): gsd:graphify Command, Audio Dual-Track (BGM+SFX) Mandatory Rule, Continuous Motion Narrative (Anti-PowerPoint), HTML-First Slide Architecture, iOS Frame Asset Rule, Junior Designer Mode, Placeholder Over Bad Implementation Principle, System Before Filler Principle (+14 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.08
-Nodes (46): Any, explain(), explain(), Figure, OWIDChinaLoader, 从 Our World in Data 自动拉取中国电力年度数据。      三级回退策略 (Fallback Chain)     ~~~~~~~~~~~~~, LEARForecaster, 持久化模型到磁盘 (joblib)。          Args:             path: 保存路径（.joblib 或 .pkl） (+38 more)
+Cohesion: 0.16
+Nodes (16): Figure, 多策略累计 P&L 叠加图。          Overlays cumulative P&L curves for all strategies., 绘制 Lasso 特征系数条状图。          系数绝对值 = 特征对价格的边际影响。         - 正系数 (蓝色): 特征值 ↑ → 价格 ↑, _build_waterfall(), explain_lear_sample(), explain_xgboost_sample(), _get_shap(), SHAP 模型可解释性 — TreeExplainer (XGBoost) + LinearExplainer (LEAR) ================= (+8 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.08
-Nodes (20): ABC, BaseAlgorithm, Env, BaseRLAgent, 强化学习训练框架 — PPO/TD3/SAC 适配器与工厂 ==========================================  基于 sta, stable-baselines3 模型适配器 — 内部类。      将 sb3 的 PPO/TD3/SAC 模型包装在 BaseRLAgent 接口之后。, 训练智能体。          Args:             total_timesteps: 总训练步数             callback: 训, 根据观测输出动作。          Args:             observation: 环境观测             deterministic (+12 more)
+Cohesion: 0.06
+Nodes (28): BaseAlgorithm, BaseRLAgent, Env, BacktestRunner, _find_timestamp_col(), 回测运行器 — 在历史数据上回放交易策略并对比性能。      Replays trading strategies on historical data an, 在历史数据上回放交易策略。          Replays a trading strategy on historical data, recording, 多策略对比 — 计算各策略绩效指标。          Computes performance metrics for each strategy. (+20 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.27
-Nodes (12): _build_units(), _generate_hourly_demand(), load_config(), main(), _merit_order_dispatch(), parse_args(), resolve_output_dir(), run_assume_simulation() (+4 more)
+Cohesion: 0.30
+Nodes (11): _build_units(), _generate_hourly_demand(), load_config(), main(), _merit_order_dispatch(), parse_args(), resolve_output_dir(), run_assume_simulation() (+3 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.08
@@ -822,12 +825,12 @@ Cohesion: 0.03
 Nodes (57): After Checkpoint, Balance Research and Reasoning, Binary Search / Divide and Conquer, Checkpoint Format, CHECKPOINT REACHED, Checkpoint Types, Combining Techniques, Comment Out Everything (+49 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.05
-Nodes (37): DataFrame, Logger, BacktestRunner, _find_timestamp_col(), 回测运行器 — 在历史数据上回放交易策略并对比性能。      Replays trading strategies on historical data an, 在历史数据上回放交易策略。          Replays a trading strategy on historical data, recording, 多策略对比 — 计算各策略绩效指标。          Computes performance metrics for each strategy., 多策略累计 P&L 叠加图。          Overlays cumulative P&L curves for all strategies. (+29 more)
+Cohesion: 0.10
+Nodes (15): LEARForecaster, 添加电价预测特征（Tier 1-3 渐进式）。          自动补全低 tier 缺失特征: 调用 add_price_features(df, "tie, 添加 Tier 1 核心特征 (6 个): 日历特征 + 价格滞后。, 添加 Tier 2 中级特征 (+5 = 11 个): 相关变量滞后 + 滚动统计。, 添加 Tier 3 高级特征 (+3 = 14 个): 循环编码 + 价格趋势。, 返回指定 tier 的特征列名列表（累积）。          - tier1: 6 列 (hour...lag_168h_price)         - t, TimeSeriesSplit + StandardScaler(fit-on-train) + Lasso 训练评估。          Args:, 用训练好的模型预测。          Args:             X: 特征 DataFrame (必须包含 train_evaluate 时的所有特 (+7 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.06
-Nodes (40): ndarray, baseline_mean(), baseline_persistence(), oracle_strategy(), 回测引擎 — 历史数据回放与多策略对比 ==================================  在历史负荷和电价数据上回放交易策略， 支持基线策, 持续法策略 — 用 24 小时前负荷作为投标。      Uses load from 24 hours ago as the bid schedule (pe, 均值策略 — 用过去 168 小时（7 天）均值作为全天投标。      Uses the mean load over the past 168 hours, Oracle 策略 — 用实际负荷作为投标（完美预见/理论上限）。      Uses actual load as the bid (perfect fore (+32 more)
+Cohesion: 0.07
+Nodes (35): ndarray, baseline_mean(), baseline_persistence(), oracle_strategy(), 回测引擎 — 历史数据回放与多策略对比 ==================================  在历史负荷和电价数据上回放交易策略， 支持基线策, 趋势策略 — 用最近 24 小时价格趋势决定方向。      Price trend strategy: use recent 24h price trend, 空仓策略 — 全部为 0。      Flat strategy: always position 0 (no exposure).      Args:, Oracle 策略 — 预测未来价格 + 价差做多/做空（理论上界）。      Perfect foresight: go long when future (+27 more)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.04
@@ -842,8 +845,8 @@ Cohesion: 0.05
 Nodes (37): Configuration Scope Blindness, Deprecated Features, Detect Test Infrastructure, Enhanced Web Search (Brave API), Exa Semantic Search (MCP), Firecrawl Deep Scraping (MCP), Honest Reporting, Identify Wave 0 Gaps (+29 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.05
-Nodes (37): 0. Git Branch Invariant, 10. Spawn gsd-plan-checker Agent, 11. Handle Checker Return, 11a. Filesystem Fallback (Checker), 12.5. Plan Bounce (Optional External Refinement), 12. Revision Loop (Max 3 Iterations), 13. Requirements Coverage Gate, 13a. Decision Coverage Gate (+29 more)
+Cohesion: 0.04
+Nodes (46): 0. Git Branch Invariant, 10. Spawn gsd-plan-checker Agent, 11. Handle Checker Return, 11a. Filesystem Fallback (Checker), 12.5. Plan Bounce (Optional External Refinement), 12. Revision Loop (Max 3 Iterations), 13. Requirements Coverage Gate, 13a. Decision Coverage Gate (+38 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.05
@@ -878,16 +881,16 @@ Cohesion: 0.26
 Nodes (12): callTTS(), __dirname, ffmpegConcat(), getDuration(), main(), makeSilence(), parseArgs(), parseScript() (+4 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.16
-Nodes (16): check_balance(), check_dispatch(), check_files_exist(), check_prices(), check_profits(), compute_stats(), generate_plots(), load_csv_safe() (+8 more)
+Cohesion: 0.29
+Nodes (11): check_balance(), check_dispatch(), check_files_exist(), check_prices(), check_profits(), compute_stats(), generate_plots(), load_csv_safe() (+3 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.06
 Nodes (33): 1. Context7 (highest priority) — Library Questions, 2. Official Docs via WebFetch — Authoritative Sources, 3. WebSearch — Ecosystem Discovery, ARCHITECTURE.md, COMPARISON.md (comparison mode only), Confidence Levels, Configuration Scope Blindness, Deprecated Features (+25 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.15
-Nodes (12): create_price_loader(), PriceDataLoader, 电价数据加载器 — ZionLuo xlsx 数据接入层 ===========================================  设计理念 (, Args:             data_path: xlsx 文件路径（相对于项目根目录或绝对路径）                        例如:, 加载 ZionLuo xlsx 文件，标准化列名，统一时区为 UTC，按时间排序。          Returns:             DataFram, 返回数据集的元信息。          Returns:             dict with:             - source:, 创建 PriceDataLoader 实例的工厂函数。      工厂模式让调用方不需要直接实例化 PriceDataLoader，     未来如果需要切换数, 标准化列名：中文/别名 → 英文标准名。      遍历 DataFrame 的列名，对每一列尝试匹配 COLUMN_NAME_MAP 中的别名。     如果 (+4 more)
+Cohesion: 0.11
+Nodes (21): create_price_loader(), PriceDataLoader, 电价数据加载器 — ZionLuo xlsx 数据接入层 ===========================================  设计理念 (, Args:             data_path: xlsx 文件路径（相对于项目根目录或绝对路径）                        例如:, 加载 ZionLuo xlsx 文件，标准化列名，统一时区为 UTC，按时间排序。          Returns:             DataFram, 返回数据集的元信息。          Returns:             dict with:             - source:, 创建 PriceDataLoader 实例的工厂函数。      工厂模式让调用方不需要直接实例化 PriceDataLoader，     未来如果需要切换数, 标准化列名：中文/别名 → 英文标准名。      遍历 DataFrame 的列名，对每一列尝试匹配 COLUMN_NAME_MAP 中的别名。     如果 (+13 more)
 
 ### Community 35 - "Community 35"
 Cohesion: 0.25
@@ -946,8 +949,8 @@ Cohesion: 0.06
 Nodes (32): 10. 风险登记, 11. 自审, 1. 背景, 2. 设计目标, 3. 非目标, 4. 拆分判断, 5.1 架构（5 层）, 5.2 Layer 2: ElectricityMarketEnv（gymnasium.Env） (+24 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.14
-Nodes (9): 从 OWID 加载中国电力年数据（三级回退 + 缓存）。          Args:             start:   开始日期 'YYYY-MM-D, 按优先级依次尝试从 OWID_CDN_URL → OWID_GITHUB_URL 拉取数据。          Returns:             (so, 从指定 URL 流式拉取 OWID CSV，过滤中国数据。          Args:             url:     CSV 文件 URL, 从本地 Parquet 缓存加载数据。缓存不存在时 raise FileNotFoundError。, 保存 DataFrame 到本地 Parquet 缓存。, 安全地将字符串转为 float，失败返回 None。, 将 TWh/年 转换为日均 MW。      转换公式:       daily_mw = twh * 10^6 / 365      解释:     - 1, _safe_float() (+1 more)
+Cohesion: 0.06
+Nodes (49): Namespace, build_datasets(), build_features(), _build_interpretation(), _build_metadata(), _detect_weather_source(), main(), make_env() (+41 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.06
@@ -1122,8 +1125,8 @@ Cohesion: 0.08
 Nodes (24): TDD 步骤, 修改文件（必填）, 参考, 实现要求, 接口定义（代码类任务必填）, 边界处理（必填）, 非目标（本任务不做的事）, 验收标准 (+16 more)
 
 ### Community 172 - "Community 172"
-Cohesion: 0.08
-Nodes (24): 1. 叙事节奏 · Slow-Fast-Boom-Stop 5 段结构, 2. Easing 哲学 · 拒绝 linear，拥抱物理, 3.1 底色不用纯黑纯白, 3.2 Easing 绝不是 linear, 3.3 Slow-Fast-Boom-Stop 叙事, 3.4 展示「过程」而非「魔法结果」, 3.5 鼠标轨迹人工绘制（弧线 + Perlin Noise）, 3.6 Logo「形变收束」(Morph) (+16 more)
+Cohesion: 0.13
+Nodes (15): 1. 叙事节奏 · Slow-Fast-Boom-Stop 5 段结构, 2. Easing 哲学 · 拒绝 linear，拥抱物理, 5. 场景配方（三种叙事模板）, 6. 反例 · 这样做就是 AI slop, 7. 自检清单（动画交付前 60 秒）, 8. 与其他 reference 的关系, Animation Best Practices · 正向动画设计语法, 三个核心 Easing（animations.jsx 已内置） (+7 more)
 
 ### Community 178 - "Community 178"
 Cohesion: 0.08
@@ -1150,8 +1153,8 @@ Cohesion: 0.09
 Nodes (21): 6-Pillar Scoring (1-4 per pillar), Automated Screenshot Capture via Playwright-MCP (preferred when available), Output: UI-REVIEW.md, Pillar 1: Copywriting, Pillar 2: Visuals, Pillar 3: Color, Pillar 4: Typography, Pillar 5: Spacing (+13 more)
 
 ### Community 200 - "Community 200"
-Cohesion: 0.09
-Nodes (22): BGM 选择决策树, Cue 选择优先级, Fade, ffmpeg 合成模板, SFX cue 设计规则, SFX 可以引导视觉节奏, SFX 音色要和视觉风格匹配, 参考 (+14 more)
+Cohesion: 0.07
+Nodes (27): BGM 选择决策树, Cue 选择优先级, Fade, ffmpeg 合成模板, SFX cue 设计规则, SFX 可以引导视觉节奏, SFX 音色要和视觉风格匹配, 参考 (+19 more)
 
 ### Community 221 - "Community 221"
 Cohesion: 0.09
@@ -1186,8 +1189,8 @@ Cohesion: 0.10
 Nodes (20): Data Processing, Development Environment, External Data Sources, Integrations — Ellectric, Notes, Python Standard Library (no install needed), Visualization, API & Schema (Phase 4) (+12 more)
 
 ### Community 229 - "Community 229"
-Cohesion: 0.10
-Nodes (14): calculate_pnl(), plot_pnl(), 预测引擎 — 负荷预测与盈亏计算 ==============================  本模块提供两种预测方法: 1. **持续法 (Persiste, 绘制端到端管道结果图。      包含两个子图:     1. 上: 负荷预测 vs 实际（时间序列叠加图）     2. 下: 累计 P&L（盈亏曲线）, XGBoost 负荷预测器 — 带 TimeSeriesSplit 防泄露和时间序列扩展。      为什么用 XGBoost？     ~~~~~~~~~~~, Args:             n_estimators: 树的数量（迭代次数），默认 100                           太多→过, 用 TimeSeriesSplit 训练和评估 XGBoost 模型。          CRITICAL: StandardScaler 在每次 fold 内, 用训练好的模型预测新数据。          Args:             X: 特征 DataFrame (必须包含 train_evaluate 时的 (+6 more)
+Cohesion: 0.15
+Nodes (8): XGBoost 负荷预测器 — 带 TimeSeriesSplit 防泄露和时间序列扩展。      为什么用 XGBoost？     ~~~~~~~~~~~, Args:             n_estimators: 树的数量（迭代次数），默认 100                           太多→过, 用 TimeSeriesSplit 训练和评估 XGBoost 模型。          CRITICAL: StandardScaler 在每次 fold 内, 用训练好的模型预测新数据。          Args:             X: 特征 DataFrame (必须包含 train_evaluate 时的, 持久化模型到磁盘。          Args:             path: 保存路径（.joblib 或 .pkl）, 从磁盘加载模型。          Args:             path: 模型文件路径（.joblib 或 .pkl）, 绘制预测对比图：实际 vs 预测叠加 + 误差分布直方图。          Args:             df:          原始数据（含 tim, XGBoostForecaster
 
 ### Community 230 - "Community 230"
 Cohesion: 0.10
@@ -1226,8 +1229,8 @@ Cohesion: 0.10
 Nodes (19): 10. 录屏开头几秒动画重复 —— Warmup 帧泄漏, 11. 画面内别画「伪 chrome」—— 装饰版 player UI 与真 chrome 撞车, 12. 录屏前置空白 + 录屏起点偏移 —— `__ready` × tick × lastTick 三联陷阱, 13. 录制时禁止 loop —— `window.__recording` 信号, 14. 60fps 视频默认用帧复制 —— minterpolate 兼容性差, 15. `file://` + 外部 `.jsx` 的 CORS 陷阱 —— 单文件交付必须内联引擎, 16. 跨 scene 反色上下文 —— 画面内元素不要硬编码颜色, 17. 离线/无 CDN 的真·自包含 —— React/Babel 全内联，且引擎也要 transpile (+11 more)
 
 ### Community 239 - "Community 239"
-Cohesion: 0.10
-Nodes (20): 1. SVG noise texture, 1. 悬浮卡片（整个风格的基本单元）, 2. 3D倾斜作品墙, 2. 角落品牌标识, 3. 2×2 四角汇聚（选择场景）, 3. 品牌收束 wordmark, Apple Gallery Showcase · 画廊展示墙动画风格, 五种核心动画模式 (+12 more)
+Cohesion: 0.14
+Nodes (14): 1. SVG noise texture, 1. 悬浮卡片（整个风格的基本单元）, 2. 3D倾斜作品墙, 2. 角落品牌标识, 3. 2×2 四角汇聚（选择场景）, 3. 品牌收束 wordmark, Apple Gallery Showcase · 画廊展示墙动画风格, 常见失败模式 (+6 more)
 
 ### Community 240 - "Community 240"
 Cohesion: 0.10
@@ -1355,7 +1358,7 @@ Nodes (15): Active, AI + 电力交易技术学习平台, Constraints, Context, C
 
 ### Community 271 - "Community 271"
 Cohesion: 0.12
-Nodes (16): 1. 先有内容/故事，再有动画, 2. 分Scene写时间轴, 3. 资源先行, Animations：时间轴动画引擎, Easing函数, UI过渡（0.3-0.8秒）, 关于Popmotion等库, 单段叙事动画最长不超过10秒 (+8 more)
+Nodes (17): 1. Fade In / Fade Out, 1. 先有内容/故事，再有动画, 2. Slide In, 2. 分Scene写时间轴, 3. 资源先行, 3. 逐字打字机, 4. 数字计数, 5. 分段解释（典型教学动画） (+9 more)
 
 ### Community 272 - "Community 272"
 Cohesion: 0.12
@@ -1738,8 +1741,8 @@ Cohesion: 0.20
 Nodes (11): GSD Plan Phase Workflow, GSD Quick Task Workflow, GSD Cross-AI Review Workflow, GSD Code Reviewer Agent, GSD Executor Agent, GSD Pattern Mapper Agent, GSD Phase Researcher Agent, GSD Plan Checker Agent (+3 more)
 
 ### Community 367 - "Community 367"
-Cohesion: 0.24
-Nodes (11): fetch/weather.py: WeatherFetcher, Ellectric 4-Phase Roadmap, shandong_loader.py: ShandongDataLoader, Shandong 15min CSV Data, Shanxi spot market JSON data, Open-Meteo Weather API, Data Schema Expand (5 New Loaders), Realtime Data Pipeline (+3 more)
+Cohesion: 0.17
+Nodes (14): fetch/weather.py: WeatherFetcher, Ellectric 4-Phase Roadmap, data_loader.py: DataLoader ABC + factory, shandong_loader.py: ShandongDataLoader, Shandong 15min CSV Data, Shanxi spot market JSON data, Open-Meteo Weather API, Data Schema Expand (5 New Loaders) (+6 more)
 
 ### Community 368 - "Community 368"
 Cohesion: 0.18
@@ -1878,8 +1881,8 @@ Cohesion: 0.20
 Nodes (9): 任务, 关键规则, 启动, 完成条件, 异常处理, 执行流程, 步骤循环, 用法 (+1 more)
 
 ### Community 402 - "Community 402"
-Cohesion: 0.24
-Nodes (8): Ember Climate API, OWID Energy Data (China), data_loader.py: DataLoader ABC + factory, ember_loader.py: EmberLoader, China Data Update (OWID+Ember), Module: data-loader, Scan: Conventions/Code Style, Scan: Integrations/Dependencies
+Cohesion: 0.50
+Nodes (5): Ember Climate API, OWID Energy Data (China), ember_loader.py: EmberLoader, China Data Update (OWID+Ember), Scan: Integrations/Dependencies
 
 ### Community 403 - "Community 403"
 Cohesion: 0.20
@@ -2006,8 +2009,8 @@ Cohesion: 0.22
 Nodes (8): Jupyter Notebook 验证, TESTING, 搜索清单, 测试现状, Schema 校验（Pydantic 自动验证）, 建议（与 Phase 1 一致，仍未实施）, 源码中的模型评估（Phase 1-3，非结构化测试）, 验证脚本（非结构化测试）
 
 ### Community 434 - "Community 434"
-Cohesion: 0.42
-Nodes (9): api/server.py: FastAPI, cli/main.py: Typer CLI, DeepSeek Chat API, llm/agent.py: LangChain Agent, llm/chat.py: Terminal chat loop, llm/tools.py: LangChain @tool functions, service/handlers.py: Business logic handlers, Phase4: Integration+LLM Interface (+1 more)
+Cohesion: 0.38
+Nodes (10): api/server.py: FastAPI, cli/main.py: Typer CLI, DeepSeek Chat API, llm/agent.py: LangChain Agent, llm/chat.py: Terminal chat loop, llm/tools.py: LangChain @tool functions, service/handlers.py: Business logic handlers, service/schemas.py: Pydantic v2 models (+2 more)
 
 ### Community 435 - "Community 435"
 Cohesion: 0.33
@@ -2494,8 +2497,8 @@ Cohesion: 0.33
 Nodes (5): 1. 读取 progress.json, 2. 如果有 progress.json, 3. 如果没有 progress.json, 注意, 流程
 
 ### Community 557 - "Community 557"
-Cohesion: 0.40
-Nodes (5): ask(), ask_agent(), 向 agent 发送一条自然语言查询，返回回答文本。      每次调用创建一个新的 agent 实例（无状态，适合 CLI 单次查询）。      Args:, main(), LLM 交互式对话入口 — 终端中启动 Ellectric 电力交易助手对话。  Usage:     python -m ellectric.llm.chat
+Cohesion: 0.07
+Nodes (30): clean_data(), detect_timezone(), get_data_quality_score(), 数据清洗管道 — 电力时序数据预处理 =================================  为什么需要数据清洗？ ~~~~~~~~~~~~~~~, 验证 DataFrame 的 schema 是否符合数据合约。      这是数据管道中的"类型检查"步骤。     类似于 TypeScript/MyPy 的, 检测 DataFrame 的时区信息。      Returns:         'UTC', 'unknown', 或其他 IANA 时区名, 检测并规范化时间频率。      检查 timestamp 的实际间隔，若不均匀则通过 resample 对齐到最可能的小时间隔。, 计算数据质量评分（0-100）。      评分维度:     - 缺失率 (40 分)     - 时间连续性 (30 分)     - 异常值比例 (30 (+22 more)
 
 ### Community 558 - "Community 558"
 Cohesion: 0.33
@@ -2538,8 +2541,8 @@ Cohesion: 0.33
 Nodes (6): 7.1 干了什么, 7.2.1 SSE（Server-Sent Events）而非 WebSocket, 7.2.2 零依赖纯前端, 7.2.3 LangChain astream_events, 7.2 用了什么技术、为什么, 7. Phase 5：Web Chat UI（SSE 流式对话）
 
 ### Community 568 - "Community 568"
-Cohesion: 0.33
-Nodes (5): fs, os, path, { spawn }, stdinTimeout
+Cohesion: 0.18
+Nodes (8): fs, os, path, { spawn }, stdinTimeout, fs, path, stdinTimeout
 
 ### Community 569 - "Community 569"
 Cohesion: 0.33
@@ -2578,8 +2581,8 @@ Cohesion: 0.33
 Nodes (6): §0.1 身份锚点, §0.2 核心信念（3 条）, §0.3 品味标准 · 什么是美, §0.4 自检 · 观众第一反应法, §0.5 身份和规则的关系, §0 · 你是谁 · 身份与品味
 
 ### Community 578 - "Community 578"
-Cohesion: 0.33
-Nodes (6): 1. Fade In / Fade Out, 2. Slide In, 3. 逐字打字机, 4. 数字计数, 5. 分段解释（典型教学动画）, 常用动画模式
+Cohesion: 0.08
+Nodes (25): Action space: directional positions, Already-implemented changes (retroactive), Backtester info dict backward compatibility, Baseline price computation, Baseline strategies redesigned, Data proxy unchanged, Data validation supporting the design, Further Notes (+17 more)
 
 ### Community 579 - "Community 579"
 Cohesion: 0.33
@@ -2630,8 +2633,8 @@ Cohesion: 0.33
 Nodes (5): File Template, Good Example, Guidelines, or, Research Template
 
 ### Community 591 - "Community 591"
-Cohesion: 0.33
-Nodes (6): 5.0. Research-Only Modifiers (`--view`, `--research`, prompt), 5.1. Standard Research Decision, 5. Handle Research, Handle Researcher Return, Research-Only Early Exit (`--research-phase`), Spawn gsd-phase-researcher
+Cohesion: 0.18
+Nodes (10): Config Comparison, Delta, Experiment Comparison, Impact Conclusion, Interpretation, Metadata, Metrics Comparison, Notes (+2 more)
 
 ### Community 592 - "Community 592"
 Cohesion: 0.40
@@ -2710,8 +2713,8 @@ Cohesion: 0.40
 Nodes (4): 前置检查, 多变更说明, 执行, 用户指令
 
 ### Community 611 - "Community 611"
-Cohesion: 0.40
-Nodes (5): 场景配方（开箱即用）, 配方 A · 产品发布 hero（huashu-design v9 同款）, 配方 B · 工具功能演示（参考 Anthropic Code Desktop）, 配方 C · AI 生成演示, 配方 D · 纯氛围长镜头（参考 Artifacts）
+Cohesion: 0.22
+Nodes (9): 3.1 底色不用纯黑纯白, 3.2 Easing 绝不是 linear, 3.3 Slow-Fast-Boom-Stop 叙事, 3.4 展示「过程」而非「魔法结果」, 3.5 鼠标轨迹人工绘制（弧线 + Perlin Noise）, 3.6 Logo「形变收束」(Morph), 3.7 衬线 + 无衬线双字体, 3.8 焦点切换 = 背景减弱 + 前景锐化 + Flash 引导 (+1 more)
 
 ### Community 612 - "Community 612"
 Cohesion: 0.40
@@ -2889,6 +2892,10 @@ Nodes (3): 多变更说明, 执行, 用户指令
 Cohesion: 0.50
 Nodes (3): 多变更说明, 执行, 用户指令
 
+### Community 656 - "Community 656"
+Cohesion: 0.17
+Nodes (17): Any, backtest(), explain(), forecast(), _format_table(), _output_table_or_json(), _print_error(), _print_json() (+9 more)
+
 ### Community 657 - "Community 657"
 Cohesion: 0.50
 Nodes (4): 两种架构对比, 为什么这条规则这么硬？（真实事故记录）, 🛑 先定架构：单文件 还是 多文件？, 选哪个？（决策树）
@@ -2898,8 +2905,8 @@ Cohesion: 0.50
 Nodes (4): 📐 出版物 grammar 模板（moxt 实测可复用）, 样式约定（直接抄走）, 每页骨架, 视觉主角必须差异化
 
 ### Community 659 - "Community 659"
-Cohesion: 0.50
-Nodes (3): Behavioral Directives, Developer Preferences, Stack Preferences
+Cohesion: 0.33
+Nodes (6): 五种核心动画模式, 模式 A · 四角汇聚（0.8-1.2s）, 模式 B · 选中放大 + 其他滑出（0.8s）, 模式 C · Ripple 涟漪展开（1.7s）, 模式 D · Sinusoidal Pan（持续漂移）, 模式 E · Focus Overlay（焦点切换）
 
 ### Community 671 - "Community 671"
 Cohesion: 0.67
@@ -2918,28 +2925,28 @@ Cohesion: 0.67
 Nodes (3): Notes 写作要点, Speaker Notes, 格式
 
 ### Community 680 - "Community 680"
-Cohesion: 0.67
-Nodes (3): 8.5.1 Outline Phase (outline-only mode, ~2 min), 8.5.2 Per-Plan Tasks (single-plan mode, ~3-5 min each), 8.5. Chunked Planning Mode
+Cohesion: 0.40
+Nodes (5): UI过渡（0.3-0.8秒）, 单段叙事动画最长不超过10秒, 叙事动画（2-10秒每段）, 微交互（0.1-0.3秒）, 节奏和时长指南
 
 ## Knowledge Gaps
-- **4801 isolated node(s):** `androidFrameStyles`, `browserWindowStyles`, `canvasStyles`, `iosFrameStyles`, `macosWindowStyles` (+4796 more)
+- **4830 isolated node(s):** `Problem Statement`, `Solution`, `User Stories`, `Market role: pure speculator`, `Reward formula: spread-based P&L` (+4825 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **166 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **168 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `load_csv_safe()` connect `Community 32` to `Community 17`?**
-  _High betweenness centrality (0.003) - this node is a cross-community bridge._
+- **Why does `gsd-phase - phase CRUD` connect `Community 105` to `Community 14`?**
+  _High betweenness centrality (0.002) - this node is a cross-community bridge._
+- **Why does `load_csv_safe()` connect `Community 32` to `Community 3`?**
+  _High betweenness centrality (0.002) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `ElectricityMarketEnv` (e.g. with `BacktestRunner` and `TimeConfig`) actually correct?**
   _`ElectricityMarketEnv` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `androidFrameStyles`, `browserWindowStyles`, `canvasStyles` to the rest of the system?**
-  _4982 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `Problem Statement`, `Solution`, `User Stories` to the rest of the system?**
+  _5028 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.03569267997580157 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.033315705975674244 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10505050505050505 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.07142857142857142 - nodes in this community are weakly interconnected._
-- **Should `Community 3` be split into smaller, more focused modules?**
-  _Cohesion score 0.09852216748768473 - nodes in this community are weakly interconnected._
