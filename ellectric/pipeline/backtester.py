@@ -36,66 +36,76 @@ _DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 def baseline_persistence(env: ElectricityMarketEnv, t: int) -> np.ndarray:
     """
-    持续法策略 — 用 24 小时前负荷作为投标。
+    趋势策略 — 用最近 24 小时价格趋势决定方向。
 
-    Uses load from 24 hours ago as the bid schedule (persistence forecast).
+    Price trend strategy: use recent 24h price trend as directional signal.
+    If prices are rising → go long; if falling → go short.
 
     Args:
         env: 交易环境实例
         t: 当前 24h 块的起始行索引
 
     Returns:
-        归一化投标向量 (0~1), shape (TimeConfig.points_per_day,), dtype float32
+        方向向量 (-1~1), shape (TimeConfig.points_per_day,), dtype float32
     """
-    capacity = env._max_capacity
     if t >= TimeConfig.points_per_day:
-        bid = env._load_data["load_mw"].iloc[t - TimeConfig.points_per_day : t].values.astype(np.float64)
+        recent = env._price_data["price_da"].iloc[
+            t - TimeConfig.points_per_day : t
+        ].values.astype(np.float64)
+        if recent[0] > 1e-8:
+            pct_change = (recent[-1] - recent[0]) / recent[0]
+        else:
+            pct_change = np.sign(recent[-1] - recent[0]) * 0.1
+        signal = float(np.clip(pct_change * 10.0, -1.0, 1.0))
     else:
-        bid = np.zeros(TimeConfig.points_per_day, dtype=np.float64)
-    return np.clip(bid / capacity, 0, 1).astype(np.float32)
+        signal = 0.0
+    return np.full(TimeConfig.points_per_day, signal, dtype=np.float32)
 
 
 def baseline_mean(env: ElectricityMarketEnv, t: int) -> np.ndarray:
     """
-    均值策略 — 用过去 168 小时（7 天）均值作为全天投标。
+    空仓策略 — 全部为 0。
 
-    Uses the mean load over the past 168 hours (7 days) as a flat bid.
+    Flat strategy: always position 0 (no exposure).
 
     Args:
         env: 交易环境实例
         t: 当前 24h 块的起始行索引
 
     Returns:
-        归一化投标向量 (0~1), shape (TimeConfig.points_per_day,), dtype float32
+        全零向量, shape (TimeConfig.points_per_day,), dtype float32
     """
-    capacity = env._max_capacity
-    if t >= TimeConfig.points_per_week:
-        past = env._load_data["load_mw"].iloc[t - TimeConfig.points_per_week : t].values
-        mean_val = past.mean() / capacity
-    else:
-        mean_val = 0.0
-    return np.full(TimeConfig.points_per_day, mean_val, dtype=np.float32)
+    return np.zeros(TimeConfig.points_per_day, dtype=np.float32)
 
 
 def oracle_strategy(env: ElectricityMarketEnv, t: int) -> np.ndarray:
     """
-    Oracle 策略 — 用实际负荷作为投标（完美预见/理论上限）。
+    Oracle 策略 — 预测未来价格 + 价差做多/做空（理论上界）。
 
-    Uses actual load as the bid (perfect foresight, theoretical upper bound).
+    Perfect foresight: go long when future price > rolling baseline,
+    go short when future price < rolling baseline.
 
     Args:
         env: 交易环境实例
         t: 当前 24h 块的起始行索引
 
     Returns:
-        归一化投标向量 (0~1), shape (TimeConfig.points_per_day,), dtype float32
+        方向向量 (-1 或 +1), shape (TimeConfig.points_per_day,), dtype float32
     """
-    capacity = env._max_capacity
-    n = min(TimeConfig.points_per_day, len(env._load_data) - t)
-    bid = env._load_data["load_mw"].iloc[t : t + n].values.astype(np.float64)
+    n = min(TimeConfig.points_per_day, len(env._price_data) - t)
+    prices = env._price_data["price_da"].iloc[t : t + n].values.astype(np.float64)
+    if t >= TimeConfig.points_per_week:
+        baseline = env._price_data["price_da"].iloc[
+            t - TimeConfig.points_per_week : t
+        ].values.mean()
+    else:
+        baseline = prices.mean()
+    direction = np.where(prices > baseline, 1.0, -1.0)
     if n < TimeConfig.points_per_day:
-        bid = np.pad(bid, (0, TimeConfig.points_per_day - n), constant_values=0)
-    return np.clip(bid / capacity, 0, 1).astype(np.float32)
+        direction = np.pad(
+            direction, (0, TimeConfig.points_per_day - n), constant_values=0
+        )
+    return direction.astype(np.float32)
 
 
 _STRATEGY_MAP: dict[str, Callable] = {
@@ -325,18 +335,18 @@ class BacktestRunner:
             "rl_ppo": "PPO 强化学习 (RL Agent)",
             "rl_td3": "TD3 强化学习 (RL Agent)",
             "rl_sac": "SAC 强化学习 (RL Agent)",
-            "baseline": "持久法基线 (Persistence)",
-            "baseline_persistence": "持久法基线 (Persistence)",
-            "baseline_mean": "均值基线 (Mean Baseline)",
+            "baseline": "趋势策略 (Trend)",
+            "baseline_persistence": "趋势策略 (Trend)",
+            "baseline_mean": "空仓策略 (Flat)",
         }
         DESC = (
             "<b>怎么看这张图 (How to read)</b><br>"
             "• 折线 = 各策略的累计盈亏轨迹（纵轴正值 = 盈利，负值 = 亏损）<br>"
-            "• <b>先知 Oracle</b> = 已知真实负荷的完美投标，理论上界<br>"
-            "• <b>基线 Baseline</b> = 持续法 (t-24h 作为今日投标)，传统调度基准<br>"
-            "• <b>RL Agent</b> = PPO 强化学习智能体，训练后自主投标<br>"
-            "• <b>价格接受者</b>：只决定投标量，出清价来自历史数据<br>"
-            "• <b>P&L 公式</b> = -|投标量 - 实际负荷| × 出清价 / 1000"
+            "• <b>先知 Oracle</b> = 完美预测价差方向，理论上界<br>"
+            "• <b>趋势 Trend</b> = 根据近期价格涨跌决定做多/做空<br>"
+            "• <b>空仓 Flat</b> = 始终不持仓（零基准）<br>"
+            "• <b>RL Agent</b> = 强化学习智能体，训练后自主决定持仓方向<br>"
+            "• <b>投机者价差模型</b>：position × (price − 7d_baseline) / 1000<br>"
         )
 
         fig = go.Figure()

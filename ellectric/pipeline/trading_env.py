@@ -3,17 +3,17 @@
 ==========================================
 
 提供基于强化学习的电力交易 Gymnasium 环境。
-智能体观察负荷/电价预测，提交 24 小时投标计划，
-环境模拟市场出清并基于交易绩效计算奖励。
+智能体观察负荷/电价预测，决定 24 小时方向性持仓，
+环境按价差模型结算盈亏。
 
 Electricity market trading environment for reinforcement learning.
-The agent observes load/price forecasts, submits 24-hour bid schedules,
-and the environment simulates market clearing with reward computation.
+The agent observes load/price forecasts, commits 24-hour directional positions,
+and the environment settles P&L using a spread-based model.
 
 关键设计:
 - 观测空间: Dict with 5 keys (load/price forecasts, time features, history, account)
-- 动作空间: Box(0, 1, (TimeConfig.points_per_day,)) — 归一化投标量
-- 出清逻辑: 价格接受者，cleared = min(bid, actual_load)
+- 动作空间: Box(-1, 1, (TimeConfig.points_per_day,)) — 方向性持仓 (-1=满做空, 1=满做多)
+- 结算逻辑: 投机者价差模型，position * (price - baseline_price)
 - 奖励: 3 种内置函数 (profit_only, risk_adjusted, volume_penalty)
 """
 
@@ -150,7 +150,10 @@ RewardRegistry.register_builtin()
 
 class ElectricityMarketEnv(gym.Env):
     """
-    电力市场交易强化学习环境。
+    电力市场投机交易强化学习环境。
+
+    Speculator model: agent takes directional positions exploiting price spreads.
+    Goes long when forecast price > baseline, short when forecast price < baseline.
 
     观测空间 (Dict):
         load_forecast_24h:  未来 24 小时负荷预测          (TimeConfig.points_per_day,)
@@ -160,12 +163,15 @@ class ElectricityMarketEnv(gym.Env):
         account_state:      账户状态 [cash, progress]      (2,)
 
     动作空间 (Box):
-        Box(0, 1, (TimeConfig.points_per_day,)) — 归一化投标量
-        实际投标量 (MW) = action * max_capacity
+        Box(-1, 1, (TimeConfig.points_per_day,)) — 方向性持仓
+        -1 = 满做空, 0 = 无仓位, +1 = 满做多
+        实际头寸 (MW) = action * max_capacity
 
-    出清逻辑:
-        价格接受者模型: cleared = min(bid_mw, actual_load)
-        P&L = -(bid_mw - actual_load) × price / 1000
+    结算逻辑:
+        投机者价差模型:
+            position_mw = action * max_capacity
+            baseline = 7 天滚动均价
+            P&L = position_mw * (price - baseline) / 1000
 
     使用方式:
         >>> from ellectric.pipeline.trading_env import ElectricityMarketEnv
@@ -226,6 +232,10 @@ class ElectricityMarketEnv(gym.Env):
         self._initial_cash = initial_cash
         self._max_capacity = max_capacity
         self._feature_engineer = feature_engineer
+        self._price_std = float(
+            price_data["price_da"].std() if "price_da" in price_data.columns else 200.0
+        )
+        self._reward_scale = 1000.0 / (self._max_capacity * max(self._price_std, 1.0))
 
         # ── 奖励函数 ──────────────────────────────────────────
         if isinstance(reward_fn, str):
@@ -253,7 +263,7 @@ class ElectricityMarketEnv(gym.Env):
                 ),
             }
         )
-        self.action_space = Box(0.0, 1.0, shape=(TimeConfig.points_per_day,), dtype=np.float32)
+        self.action_space = Box(-1.0, 1.0, shape=(TimeConfig.points_per_day,), dtype=np.float32)
 
         # ── 内部状态 ──────────────────────────────────────────
         self._current_step = 0
@@ -310,11 +320,11 @@ class ElectricityMarketEnv(gym.Env):
             raise ValueError(
                 f"action 必须为 {TimeConfig.points_per_day} 维（实际 {action.shape[0]}）"
             )
-        if np.any((action < 0) | (action > 1)):
+        if np.any((action < -1) | (action > 1)):
             logger.warning(
-                f"Action 越界 [{action.min():.3f}, {action.max():.3f}]，已裁剪到 [0, 1]"
+                f"Action 越界 [{action.min():.3f}, {action.max():.3f}]，已裁剪到 [-1, 1]"
             )
-        action = np.clip(action, 0.0, 1.0)
+        action = np.clip(action, -1.0, 1.0)
 
         # ── 获取实际数据 ──────────────────────────────────────
         start = self._current_step
@@ -324,10 +334,11 @@ class ElectricityMarketEnv(gym.Env):
         actual_load = self._load_data["load_mw"].iloc[start:end].values.astype(np.float64)
         price = self._price_data["price_da"].iloc[start:end].values.astype(np.float64)
 
-        # ── 出清与盈亏 ────────────────────────────────────────
-        bid_mw = action[:n_hours] * self._max_capacity
-        cleared = np.minimum(bid_mw, actual_load)
-        pnl_hourly = -np.abs(bid_mw - actual_load) * price / 1000.0
+        # ── 投机者价差模型 ────────────────────────────────────
+        position_mw = action[:n_hours] * self._max_capacity
+        baseline_price = self._compute_baseline_price(price)
+
+        pnl_hourly = position_mw * (price - baseline_price) / 1000.0
 
         step_pnl = float(pnl_hourly.sum())
         self._cash += step_pnl
@@ -338,16 +349,18 @@ class ElectricityMarketEnv(gym.Env):
             "step": self._current_step,
             "cash": self._cash,
             "total_pnl": step_pnl,
-            "cleared_volume": cleared.copy(),
+            "cleared_volume": position_mw.copy(),
             "clearing_price": price.copy(),
             "pnl_hourly": pnl_hourly.copy(),
             "mean_bid": float(action[:n_hours].mean()),
-            "bid_mw": bid_mw.copy(),
+            "bid_mw": position_mw.copy(),
             "actual_load": actual_load.copy(),
+            "baseline_price": float(baseline_price),
         }
 
         # ── 奖励 ──────────────────────────────────────────────
-        reward = self._compute_reward(cleared, price, pnl_hourly, info)
+        reward = self._compute_reward(position_mw, price, pnl_hourly, info)
+        reward = float(reward) * self._reward_scale
 
         # ── 终止判断 ──────────────────────────────────────────
         terminated = self._current_step >= len(self._load_data)
@@ -592,6 +605,19 @@ class ElectricityMarketEnv(gym.Env):
                 .values.astype(np.float32)
             )
         return np.zeros(TimeConfig.points_per_day, dtype=np.float32)
+
+    def _compute_baseline_price(self, current_prices: np.ndarray) -> float:
+        """计算投机基准价格 — 7 天滚动均价。
+
+        价格高于基准 → 做多盈利；价格低于基准 → 做空盈利。
+        """
+        step = self._current_step
+        if step >= TimeConfig.points_per_week:
+            hist = self._price_data["price_da"].iloc[
+                step - TimeConfig.points_per_week : step
+            ].values
+            return float(np.mean(hist))
+        return float(np.mean(current_prices))
 
     def _compute_reward(
         self,

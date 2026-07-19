@@ -156,6 +156,7 @@ def test_backtester_baseline_actions_use_timeconfig():
     class Env:
         _max_capacity = 1000.0
         _load_data = pd.DataFrame({"load_mw": np.ones(TimeConfig.points_per_week + TimeConfig.points_per_day) * 500.0})
+        _price_data = pd.DataFrame({"price_da": np.ones(TimeConfig.points_per_week + TimeConfig.points_per_day) * 300.0})
 
     env = Env()
     assert baseline_persistence(env, TimeConfig.points_per_day).shape == (TimeConfig.points_per_day,)
