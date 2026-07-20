@@ -1,0 +1,186 @@
+{
+  "metadata": {
+    "generated_at": "2026-07-20T14:36:19Z",
+    "git_sha": "a68513326c13d765db6748a68e5dfd48816c55a4",
+    "protocol_summary": {
+      "train_start": "2024-01-01",
+      "train_end": "2025-09-30",
+      "test_start": "2025-10-01",
+      "test_end": "2026-01-15",
+      "algos": [
+        "ppo",
+        "sac",
+        "td3"
+      ],
+      "baselines": [
+        "baseline_persistence",
+        "baseline_mean",
+        "oracle"
+      ],
+      "seed": 42,
+      "timesteps": 200000,
+      "tier": "tier4",
+      "price_proxy": "rt_price->price_da"
+    }
+  },
+  "protocol": {
+    "train_start": "2024-01-01",
+    "train_end": "2025-09-30",
+    "test_start": "2025-10-01",
+    "test_end": "2026-01-15",
+    "algos": [
+      "ppo",
+      "sac",
+      "td3"
+    ],
+    "baselines": [
+      "baseline_persistence",
+      "baseline_mean",
+      "oracle"
+    ],
+    "seed": 42,
+    "timesteps": 200000,
+    "tier": "tier4",
+    "price_proxy": "rt_price->price_da",
+    "checkpoint_dir": "models/rl_full_dataset",
+    "report_dir": "ellectric/reports/rl_full_dataset"
+  },
+  "training": {
+    "ppo": {
+      "status": "ok",
+      "algo": "ppo"
+    },
+    "sac": {
+      "status": "ok",
+      "algo": "sac"
+    },
+    "td3": {
+      "status": "ok",
+      "algo": "td3"
+    }
+  },
+  "evaluations": {
+    "baseline_persistence": {
+      "strategy": "baseline_persistence",
+      "status": "ok",
+      "error": null,
+      "artifact_path": null
+    },
+    "baseline_mean": {
+      "strategy": "baseline_mean",
+      "status": "ok",
+      "error": null,
+      "artifact_path": null
+    },
+    "oracle": {
+      "strategy": "oracle",
+      "status": "ok",
+      "error": null,
+      "artifact_path": null
+    },
+    "rl_ppo": {
+      "strategy": "rl_ppo",
+      "status": "ok",
+      "error": null,
+      "artifact_path": "models/rl_full_dataset/ppo.zip"
+    },
+    "rl_sac": {
+      "strategy": "rl_sac",
+      "status": "ok",
+      "error": null,
+      "artifact_path": "models/rl_full_dataset/sac.zip"
+    },
+    "rl_td3": {
+      "strategy": "rl_td3",
+      "status": "ok",
+      "error": null,
+      "artifact_path": "models/rl_full_dataset/td3.zip"
+    }
+  },
+  "metrics": [
+    {
+      "strategy": "baseline_persistence",
+      "total_pnl": 4051823.1529161427,
+      "sharpe": 2.5488313102521105,
+      "win_rate": 0.48771619496855345,
+      "max_drawdown": -4321051.341959741,
+      "profit_factor": 1.0846463437844378,
+      "volatility": 14621.244619608113,
+      "oracle_gap": 0.9691835522955328,
+      "baseline_delta": 0.0,
+      "rank": 5.0,
+      "status": "ok"
+    },
+    {
+      "strategy": "baseline_mean",
+      "total_pnl": 0.0,
+      "sharpe": 0.0,
+      "win_rate": 0.0,
+      "max_drawdown": 0.0,
+      "profit_factor": null,
+      "volatility": 0.0,
+      "oracle_gap": 1.0,
+      "baseline_delta": -4051823.1529161427,
+      "rank": 6.0,
+      "status": "ok"
+    },
+    {
+      "strategy": "oracle",
+      "total_pnl": 131482485.968971,
+      "sharpe": 101.1481709496822,
+      "win_rate": 1.0,
+      "max_drawdown": 0.0,
+      "profit_factor": null,
+      "volatility": 11955.970304313047,
+      "oracle_gap": 0.0,
+      "baseline_delta": 127430662.81605485,
+      "rank": 1.0,
+      "status": "ok"
+    },
+    {
+      "strategy": "rl_ppo",
+      "total_pnl": 20342316.938842922,
+      "sharpe": 31.484145617938594,
+      "win_rate": 0.6558569182389937,
+      "max_drawdown": -422197.0941358153,
+      "profit_factor": 3.464712379565658,
+      "volatility": 5942.695239897546,
+      "oracle_gap": 0.845284968648649,
+      "baseline_delta": 16290493.78592678,
+      "rank": 2.0,
+      "status": "ok"
+    },
+    {
+      "strategy": "rl_sac",
+      "total_pnl": 11477065.237238968,
+      "sharpe": 6.047100227942516,
+      "win_rate": 0.5192610062893082,
+      "max_drawdown": -880434.8620968722,
+      "profit_factor": 1.1926938287180622,
+      "volatility": 17456.558900424778,
+      "oracle_gap": 0.9127103115471403,
+      "baseline_delta": 7425242.084322825,
+      "rank": 4.0,
+      "status": "ok"
+    },
+    {
+      "strategy": "rl_td3",
+      "total_pnl": 17237199.465849053,
+      "sharpe": 9.106067234154011,
+      "win_rate": 0.5473663522012578,
+      "max_drawdown": -465587.2814049944,
+      "profit_factor": 1.3041718788186554,
+      "volatility": 17410.48259910121,
+      "oracle_gap": 0.868901174640728,
+      "baseline_delta": 13185376.31293291,
+      "rank": 3.0,
+      "status": "ok"
+    }
+  ],
+  "artifacts": {
+    "json_path": "/home/lmr/projects/Electric/ellectric/reports/rl_full_dataset/evaluation_report.json",
+    "csv_path": "/home/lmr/projects/Electric/ellectric/reports/rl_full_dataset/evaluation_metrics.csv",
+    "md_path": "/home/lmr/projects/Electric/ellectric/reports/rl_full_dataset/evaluation_report.md",
+    "cumulative_pnl_html": "ellectric/reports/rl_full_dataset/cumulative_pnl.html"
+  }
+}
