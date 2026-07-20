@@ -1,0 +1,89 @@
+{
+  "metadata": {
+    "generated_at": "2026-07-20T07:05:05Z",
+    "git_sha": "a04b0412092339df07a7e1a5ccb2ad7d032e169c",
+    "time_config": {
+      "freq": "15min",
+      "points_per_day": 96
+    },
+    "seed": 42,
+    "algos": [
+      "ppo"
+    ],
+    "timesteps_per_algo": 20000,
+    "train_range": [
+      "2024-01-01",
+      "2025-09-30"
+    ],
+    "test_range": [
+      "2025-10-01",
+      "2026-01-14"
+    ],
+    "tier": "tier4",
+    "price_proxy": "rt_price->price_da",
+    "reward_fn": "profit_only",
+    "weather_source": "cache",
+    "train_max_capacity_mw": 111100.836,
+    "test_max_capacity_mw": 99673.38
+  },
+  "training": {
+    "ppo": {
+      "algo": "ppo",
+      "status": "ok",
+      "final_reward": 1761.160616387635,
+      "duration_s": 393.1,
+      "checkpoint_path": "models/rl_full_dataset/ppo.zip",
+      "tb_log_path": "tb_logs/rl_full_dataset_ppo",
+      "error": null
+    }
+  },
+  "backtest": {
+    "metrics": [
+      {
+        "策略": "baseline_persistence",
+        "总收益": 6041414.369733619,
+        "夏普比率": 3.866900534914212,
+        "胜率": 0.49236111111111114,
+        "最大回撤": -4321051.341959741,
+        "交易次数": 10080
+      },
+      {
+        "策略": "baseline_mean",
+        "总收益": 0.0,
+        "夏普比率": 0.0,
+        "胜率": 0.0,
+        "最大回撤": 0.0,
+        "交易次数": 10080
+      },
+      {
+        "策略": "oracle",
+        "总收益": 129492894.75215352,
+        "夏普比率": 100.67493507323734,
+        "胜率": 1.0,
+        "最大回撤": 0.0,
+        "交易次数": 10080
+      },
+      {
+        "策略": "rl_ppo",
+        "总收益": 3698978.980807781,
+        "夏普比率": 30.388043436476362,
+        "胜率": 0.6787698412698413,
+        "最大回撤": -99130.71195491566,
+        "交易次数": 10080
+      }
+    ],
+    "cumulative_pnl_html_path": "ellectric/reports/rl_full_dataset/cumulative_pnl.html",
+    "_evaluation_protocol": "EvaluationProtocol(train_start='2024-01-01', train_end='2025-09-30', test_start='2025-10-01', test_end='2026-01-14', algos=('ppo',), baselines=('baseline_persistence', 'baseline_mean', 'oracle'), seed=42, timesteps=20000, tier='tier4', price_proxy='rt_price->price_da', checkpoint_dir='models/rl_full_dataset', report_dir='ellectric/reports/rl_full_dataset')",
+    "_evaluations": {
+      "baseline_persistence": "StrategyEvaluation(strategy='baseline_persistence', status='ok', trades=                timestamp    bid_mw  ...  pnl_cumulative              strategy\n0     2025-10-01 00:00:00      0.00  ...    0.000000e+00  baseline_persistence\n1     2025-10-01 00:15:00      0.00  ...    0.000000e+00  baseline_persistence\n2     2025-10-01 00:30:00      0.00  ...    0.000000e+00  baseline_persistence\n3     2025-10-01 00:45:00      0.00  ...    0.000000e+00  baseline_persistence\n4     2025-10-01 01:00:00      0.00  ...    0.000000e+00  baseline_persistence\n...                   ...       ...  ...             ...                   ...\n10075 2026-01-13 22:45:00  99673.38  ...    6.017174e+06  baseline_persistence\n10076 2026-01-13 23:00:00  99673.38  ...    6.023045e+06  baseline_persistence\n10077 2026-01-13 23:15:00  99673.38  ...    6.030186e+06  baseline_persistence\n10078 2026-01-13 23:30:00  99673.38  ...    6.035053e+06  baseline_persistence\n10079 2026-01-13 23:45:00  99673.38  ...    6.041414e+06  baseline_persistence\n\n[10080 rows x 8 columns], error=None, artifact_path=None)",
+      "baseline_mean": "StrategyEvaluation(strategy='baseline_mean', status='ok', trades=                timestamp  bid_mw  ...  pnl_cumulative       strategy\n0     2025-10-01 00:00:00     0.0  ...             0.0  baseline_mean\n1     2025-10-01 00:15:00     0.0  ...             0.0  baseline_mean\n2     2025-10-01 00:30:00     0.0  ...             0.0  baseline_mean\n3     2025-10-01 00:45:00     0.0  ...             0.0  baseline_mean\n4     2025-10-01 01:00:00     0.0  ...             0.0  baseline_mean\n...                   ...     ...  ...             ...            ...\n10075 2026-01-13 22:45:00     0.0  ...             0.0  baseline_mean\n10076 2026-01-13 23:00:00     0.0  ...             0.0  baseline_mean\n10077 2026-01-13 23:15:00     0.0  ...             0.0  baseline_mean\n10078 2026-01-13 23:30:00     0.0  ...             0.0  baseline_mean\n10079 2026-01-13 23:45:00     0.0  ...             0.0  baseline_mean\n\n[10080 rows x 8 columns], error=None, artifact_path=None)",
+      "oracle": "StrategyEvaluation(strategy='oracle', status='ok', trades=                timestamp    bid_mw  ...  pnl_cumulative  strategy\n0     2025-10-01 00:00:00 -99673.38  ...    1.617471e+02    oracle\n1     2025-10-01 00:15:00  99673.38  ...    2.080183e+03    oracle\n2     2025-10-01 00:30:00  99673.38  ...    3.563047e+03    oracle\n3     2025-10-01 00:45:00  99673.38  ...    5.173493e+03    oracle\n4     2025-10-01 01:00:00  99673.38  ...    7.187616e+03    oracle\n...                   ...       ...  ...             ...       ...\n10075 2026-01-13 22:45:00  99673.38  ...    1.294687e+08    oracle\n10076 2026-01-13 23:00:00  99673.38  ...    1.294745e+08    oracle\n10077 2026-01-13 23:15:00  99673.38  ...    1.294817e+08    oracle\n10078 2026-01-13 23:30:00  99673.38  ...    1.294865e+08    oracle\n10079 2026-01-13 23:45:00  99673.38  ...    1.294929e+08    oracle\n\n[10080 rows x 8 columns], error=None, artifact_path=None)",
+      "rl_ppo": "StrategyEvaluation(strategy='rl_ppo', status='ok', trades=                timestamp        bid_mw  ...  pnl_cumulative  strategy\n0     2025-10-01 00:00:00    561.577884  ...   -9.113122e-01    rl_ppo\n1     2025-10-01 00:15:00    251.226567  ...    3.924103e+00    rl_ppo\n2     2025-10-01 00:30:00    354.646342  ...    9.200258e+00    rl_ppo\n3     2025-10-01 00:45:00    223.789027  ...    1.281607e+01    rl_ppo\n4     2025-10-01 01:00:00     49.424518  ...    1.381480e+01    rl_ppo\n...                   ...           ...  ...             ...       ...\n10075 2026-01-13 22:45:00   5395.531249  ...    3.697345e+06    rl_ppo\n10076 2026-01-13 23:00:00   5806.609213  ...    3.697687e+06    rl_ppo\n10077 2026-01-13 23:15:00   4279.884530  ...    3.697994e+06    rl_ppo\n10078 2026-01-13 23:30:00  12954.740715  ...    3.698626e+06    rl_ppo\n10079 2026-01-13 23:45:00   5529.016156  ...    3.698979e+06    rl_ppo\n\n[10080 rows x 8 columns], error=None, artifact_path='models/rl_full_dataset/ppo.zip')"
+    },
+    "_evaluation_metrics_df": "               strategy     total_pnl      sharpe  ...  baseline_delta  rank  status\n0  baseline_persistence  6.041414e+06    3.866901  ...    0.000000e+00   2.0      ok\n1         baseline_mean  0.000000e+00    0.000000  ...   -6.041414e+06   4.0      ok\n2                oracle  1.294929e+08  100.674935  ...    1.234515e+08   1.0      ok\n3                rl_ppo  3.698979e+06   30.388043  ...   -2.342435e+06   3.0      ok\n\n[4 rows x 11 columns]"
+  },
+  "interpretation": {
+    "hard_threshold_applied": false,
+    "summary": "成功 1/1 算法训练完成。最佳策略: oracle。"
+  }
+}
