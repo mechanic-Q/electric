@@ -260,8 +260,6 @@ def run_backtest(
             ckpt = os.path.join(checkpoint_dir, f"{algo}.zip")
             try:
                 agent = RLAgentFactory.load(algo, ckpt)
-                if hasattr(agent, "_trained"):
-                    agent._trained = True
                 df = runner.replay(agent, test_load, test_price, test_start, test_end,
                                    strategy_name=f"rl_{algo}")
                 results[f"rl_{algo}"] = df

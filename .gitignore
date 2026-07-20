@@ -28,8 +28,6 @@ ellectric/data/*.xls
 Thumbs.db
 
 # Reports
-ellectric/reports/rl_full_dataset/*.json
-ellectric/reports/rl_full_dataset/*.md
 ellectric/reports/rl_full_dataset/*.html
 ellectric/reports/rl_full_dataset/*.log
 !ellectric/reports/rl_full_dataset/.gitkeep
@@ -47,3 +45,6 @@ tb_logs/rl_full_dataset_*/
 .sillyspec/.runtime/worktrees/
 .sillyspec/codebase/SCAN-RAW.md
 .sillyspec/local.yaml
+
+# Node.js
+node_modules/

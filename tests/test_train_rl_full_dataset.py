@@ -382,3 +382,13 @@ def _dummy_shandong_df():
         "is_holiday": np.zeros(n, dtype=int),
         "is_weekend": (pd.Series(timestamps).dt.dayofweek >= 5).astype(int),
     })
+
+
+def test_factory_load_sets_trained_flag():
+    """RLAgentFactory.load() 返回的 adapter 的 _trained=True."""
+    from ellectric.pipeline.rl_trainer import RLAgentFactory
+    ckpt = "models/rl_full_dataset/ppo.zip"
+    if not os.path.exists(ckpt):
+        pytest.skip("模型文件不存在，跳过")
+    agent = RLAgentFactory.load("ppo", ckpt)
+    assert agent._trained is True

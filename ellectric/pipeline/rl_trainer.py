@@ -400,4 +400,6 @@ class RLAgentFactory:
         model = algo_cls.load(path, env=env)
         logger.info("已加载 %s 模型: %s", algo.upper(), path)
 
-        return _SB3Adapter(algo=algo, model=model, env=env)
+        adapter = _SB3Adapter(algo=algo, model=model, env=env)
+        adapter._trained = True
+        return adapter
