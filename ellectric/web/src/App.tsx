@@ -202,9 +202,11 @@ function CopilotPanel() {
   const abortRef = useRef<AbortController | null>(null);
   const streamingTextRef = useRef("");
   const msgsEndRef = useRef<HTMLDivElement>(null);
+  const msgsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    msgsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = msgsContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages, streamingText]);
 
   useEffect(() => {
@@ -279,7 +281,7 @@ function CopilotPanel() {
     <aside className="copilot-panel">
       <div className="copilot-header">Copilot 助手 / Copilot</div>
       {configError && <div className="copilot-config-error">⚠️ {configError}</div>}
-      <div className="copilot-messages">
+      <div className="copilot-messages" ref={msgsContainerRef}>
         {messages.map((msg, i) => {
           switch (msg.role) {
             case "user":
@@ -289,17 +291,16 @@ function CopilotPanel() {
             case "tool_call":
               return (
                 <div key={i} className="message message-tool-call">
-                  🔧 {msg.name}({JSON.stringify(msg.args)})
+                  🔧 查询 {msg.name}…
                 </div>
               );
             case "tool_result":
+              const resultText = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content, null, 2);
               return (
-                <div key={i} className="message message-tool-result">
-                  <div className="tool-result-card">
-                    <div className="tool-result-header">{msg.name || "工具结果 / Tool result"}</div>
-                    <pre className="tool-result-body">{JSON.stringify(msg.payload ?? msg.content, null, 2)}</pre>
-                  </div>
-                </div>
+                <details key={i} className="message-tool-result-details">
+                  <summary>{msg.name || "工具结果 / Tool result"}</summary>
+                  <pre className="tool-result-body">{resultText}</pre>
+                </details>
               );
             case "error":
               return <div key={i} className="message message-error">⚠️ {msg.content}</div>;

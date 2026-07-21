@@ -127,6 +127,9 @@ async def stream_chat(
                 messages.append(AIMessage(content=msg["content"]))
         messages.append(HumanMessage(content=query))
 
+        # ── token 计数器: astream_events 结束后若 0 token 则触发 ainvoke 兜底 ──
+        token_count = 0
+
         # ── 通过 astream_events() 遍历 LangChain v2 流式事件 ──
         async for event in agent.astream_events(
             {"messages": messages},
@@ -139,8 +142,9 @@ async def stream_chat(
                 chunk = event.get("data", {}).get("chunk")
                 if chunk is not None and hasattr(chunk, "content"):
                     content = chunk.content
-                    # 边界: token content 为空则跳过
+                    # 边界: token content 为空则跳过（推理阶段 content=""）
                     if content:
+                        token_count += 1
                         yield _sse_frame({"type": "token", "content": content})
 
             # ── 工具调用开始: on_tool_start ──
@@ -169,6 +173,24 @@ async def stream_chat(
             # ── 未识别事件: debug 日志，静默跳过 ──
             else:
                 logger.debug("跳过未识别事件: event=%s, keys=%s", event_name, list(event.keys()))
+
+        # ── 兜底: streaming 未产出任何 token → 用 ainvoke 取完整回答 ──
+        if token_count == 0:
+            logger.info("stream_chat: astream_events 产出 0 token，触发 ainvoke 兜底")
+            try:
+                result = await agent.ainvoke({"messages": messages})
+                fallback_messages = result.get("messages", [])
+                if fallback_messages:
+                    final_content = (
+                        fallback_messages[-1].content
+                        if hasattr(fallback_messages[-1], "content")
+                        else str(fallback_messages[-1])
+                    )
+                    if final_content:
+                        yield _sse_frame({"type": "token", "content": final_content})
+            except Exception as fallback_exc:
+                logger.error("ainvoke 兜底也失败: %s", fallback_exc)
+                yield _sse_frame({"type": "error", "message": str(fallback_exc)})
 
         # ── 流正常结束 ──
         yield _sse_frame({"type": "done"})
