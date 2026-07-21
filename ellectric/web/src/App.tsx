@@ -88,7 +88,7 @@ function PriceHeatmapGrid({ data }: { data: RollingDemoResponse }) {
   }, [data, maxDays, ppd, tpH]);
 
   return (
-    <div style={{ marginTop: "8px" }}>
+    <div className="heatmap-scroll" style={{ marginTop: "8px" }}>
       <div className="heatmap-grid" style={{ gridTemplateColumns: `repeat(${maxDays},1fr)` }}>
         {cells.map((c, i) => (
           <div key={i} className="heatmap-cell" style={{ backgroundColor: c.c }} title={`电价 / Price ¥${c.v.toFixed(1)}`} />
@@ -194,6 +194,7 @@ function bilingualReportSummary(summary: string): string {
 }
 
 function CopilotPanel() {
+  const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -278,8 +279,10 @@ function CopilotPanel() {
   };
 
   return (
-    <aside className="copilot-panel">
-      <div className="copilot-header">Copilot 助手 / Copilot</div>
+    <>
+      <div className={"copilot-backdrop" + (open ? " open" : "")} onClick={() => setOpen(false)} />
+      <aside className={"copilot-panel" + (open ? " open" : "")}>
+        <div className="copilot-header">Copilot 助手 / Copilot</div>
       {configError && <div className="copilot-config-error">⚠️ {configError}</div>}
       <div className="copilot-messages" ref={msgsContainerRef}>
         {messages.map((msg, i) => {
@@ -330,6 +333,10 @@ function CopilotPanel() {
         )}
       </div>
     </aside>
+    <div className="copilot-toggle-bar" onClick={() => setOpen(o => !o)}>
+      💬 Copilot {open ? "关闭 / Close" : "打开 / Open"}
+    </div>
+  </>
   );
 }
 
@@ -381,14 +388,11 @@ export default function App() {
   if (error) return <div className="app"><p className="error">数据不可用 / Data unavailable: {error}</p></div>;
 
   const s = {
-    shell: { display: "grid", gridTemplateColumns: "minmax(0,1fr) 320px", gap: "18px" } as const,
-    stageGrid: { display: "grid", gridTemplateColumns: "1fr 250px", gap: "16px", padding: "18px", alignItems: "stretch" } as const,
     tl: { border: "1px solid rgba(45,212,191,0.22)", background: "rgba(2,6,23,0.4)", borderRadius: "16px", padding: "14px", minHeight: "215px", position: "relative" as const },
     ms: { display: "grid", gap: "10px" },
     mc: { background: "rgba(15,23,42,0.7)", border: "1px solid rgba(148,163,184,0.18)", borderRadius: "14px", padding: "12px" },
     mv: { display: "block", fontSize: "20px", marginTop: "4px" },
     ml: { color: "#8aa4c2", fontSize: "12px" },
-    pg: { display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: "18px" },
     pn: { border: "1px solid rgba(148,163,184,0.2)", background: "linear-gradient(145deg,rgba(15,23,42,0.92),rgba(13,26,46,0.9))", borderRadius: "20px", overflow: "hidden" },
     ph: { display: "flex", justifyContent: "space-between", gap: "14px", alignItems: "center", padding: "16px 18px", borderBottom: "1px solid rgba(148,163,184,0.16)" },
     pb: { padding: "16px 18px 18px" },
@@ -398,14 +402,9 @@ export default function App() {
 
   return (
     <div className="app">
-      <header style={{
-        display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "center",
-        padding: "18px 22px", borderBottom: "1px solid rgba(148,163,184,0.2)",
-        background: "rgba(2,6,23,0.72)", position: "sticky", top: 0, zIndex: 5,
-        backdropFilter: "blur(12px)",
-      }}>
+      <header className="app-header">
         <div>
-          <h1 style={{ fontSize: "22px", letterSpacing: "0.02em", margin: 0 }}>山东 15min 数据剧场 / Shandong 15min Data Theater</h1>
+          <h1>山东 15min 数据剧场 / Shandong 15min Data Theater</h1>
           <p style={{ color: "#8aa4c2", fontSize: "13px", marginTop: "4px" }}>
             {data?.meta.start} → {data?.meta.end} · {data?.meta.rows.toLocaleString()} 点 / points · 只读滚动演示端点 / rolling demo readonly endpoint
           </p>
@@ -413,7 +412,7 @@ export default function App() {
         <span className="badge badge-shandong" style={{ marginTop: 0 }}>学习原型 / Learning prototype · 非真实交易 / no real trading</span>
       </header>
 
-      <div className="app-layout" style={s.shell}>
+      <div className="app-layout">
         <main className="dashboard-main">
           <section className="section" style={{ marginTop: 0, border: "1px solid rgba(148,163,184,0.2)", background: "linear-gradient(145deg,rgba(15,23,42,0.92),rgba(13,26,46,0.9))", borderRadius: "20px", overflow: "hidden" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: "14px", alignItems: "center", padding: "16px 18px", borderBottom: "1px solid rgba(148,163,184,0.16)" }}>
@@ -436,7 +435,7 @@ export default function App() {
                 ))}
               </div>
             </div>
-            <div style={s.stageGrid}>
+            <div className="stage-grid">
               <div style={s.tl}>
                 <div style={{ position: "absolute", top: "14px", bottom: "14px", width: "2px", background: "#2dd4bf", boxShadow: "0 0 18px #2dd4bf", left: `${progressPct}%`, transition: "left 0.3s ease" }} />
                 <LoadChartSVG series={data!.series} tick={currentTick} />
@@ -457,7 +456,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="section" style={{ ...s.pg, marginTop: "18px" }}>
+          <section className="section panel-grid" style={{ marginTop: "18px" }}>
             <article style={s.pn}>
               <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>负荷预测 / Load Forecast</h3><span className="badge badge-shandong" style={{ margin: 0 }}>折线 / line</span></div>
               <div style={s.pb}><div style={s.mono}>实际负荷 / actual load ━━━━━{'\n'}预测 / forecast      - - - -{'\n'}当前 / current: {fmt(data?.series.load_actual[currentTick])} MW · 预测 / forecast {fmt(data?.series.load_forecast[currentTick])} MW</div></div>
