@@ -192,13 +192,13 @@ body {
 }
 .message-user { background: var(--bg-card); border: 1px solid var(--border); align-self: flex-end; }
 .message-assistant { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.15); align-self: flex-start; }
-.message-tool-call { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.15); font-family: monospace; font-size: 0.75rem; color: var(--purple); align-self: flex-start; }
-.message-tool-result { padding: 0; background: none; border: none; align-self: flex-start; }
+.message-tool-call { background: none; border: none; padding: 2px 12px; font-size: 0.7rem; color: var(--text-muted); align-self: flex-start; }
 .message-error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.15); color: var(--red); align-self: flex-start; }
 
-.tool-result-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; width: 100%; }
-.tool-result-header { padding: 6px 10px; background: rgba(168,85,247,0.1); color: var(--purple); font-size: 0.7rem; font-weight: 600; border-bottom: 1px solid var(--border); }
-.tool-result-body { padding: 8px 10px; font-size: 0.7rem; color: var(--text-secondary); overflow-x: auto; white-space: pre-wrap; font-family: monospace; margin: 0; max-height: 200px; overflow-y: auto; }
+.message-tool-result-details { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; width: 100%; align-self: flex-start; font-size: 0.75rem; }
+.message-tool-result-details summary { cursor: pointer; color: var(--purple); font-weight: 600; }
+.message-tool-result-details summary:hover { opacity: 0.8; }
+.tool-result-body { margin: 6px 0 0; padding: 6px 8px; font-size: 0.7rem; color: var(--text-secondary); overflow-x: auto; white-space: pre-wrap; font-family: monospace; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.15); border-radius: 4px; }
 
 .streaming-cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent); margin-left: 2px; animation: blink 0.8s step-end infinite; vertical-align: text-bottom; }
 @keyframes blink { 50% { opacity: 0; } }
