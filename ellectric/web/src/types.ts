@@ -122,6 +122,15 @@ export interface StrategyDailyEvidence {
   strategies: Record<StrategyKey, StrategyDailySeries>;
 }
 
+export interface StrategyOracleEvidence {
+  role: "theoretical_upper_bound";
+  simulated_spread_value: number[];
+  cumulative_simulated_spread_value: number[];
+  daily_simulated_spread_value: number[];
+  terminal_simulated_spread_value: number;
+  capture_rate: Record<StrategyKey, number>;
+}
+
 export interface StrategyEvidenceWindow {
   start: string;
   end: string;
@@ -185,7 +194,7 @@ export interface RollingDemoStrategyOk extends StrategyCommon {
   summary: StrategySummaryRow[];
   timeseries: StrategyTimeseries;
   daily: StrategyDailyEvidence;
-  oracle: Record<string, unknown>;
+  oracle: StrategyOracleEvidence;
   long_term_evidence: LongTermStrategyEvidence;
   provenance: StrategyProvenance;
 }

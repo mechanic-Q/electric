@@ -1,11 +1,5 @@
 import type { RollingDemoStrategy, StrategySummaryRow } from "./types";
-
-const strategyLabels: Record<StrategySummaryRow["strategy"], string> = {
-  td3: "TD3",
-  ppo: "PPO",
-  sac: "SAC",
-  trend: "趋势基线 / Trend",
-};
+import { simulatedValueParts, strategyPresentation } from "./strategyPresentation";
 
 const factLabels: Record<string, string> = {
   highest_30_day_value: "30 天累计值最高",
@@ -17,18 +11,12 @@ const factLabels: Record<string, string> = {
   simple_rule_reference: "简单规则参照",
 };
 
-function formatSimulatedValue(value: number, signed = true): string {
-  const sign = value < 0 ? "−" : signed && value > 0 ? "+" : "";
-  const absolute = Math.abs(value);
-  if (absolute >= 10_000) return `${sign}${(absolute / 10_000).toFixed(2)} 万`;
-  return `${sign}${Math.round(absolute).toLocaleString("zh-CN")}`;
-}
-
 function MetricValue({ value, signed = true }: { value: number; signed?: boolean }) {
+  const formatted = simulatedValueParts(value, signed);
   return (
     <span className="strategy-number">
-      {formatSimulatedValue(value, signed)}
-      <small>模拟单位</small>
+      {formatted.number}
+      <small>{formatted.unit}</small>
     </span>
   );
 }
@@ -56,7 +44,7 @@ function StrategyTable({ rows }: { rows: StrategySummaryRow[] }) {
             <tr key={row.strategy} data-strategy={row.strategy}>
               <th scope="row">
                 <span className="strategy-identity-mark" aria-hidden="true" />
-                {strategyLabels[row.strategy]}
+                {strategyPresentation[row.strategy].label}
               </th>
               <td><MetricValue value={row.simulated_spread_value} /></td>
               <td><strong>{row.profitable_days}</strong><span className="strategy-denominator"> / 30 天</span></td>

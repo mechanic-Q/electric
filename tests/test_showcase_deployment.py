@@ -144,6 +144,7 @@ class TestStrategyComparisonSource:
                 root / "App.tsx",
                 root / "ReplayStage.tsx",
                 root / "StrategyComparison.tsx",
+                root / "StrategyPathEvidence.tsx",
             )
         }
 
@@ -188,6 +189,18 @@ class TestStrategyComparisonSource:
         assert "历史发布负荷预测" in replay
         assert "日前价仅作对照" in replay
         assert "30×96" not in replay
+
+    def test_strategy_path_uses_native_accessible_visuals(self, sources):
+        path = sources["StrategyPathEvidence.tsx"]
+
+        assert "const HEAT_LIMIT = 300_000" in path
+        assert "<svg" in path
+        assert 'type="button"' in path
+        assert 'role="gridcell"' in path
+        assert "onSelectDay(day)" in path
+        assert "Oracle 理论价差上界" in path
+        assert "plotly" not in path.lower()
+        assert "recharts" not in path.lower()
 
     def test_degraded_strategy_does_not_render_comparison_or_long_term_values(
         self, sources

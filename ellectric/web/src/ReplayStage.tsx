@@ -5,18 +5,13 @@ import type {
   StrategyKey,
   StrategyPointSeries,
 } from "./types";
+import { StrategyPathEvidence } from "./StrategyPathEvidence";
+import { formatSimulatedValue, strategyOrder, strategyPresentation } from "./strategyPresentation";
 
 type ReplayMode = "day" | "hour" | "point";
 
 const POINTS_PER_DAY = 96;
 const POINTS_PER_HOUR = 4;
-const strategyOrder: StrategyKey[] = ["td3", "ppo", "sac", "trend"];
-const strategyLabels: Record<StrategyKey, string> = {
-  td3: "TD3",
-  ppo: "PPO",
-  sac: "SAC",
-  trend: "趋势 / Trend",
-};
 const modeLabels: Record<ReplayMode, string> = {
   day: "逐日 / Daily",
   hour: "逐小时 / Hourly",
@@ -42,14 +37,6 @@ function formatNumber(value: number | null | undefined, digits = 1): string {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
-}
-
-function formatContribution(value: number): string {
-  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
-  const absolute = Math.abs(value);
-  return absolute >= 10_000
-    ? `${sign}${(absolute / 10_000).toFixed(2)} 万模拟单位`
-    : `${sign}${Math.round(absolute).toLocaleString("zh-CN")} 模拟单位`;
 }
 
 function dateLabel(timestamp: string): string {
@@ -253,9 +240,9 @@ function deterministicSummary(
 ): string {
   const priceKind = mode === "point" ? "实时结算价" : "实时结算价均值";
   const relation = spread == null || Math.abs(spread) < 0.01 ? "接近" : spread > 0 ? "高于" : "低于";
-  const positive = strategyOrder.filter((key) => periodContributionClass(summaries[key], mode) === "正贡献").map((key) => strategyLabels[key]);
-  const negative = strategyOrder.filter((key) => periodContributionClass(summaries[key], mode) === "负贡献").map((key) => strategyLabels[key]);
-  const neutral = strategyOrder.filter((key) => periodContributionClass(summaries[key], mode) === "无贡献").map((key) => strategyLabels[key]);
+  const positive = strategyOrder.filter((key) => periodContributionClass(summaries[key], mode) === "正贡献").map((key) => strategyPresentation[key].label);
+  const negative = strategyOrder.filter((key) => periodContributionClass(summaries[key], mode) === "负贡献").map((key) => strategyPresentation[key].label);
+  const neutral = strategyOrder.filter((key) => periodContributionClass(summaries[key], mode) === "无贡献").map((key) => strategyPresentation[key].label);
   const parts = [`${label}：${priceKind}${relation}当日回测基准价${spread == null ? "" : `，价差 ${spread >= 0 ? "+" : ""}${spread.toFixed(1)} 元/MWh`}`];
   if (positive.length) parts.push(`${positive.join("、")}为正贡献`);
   if (negative.length) parts.push(`${negative.join("、")}为负贡献`);
@@ -301,6 +288,12 @@ export function ReplayStage({ data }: { data: RollingDemoResponse }) {
     setPlaying(false);
     setMode("point");
     setTick(Math.max(0, Math.min(total - 1, nextTick)));
+  };
+
+  const selectDay = (dayIndex: number) => {
+    setPlaying(false);
+    setMode("day");
+    setTick(dayIndex * POINTS_PER_DAY);
   };
 
   const [start, end] = summaryRange(mode, tick, total);
@@ -424,8 +417,8 @@ export function ReplayStage({ data }: { data: RollingDemoResponse }) {
                 const classification = periodContributionClass(summary, mode);
                 return (
                   <div key={key} role="row" data-contribution={classification}>
-                    <strong role="rowheader">{strategyLabels[key]}</strong>
-                    <span role="cell">{formatContribution(summary.contribution)}</span>
+                    <strong role="rowheader">{strategyPresentation[key].label}</strong>
+                    <span role="cell">{formatSimulatedValue(summary.contribution)}</span>
                     <span role="cell">{classification}</span>
                     <small role="cell">
                       {mode === "point"
@@ -471,6 +464,14 @@ export function ReplayStage({ data }: { data: RollingDemoResponse }) {
         <header><h3>30 天 × 24 小时实时价格均价 / Monthly RT Price Overview</h3><span>当前日期与小时高亮</span></header>
         <PriceMonthMatrix data={data} tick={tick} mode={mode} />
       </article>
+      {strategy ? (
+        <StrategyPathEvidence
+          strategy={strategy}
+          selectedTick={Math.max(start, end - 1)}
+          selectedDay={currentDay}
+          onSelectDay={selectDay}
+        />
+      ) : null}
     </section>
   );
 }
