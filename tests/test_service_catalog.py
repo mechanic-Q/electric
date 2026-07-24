@@ -71,6 +71,16 @@ def test_list_reports_scans_known_report_types():
     assert "rl_evaluation" in types
 
 
+def test_rl_report_catalog_uses_long_term_simulated_value_language():
+    from ellectric.service import catalog
+
+    report = next(item for item in catalog.list_reports() if item.report_type == "rl_evaluation")
+    assert report.title.startswith("106 天样本外稳定性评估")
+    assert "P&L" not in report.title
+    assert all(not key.startswith("pnl_") for key in report.metrics)
+    assert all(key.startswith("simulated_spread_value_") for key in report.metrics)
+
+
 def test_list_reports_filter_by_type():
     from ellectric.service import catalog
 

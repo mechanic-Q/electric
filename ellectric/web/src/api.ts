@@ -1,4 +1,4 @@
-import type { CapabilityItem, DatasetInfo, ReportDetail, ReportSummary, RollingDemoResponse } from "./types";
+import type { CapabilityItem, DatasetInfo, ReplayContext, ReportDetail, ReportSummary, RollingDemoResponse } from "./types";
 
 async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal });
@@ -81,12 +81,13 @@ export async function streamChat(
   query: string,
   history: Array<{ role: string; content: string }>,
   callbacks: ChatCallbacks,
+  replayContext?: ReplayContext | null,
   signal?: AbortSignal,
 ): Promise<void> {
   const res = await fetch("/chat/stream", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, history }),
+    body: JSON.stringify({ query, history, replay_context: replayContext ?? null }),
     signal,
   });
 

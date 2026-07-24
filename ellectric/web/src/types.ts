@@ -230,6 +230,53 @@ export interface RollingDemoResponse {
   warnings: string[];
 }
 
+export type ReplayGranularity = "daily" | "hourly" | "15-minute";
+export type ReplayContribution = "positive" | "negative" | "none";
+
+export interface ReplayStrategyContext {
+  simulated_spread_value: number;
+  contribution: ReplayContribution;
+  reconstructed_position_pct: number | null;
+  position_state: PositionState | null;
+  long_periods: number;
+  short_periods: number;
+  approximately_flat_periods: number;
+  indeterminate_periods: number;
+  mean_absolute_position_pct: number | null;
+}
+
+export interface ReplayContext {
+  scene: "shandong-2025-10-30d";
+  window_start: "2025-10-01T00:00:00+08:00";
+  window_end: "2025-10-30T23:45:00+08:00";
+  timezone: "Asia/Shanghai (UTC+8)";
+  granularity: ReplayGranularity;
+  period_start: string;
+  period_end: string;
+  period_points: number;
+  baseline_initialization: boolean;
+  market: {
+    realtime_settlement_price: number;
+    realtime_price_measure: "exact" | "mean";
+    realtime_price_min: number;
+    realtime_price_max: number;
+    daily_backtest_baseline_price: number;
+    spread: number;
+    day_ahead_hourly_price: number | null;
+    load_actual_mw: number;
+    historical_published_load_forecast_mw: number;
+    load_measure: "exact" | "mean" | "peak";
+    wind_mw: number;
+    solar_mw: number;
+    renewable_measure: "exact" | "mean";
+  };
+  strategies: Record<StrategyKey, ReplayStrategyContext>;
+  snapshot: {
+    generated_at: string;
+    content_hash: string;
+  };
+}
+
 export type ChatEvent =
   | { type: "token"; content: string }
   | { type: "tool_call"; name?: string; args?: unknown }

@@ -29,12 +29,13 @@ Phase 4+5 — FastAPI REST API 服务
 
 import logging
 import os
+from datetime import datetime, timedelta, timezone
+from typing import Literal
 
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
-from typing import Literal
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ellectric.service.schemas import (
     CapabilityItem,
@@ -80,12 +81,102 @@ class ChatMessage(BaseModel):
     content: str = Field(description="消息内容")
 
 
+class _ReplayContextModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+
+
+class ReplayMarketContext(_ReplayContextModel):
+    realtime_settlement_price: float
+    realtime_price_measure: Literal["exact", "mean"]
+    realtime_price_min: float
+    realtime_price_max: float
+    daily_backtest_baseline_price: float
+    spread: float
+    day_ahead_hourly_price: float | None = None
+    load_actual_mw: float
+    historical_published_load_forecast_mw: float
+    load_measure: Literal["exact", "mean", "peak"]
+    wind_mw: float
+    solar_mw: float
+    renewable_measure: Literal["exact", "mean"]
+
+
+class ReplayStrategyContext(_ReplayContextModel):
+    simulated_spread_value: float
+    contribution: Literal["positive", "negative", "none"]
+    reconstructed_position_pct: float | None = Field(default=None, ge=-100.1, le=100.1)
+    position_state: Literal["long", "short", "approximately_flat", "indeterminate"] | None = None
+    long_periods: int = Field(ge=0, le=96)
+    short_periods: int = Field(ge=0, le=96)
+    approximately_flat_periods: int = Field(ge=0, le=96)
+    indeterminate_periods: int = Field(ge=0, le=96)
+    mean_absolute_position_pct: float | None = Field(default=None, ge=0, le=100.1)
+
+
+class ReplayStrategiesContext(_ReplayContextModel):
+    td3: ReplayStrategyContext
+    ppo: ReplayStrategyContext
+    sac: ReplayStrategyContext
+    trend: ReplayStrategyContext
+
+
+class ReplaySnapshotContext(_ReplayContextModel):
+    generated_at: str = Field(max_length=40)
+    content_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class ReplayContext(_ReplayContextModel):
+    scene: Literal["shandong-2025-10-30d"]
+    window_start: Literal["2025-10-01T00:00:00+08:00"]
+    window_end: Literal["2025-10-30T23:45:00+08:00"]
+    timezone: Literal["Asia/Shanghai (UTC+8)"]
+    granularity: Literal["daily", "hourly", "15-minute"]
+    period_start: str = Field(pattern=r"^2025-10-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:00\+08:00$")
+    period_end: str = Field(pattern=r"^2025-10-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:00\+08:00$")
+    period_points: int = Field(ge=1, le=96)
+    baseline_initialization: bool
+    market: ReplayMarketContext
+    strategies: ReplayStrategiesContext
+    snapshot: ReplaySnapshotContext
+
+    @model_validator(mode="after")
+    def validate_selection(self):
+        start = datetime.fromisoformat(self.period_start)
+        end = datetime.fromisoformat(self.period_end)
+        scene_start = datetime(2025, 10, 1, tzinfo=timezone(timedelta(hours=8)))
+        scene_end = datetime(2025, 10, 30, 23, 45, tzinfo=timezone(timedelta(hours=8)))
+        expected_points = {"daily": 96, "hourly": 4, "15-minute": 1}[self.granularity]
+        if start.utcoffset() != timedelta(hours=8) or end.utcoffset() != timedelta(hours=8):
+            raise ValueError("period timestamps must use UTC+8")
+        if not scene_start <= start <= end <= scene_end:
+            raise ValueError("period must stay within the 30-day replay window")
+        if self.period_points != expected_points:
+            raise ValueError("period_points does not match granularity")
+        if end != start + timedelta(minutes=15 * (self.period_points - 1)):
+            raise ValueError("period timestamps do not match period_points")
+        for name in ("td3", "ppo", "sac", "trend"):
+            strategy = getattr(self.strategies, name)
+            counted = (
+                strategy.long_periods
+                + strategy.short_periods
+                + strategy.approximately_flat_periods
+                + strategy.indeterminate_periods
+            )
+            if counted != self.period_points:
+                raise ValueError(f"{name} period counts do not match period_points")
+        return self
+
+
 class ChatRequest(BaseModel):
     """SSE 流式对话请求。"""
     query: str = Field(description="用户当前输入")
     history: list[ChatMessage] = Field(
         default_factory=list,
         description="历史消息列表。客户端维护会话上下文。",
+    )
+    replay_context: ReplayContext | None = Field(
+        default=None,
+        description="当前屏幕的紧凑30天历史回放事实，不写入聊天历史。",
     )
 
 
@@ -137,7 +228,11 @@ async def chat_stream(req: ChatRequest):
     from ellectric.chat.streaming import stream_chat
 
     return StreamingResponse(
-        stream_chat(req.query, [m.model_dump() for m in req.history]),
+        stream_chat(
+            req.query,
+            [m.model_dump() for m in req.history],
+            replay_context=req.replay_context.model_dump(mode="json") if req.replay_context else None,
+        ),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

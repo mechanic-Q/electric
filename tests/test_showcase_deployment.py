@@ -202,6 +202,16 @@ class TestStrategyComparisonSource:
         assert "plotly" not in path.lower()
         assert "recharts" not in path.lower()
 
+    def test_copilot_sends_compact_current_replay_context(self, sources):
+        app = sources["App.tsx"]
+        replay = sources["ReplayStage.tsx"]
+
+        assert "onContextChange={setReplayContext}" in app
+        assert "replayContext, ac.signal" in app
+        assert 'scene: "shandong-2025-10-30d"' in replay
+        assert "strategy.provenance.content_hash" in replay
+        assert "long_term_evidence" not in replay
+
     def test_degraded_strategy_does_not_render_comparison_or_long_term_values(
         self, sources
     ):

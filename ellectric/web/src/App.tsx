@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import type { RollingDemoResponse } from "./types";
+import type { ReplayContext, RollingDemoResponse } from "./types";
 import { fetchRollingDemo, streamChat } from "./api";
 import { ReplayStage } from "./ReplayStage";
 import { StrategyComparison } from "./StrategyComparison";
@@ -67,7 +67,7 @@ function bilingualReportSummary(summary: string): string {
   return `${summary} / Source report summary`;
 }
 
-function CopilotPanel() {
+function CopilotPanel({ replayContext }: { replayContext: ReplayContext | null }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [input, setInput] = useState("");
@@ -141,7 +141,7 @@ function CopilotPanel() {
         setStreaming(false);
         abortRef.current = null;
       },
-    }, ac.signal);
+    }, replayContext, ac.signal);
   };
 
   const cancel = () => {
@@ -218,6 +218,7 @@ export default function App() {
   const [data, setData] = useState<RollingDemoResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [replayContext, setReplayContext] = useState<ReplayContext | null>(null);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -257,7 +258,7 @@ export default function App() {
 
       <div className="app-layout">
         <main className="dashboard-main">
-          <ReplayStage data={data!} />
+          <ReplayStage data={data!} onContextChange={setReplayContext} />
 
           <section className="section panel-grid" style={{ marginTop: "18px" }}>
             <StrategyComparison strategy={data!.strategy} />
@@ -294,7 +295,7 @@ export default function App() {
             </details>
           </section>
         </main>
-        <CopilotPanel />
+        <CopilotPanel replayContext={replayContext} />
       </div>
     </div>
   );

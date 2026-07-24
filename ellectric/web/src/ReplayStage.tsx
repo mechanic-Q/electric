@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type {
   PositionState,
+  ReplayContext,
+  ReplayContribution,
+  ReplayStrategyContext,
   RollingDemoResponse,
   StrategyKey,
   StrategyPointSeries,
@@ -218,6 +221,31 @@ function periodContributionClass(summary: StrategyPeriodSummary, mode: ReplayMod
   return contributionClass(summary.contribution);
 }
 
+function replayContribution(summary: StrategyPeriodSummary, mode: ReplayMode): ReplayContribution {
+  const contribution = periodContributionClass(summary, mode);
+  if (contribution === "正贡献") return "positive";
+  if (contribution === "负贡献") return "negative";
+  return "none";
+}
+
+function replayStrategyContext(summary: StrategyPeriodSummary, mode: ReplayMode): ReplayStrategyContext {
+  return {
+    simulated_spread_value: summary.contribution,
+    contribution: replayContribution(summary, mode),
+    reconstructed_position_pct: mode === "point" && summary.pointPosition != null
+      ? summary.pointPosition * 100
+      : null,
+    position_state: mode === "point" ? summary.pointState : null,
+    long_periods: summary.long,
+    short_periods: summary.short,
+    approximately_flat_periods: summary.flat,
+    indeterminate_periods: summary.indeterminate,
+    mean_absolute_position_pct: summary.meanAbsolutePosition == null
+      ? null
+      : summary.meanAbsolutePosition * 100,
+  };
+}
+
 function pointPositionLabel(position: number | null, state: PositionState): string {
   if (state === "indeterminate" || position == null) return "不可判定";
   if (state === "approximately_flat") return "近似空仓";
@@ -250,7 +278,10 @@ function deterministicSummary(
   return `${parts.join("；")}。`;
 }
 
-export function ReplayStage({ data }: { data: RollingDemoResponse }) {
+export function ReplayStage({ data, onContextChange }: {
+  data: RollingDemoResponse;
+  onContextChange?: (context: ReplayContext | null) => void;
+}) {
   const total = data.series.timestamps.length;
   const strategy = data.strategy.status === "ok" ? data.strategy : null;
   const [mode, setMode] = useState<ReplayMode>("day");
@@ -318,12 +349,81 @@ export function ReplayStage({ data }: { data: RollingDemoResponse }) {
     .slice(chartStart, chartEnd)
     .map((value, offset) => (chartStart + offset) % POINTS_PER_HOUR === 0 ? value : null);
   const periodLength = end - start;
-  const strategySummaries = strategy
+  const strategySummaries = useMemo(() => strategy
     ? Object.fromEntries(strategyOrder.map((key) => [
       key,
       aggregateStrategy(strategy.timeseries.strategies[key], start, end),
     ])) as Record<StrategyKey, StrategyPeriodSummary>
-    : null;
+    : null, [end, start, strategy]);
+
+  const replayContext = useMemo<ReplayContext | null>(() => {
+    const forecastValues = data.series.load_forecast.slice(start, end);
+    const forecastStats = valueRange(forecastValues);
+    const periodStart = data.series.timestamps[start];
+    const periodEnd = data.series.timestamps[end - 1];
+    if (
+      !strategy || !strategySummaries || baseline == null || spread == null
+      || settlementReference == null || priceStats.min == null || priceStats.max == null
+      || loadStats.max == null || !periodStart || !periodEnd
+    ) {
+      return null;
+    }
+    const exact = mode === "point";
+    const daily = mode === "day";
+    const loadActual = exact
+      ? data.series.load_actual[tick]
+      : daily ? loadStats.max : average(loadValues);
+    const loadForecast = exact
+      ? data.series.load_forecast[tick]
+      : daily ? forecastStats.max : average(forecastValues);
+    const wind = exact ? data.series.wind_actual[tick] : average(windValues);
+    const solar = exact ? data.series.solar_actual[tick] : average(solarValues);
+    if (loadActual == null || loadForecast == null || wind == null || solar == null) {
+      return null;
+    }
+    return {
+      scene: "shandong-2025-10-30d",
+      window_start: "2025-10-01T00:00:00+08:00",
+      window_end: "2025-10-30T23:45:00+08:00",
+      timezone: "Asia/Shanghai (UTC+8)",
+      granularity: mode === "day" ? "daily" : mode === "hour" ? "hourly" : "15-minute",
+      period_start: periodStart,
+      period_end: periodEnd,
+      period_points: end - start,
+      baseline_initialization: initializationPeriod,
+      market: {
+        realtime_settlement_price: settlementReference,
+        realtime_price_measure: exact ? "exact" : "mean",
+        realtime_price_min: priceStats.min,
+        realtime_price_max: priceStats.max,
+        daily_backtest_baseline_price: baseline,
+        spread,
+        day_ahead_hourly_price: daily ? null : dayAhead,
+        load_actual_mw: loadActual,
+        historical_published_load_forecast_mw: loadForecast,
+        load_measure: exact ? "exact" : daily ? "peak" : "mean",
+        wind_mw: wind,
+        solar_mw: solar,
+        renewable_measure: exact ? "exact" : "mean",
+      },
+      strategies: Object.fromEntries(strategyOrder.map((key) => [
+        key,
+        replayStrategyContext(strategySummaries[key], mode),
+      ])) as Record<StrategyKey, ReplayStrategyContext>,
+      snapshot: {
+        generated_at: strategy.provenance.source_generated_at,
+        content_hash: strategy.provenance.content_hash,
+      },
+    };
+  }, [
+    baseline, data, dayAhead, end, initializationPeriod, loadStats.max, mode,
+    priceStats.max, priceStats.min, settlementReference, spread, start, strategy,
+    strategySummaries, tick,
+  ]);
+
+  useEffect(() => {
+    onContextChange?.(replayContext);
+  }, [onContextChange, replayContext]);
 
   const marketCards = mode === "day" ? [
     ["实时价范围 / RT range", `${formatNumber(priceStats.min)}–${formatNumber(priceStats.max)} 元/MWh`],
