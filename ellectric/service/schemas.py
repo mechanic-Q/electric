@@ -437,7 +437,7 @@ class RollingDemoPanel(BaseModel):
 
     id: str = Field(description="面板 ID")
     title: str = Field(description="面板标题")
-    chart_type: str = Field(description="图表类型: line/heatmap/area/bar")
+    chart_type: str = Field(description="图表类型: line/heatmap/area/evidence")
     summary: str = Field(default="", description="文字摘要")
     metrics: dict[str, float | int | str] = Field(default_factory=dict, description="关键指标")
     warning_ids: list[str] = Field(default_factory=list, description="关联警告 ID")
@@ -457,11 +457,6 @@ class RollingDemoStrategy(BaseModel):
     oracle: dict[str, Any] = Field(default_factory=dict)
     long_term_evidence: dict[str, Any] = Field(default_factory=dict)
     provenance: dict[str, Any] = Field(default_factory=dict)
-    # Legacy keys remain until the strategy UI migrates in issue #63.
-    ranking: list[dict] = Field(default_factory=list, description="策略排名 [{name, score, ...}]")
-    pnl_curves: dict[str, list[float]] = Field(
-        default_factory=dict, description="策略 P&L 曲线 {name: [pnl_values]}"
-    )
 
 
 class RollingDemoReportEvidence(BaseModel):

@@ -119,6 +119,7 @@ def build_strategy_evidence(
     _validate_approved_reference(summary)
     snapshot: dict[str, Any] = {
         "status": "ok",
+        "degradation_reason": None,
         "snapshot_version": 1,
         "window": {
             "start": REPLAY_START,

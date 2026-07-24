@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import type { RollingDemoResponse, RollingDemoSeries } from "./types";
 import { fetchRollingDemo, streamChat } from "./api";
+import { StrategyComparison } from "./StrategyComparison";
 import "./styles.css";
 
 /* ── SVG chart helpers ── */
@@ -112,27 +113,12 @@ const statusLabels: Record<string, string> = {
   degraded: "降级 / Degraded",
 };
 
-const strategyLabels: Record<string, string> = {
-  oracle: "上帝视角 / Oracle",
-  baseline_persistence: "持久性基线 / Persistence baseline",
-  baseline_mean: "均值基线 / Mean baseline",
-  rl_ppo: "强化学习 PPO / RL PPO",
-  rl_sac: "强化学习 SAC / RL SAC",
-  rl_td3: "强化学习 TD3 / RL TD3",
-};
-
 const metricLabels: Record<string, string> = {
   baseline_mae: "基线 MAE / Baseline MAE",
   wind_mae: "风电 MAE / Wind MAE",
   wind_nrmse: "风电 NRMSE / Wind NRMSE",
   solar_mae: "光伏 MAE / Solar MAE",
   solar_nrmse: "光伏 NRMSE / Solar NRMSE",
-  pnl_baseline_persistence: "持久性基线收益 / Persistence P&L",
-  pnl_baseline_mean: "均值基线收益 / Mean P&L",
-  pnl_oracle: "上帝视角收益 / Oracle P&L",
-  pnl_rl_ppo: "PPO 收益 / PPO P&L",
-  pnl_rl_sac: "SAC 收益 / SAC P&L",
-  pnl_rl_td3: "TD3 收益 / TD3 P&L",
   validate_weather_tier4_status: "Weather Tier4 状态 / Weather Tier4 status",
   validate_renewable_forecaster_status: "风光预测状态 / Renewable forecast status",
   compare_price_models_status: "电价模型对比状态 / Price model comparison status",
@@ -147,22 +133,8 @@ function bilingualStatus(status: string): string {
   return statusLabels[status] ?? `未知状态 / Unknown status: ${status}`;
 }
 
-function bilingualStrategy(name: string): string {
-  return strategyLabels[name] ?? `${name} / Strategy`;
-}
-
 function bilingualMetric(key: string): string {
   return metricLabels[key] ?? `${key} / ${key.replace(/_/g, " ")}`;
-}
-
-function formatPnL(value: number): string {
-  if (value == null) return "";
-  const abs = Math.abs(value);
-  if (abs < 1000) return `${value.toFixed(1)} 元`;
-  if (abs < 1e4) return `${(value / 1e3).toFixed(1)} 千元`;
-  if (abs < 1e6) return `${(value / 1e4).toFixed(1)} 万元`;
-  if (abs < 1e8) return `${(value / 1e6).toFixed(2)} 百万元`;
-  return `${(value / 1e8).toFixed(2)} 亿元`;
 }
 
 function bilingualValue(value: unknown): string {
@@ -172,7 +144,6 @@ function bilingualValue(value: unknown): string {
 function bilingualReportTitle(title: string): string {
   if (title === "Weather Tier4 负荷预测验证") return "Weather Tier4 负荷预测验证 / Weather Tier4 Load Forecast Validation";
   if (title === "风光出力预测验证") return "风光出力预测验证 / Renewable Output Forecast Validation";
-  if (title === "RL 全量评估") return "RL 全量评估 / Full Dataset RL Evaluation";
   if (title.startsWith("全量运行")) return `${title} / Full Run`;
   return `${title} / Report`;
 }
@@ -183,9 +154,6 @@ function bilingualReportSummary(summary: string): string {
   }
   if (summary === "风光出力预测验证 验证结果。") {
     return "风光出力预测验证结果。 / Renewable output forecast validation result.";
-  }
-  if (summary === "山东全量数据上的 RL 策略评估。") {
-    return "山东全量数据上的 RL 策略评估。 / RL strategy evaluation on the full Shandong dataset.";
   }
   if (summary === "Weather + 风光 + 电价 + RL 全量运行汇总。") {
     return "Weather + 风光 + 电价 + RL 全量运行汇总。 / Full-run summary: weather + renewable + price + RL.";
@@ -478,37 +446,11 @@ export default function App() {
                   </div>
                 </div>
             </article>
-            <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr", gap: "18px" }}>
-              <article style={s.pn}>
-                <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>策略回放 / Strategy Replay</h3><span className="badge badge-shandong" style={{ margin: 0 }}>收益 / P&L</span></div>
-                <div className="bars-list">
-                  {data?.strategy.ranking.length ? data.strategy.ranking.map((r, i) => {
-                    const name: string = (r.strategy as string) || `#${i + 1}`;
-                    const rank = r.rank as number | undefined;
-                    const rankVal = rank != null ? Math.max(0, 100 - (rank - 1) * 16) : 0;
-                    return (
-                      <div key={i} className="bar-row">
-                        <span className="bar-label">{bilingualStrategy(name)}</span>
-                        <div className="bar-track-wrap">
-                          <span className="bar-scale">低 / low</span>
-                          <div className="bar-track"><i className="bar-fill" style={{ width: `${rankVal}%` }} /></div>
-                          <span className="bar-scale">高 / high</span>
-                        </div>
-                        <span className="bar-rank">#{i + 1} · {formatPnL(r.total_pnl as number)}</span>
-                      </div>
-                    );
-                  }) : <div style={{ textAlign: "center", color: "#8aa4c2", fontSize: "12px", padding: "12px 0" }}>RL 策略评估 CSV 未找到 / No RL evaluation data</div>}
-                </div>
-              </article>
-              <article style={s.pn}>
-                <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>API 契约 / API Contract</h3><span className="badge badge-shandong" style={{ margin: 0 }}>只读 / readonly</span></div>
-              <div style={s.pb}><div style={s.mono}>GET /rolling-demo.json{'\n'}返回 / returns: meta, series, panels, strategy, reports, warnings</div></div>
-              </article>
-            </div>
+            <StrategyComparison strategy={data!.strategy} />
             <article style={{ ...s.pn, gridColumn: "1 / -1" }}>
               <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>证据报告 / Evidence</h3><span className="badge badge-shandong" style={{ margin: 0 }}>报告 / reports</span></div>
                 <div style={{ padding: "12px 18px 18px" }}>
-                  {data!.reports.map((r) => (
+                  {data!.reports.filter((r) => r.id !== "rl_full_dataset/evaluation").map((r) => (
                     <div key={r.id} className="evidence-card">
                       <div className="evidence-header">
                         <span className="evidence-title">{bilingualReportTitle(r.title)}</span>
@@ -529,6 +471,13 @@ export default function App() {
                   ))}
                 </div>
             </article>
+            <details className="technical-interface">
+              <summary>技术接口 / Technical interface</summary>
+              <div>
+                <code>GET /rolling-demo.json</code>
+                <span>只读静态数据 · 返回 meta, series, panels, strategy, reports, warnings</span>
+              </div>
+            </details>
           </section>
         </main>
         <CopilotPanel />

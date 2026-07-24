@@ -77,9 +77,82 @@ export interface RollingDemoPanel {
   warning_ids: string[];
 }
 
+export interface StrategySummaryRow {
+  strategy: "td3" | "ppo" | "sac" | "trend";
+  simulated_spread_value: number;
+  profitable_days: number;
+  active_positive_contribution_rate: number;
+  approximately_flat_period_rate: number;
+  max_drawdown: number;
+  profit_factor: number;
+  trend_multiple: number;
+  oracle_capture_rate: number;
+  facts: string[];
+}
+
+export interface StrategyEvidenceWindow {
+  start: string;
+  end: string;
+  timezone: string;
+  points: number;
+  points_per_day: number;
+  standardized_day: string;
+}
+
+export interface StrategyMethodology {
+  value_name: string;
+  unit: string;
+  settlement_price: string;
+  formula: string;
+  capacity_scale_mw: number;
+  capacity_scale_source: string;
+  baseline_initialization_days: number;
+  baseline_after_initialization: string;
+  approximate_flat_position_threshold: number;
+  indeterminate_spread_threshold_cny_per_mwh: number;
+  reconstructed_position_bound: number;
+  zero_reference: string;
+}
+
+export interface LongTermStrategyEvidence {
+  title: string;
+  window: { start: string; end: string; timezone: string };
+  training_window: { start: string; end: string };
+  points: number;
+  cumulative_leader: string;
+  terminal_simulated_spread_value: Record<string, number>;
+  source_report: string;
+  purpose: string;
+}
+
+export interface StrategyProvenance {
+  source_generated_at: string;
+  source_git_sha: string;
+  training_steps_per_algorithm: number;
+  seed: number;
+  feature_tier: string;
+  source_evaluation_window: {
+    start: string;
+    end_exclusive: string;
+    points: number;
+  };
+  source_artifacts: Record<string, string>;
+  source_hashes: Record<string, string>;
+  content_hash: string;
+}
+
 export interface RollingDemoStrategy {
-  ranking: Record<string, unknown>[];
-  pnl_curves: Record<string, number[]>;
+  status: "ok" | "degraded";
+  degradation_reason?: string | null;
+  snapshot_version?: number | null;
+  window: StrategyEvidenceWindow;
+  methodology: StrategyMethodology;
+  summary: StrategySummaryRow[];
+  timeseries: Record<string, unknown>;
+  daily: Record<string, unknown>;
+  oracle: Record<string, unknown>;
+  long_term_evidence: LongTermStrategyEvidence;
+  provenance: StrategyProvenance;
 }
 
 export interface RollingDemoReportEvidence {

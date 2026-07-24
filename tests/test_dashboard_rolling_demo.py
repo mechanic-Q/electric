@@ -13,6 +13,7 @@ Coverage:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import pandas as pd
 import pytest
@@ -130,7 +131,19 @@ class TestService:
         assert len(strategy.oracle["cumulative_simulated_spread_value"]) == 2880
         assert strategy.long_term_evidence["points"] == 10176
         assert strategy.provenance["source_git_sha"] == "a68513326c13d765db6748a68e5dfd48816c55a4"
-        assert len(strategy.provenance["content_hash"]) == 64
+        serialized = strategy.model_dump(mode="json")
+        expected_hash = serialized["provenance"].pop("content_hash")
+        actual_hash = hashlib.sha256(
+            json.dumps(
+                serialized,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        assert expected_hash == actual_hash
+        assert all(panel.id != "strategy" for panel in result.panels)
 
     def test_missing_strategy_evidence_degrades_as_one_unit(self, monkeypatch, tmp_path):
         from ellectric.service import dashboard
@@ -178,7 +191,17 @@ class TestService:
         assert artifact["meta"]["rows"] == 2880
         assert artifact["strategy"]["status"] == "ok"
         assert len(artifact["strategy"]["timeseries"]["timestamps"]) == 2880
-        assert len(artifact["strategy"]["provenance"]["content_hash"]) == 64
+        expected_hash = artifact["strategy"]["provenance"].pop("content_hash")
+        actual_hash = hashlib.sha256(
+            json.dumps(
+                artifact["strategy"],
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        assert expected_hash == actual_hash
 
     def test_default_payload_shape(self):
         from ellectric.service.dashboard import build_rolling_demo

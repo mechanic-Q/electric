@@ -153,11 +153,6 @@ def _build_panels(series: RollingDemoSeries) -> list[RollingDemoPanel]:
         metrics=re_metrics,
     ))
 
-    # Strategy — ranking (populated from artifact, empty if missing)
-    panels.append(RollingDemoPanel(
-        id="strategy", title="策略排名", chart_type="ranking",
-    ))
-
     # Evidence
     panels.append(RollingDemoPanel(
         id="evidence", title="解释性证据", chart_type="evidence",

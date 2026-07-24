@@ -9,7 +9,6 @@ Covers issue #31 acceptance criteria.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -119,6 +118,62 @@ class TestRollingDemoArtifact:
     def test_artifact_has_enough_data_for_autoplay(self, artifact):
         assert artifact["meta"]["rows"] > 0
         assert len(artifact["series"]) > 0
+
+    def test_artifact_exposes_validated_strategy_snapshot(self, artifact):
+        strategy = artifact["strategy"]
+
+        assert strategy["status"] == "ok"
+        assert [row["strategy"] for row in strategy["summary"]] == [
+            "td3", "ppo", "sac", "trend"
+        ]
+        assert strategy["window"]["points"] == 2880
+        assert "ranking" not in strategy
+        assert "pnl_curves" not in strategy
+        assert all(panel["id"] != "strategy" for panel in artifact["panels"])
+
+
+class TestStrategyComparisonSource:
+    """Public strategy semantics remain separate from legacy report fields."""
+
+    @pytest.fixture(scope="class")
+    def sources(self):
+        root = Path(__file__).parent.parent / "ellectric" / "web" / "src"
+        return {
+            path.name: path.read_text(encoding="utf-8")
+            for path in (root / "App.tsx", root / "StrategyComparison.tsx")
+        }
+
+    def test_comparison_uses_all_approved_metrics(self, sources):
+        comparison = sources["StrategyComparison.tsx"]
+        for label in (
+            "30 天模拟价差值",
+            "盈利日",
+            "持仓时段正贡献率",
+            "最大回撤",
+            "盈利因子",
+            "趋势倍数",
+            "Oracle 捕获率",
+            "事实标签",
+        ):
+            assert label in comparison
+
+    def test_legacy_ranking_and_currency_semantics_are_absent(self, sources):
+        public_source = "\n".join(sources.values())
+
+        assert "strategy.ranking" not in public_source
+        assert "formatPnL" not in public_source
+        assert "收益 / P&L" not in public_source
+        assert "RL 全量评估 / Full Dataset RL Evaluation" not in public_source
+
+    def test_degraded_strategy_does_not_render_comparison_or_long_term_values(
+        self, sources
+    ):
+        comparison = sources["StrategyComparison.tsx"]
+
+        degraded_branch = comparison.split('if (strategy.status !== "ok")', 1)[1]
+        degraded_branch = degraded_branch.split("const { window", 1)[0]
+        assert "StrategyTable" not in degraded_branch
+        assert "strategy-long-term" not in degraded_branch
 
 
 # ═══════════════════════════════════════════════════════════════════
