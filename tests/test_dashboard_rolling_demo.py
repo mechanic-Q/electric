@@ -13,6 +13,8 @@ Coverage:
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
@@ -79,6 +81,128 @@ class TestSchema:
 
 
 class TestService:
+    def test_default_payload_has_validated_strategy_evidence_snapshot(self):
+        from ellectric.service.dashboard import build_rolling_demo
+
+        result = build_rolling_demo()
+        strategy = result.strategy
+
+        assert strategy.status == "ok"
+        assert strategy.window == {
+            "start": "2025-10-01T00:00:00+08:00",
+            "end": "2025-10-30T23:45:00+08:00",
+            "timezone": "Asia/Shanghai",
+            "points": 2880,
+            "points_per_day": 96,
+            "standardized_day": "00:00-23:45",
+        }
+        assert result.meta.start == "2025-10-01T00:00:00+08:00"
+        assert result.meta.end == "2025-10-30T23:45:00+08:00"
+        # Source 00:00 is a Shandong local clock mislabeled UTC by the loader;
+        # showcase correction must preserve 00:00 rather than shift it to 08:00.
+        assert result.series.timestamps[0] == "2025-10-01T00:00:00+08:00"
+        assert len(strategy.timeseries["timestamps"]) == 2880
+        assert strategy.timeseries["timestamps"] == result.series.timestamps
+        assert set(strategy.timeseries["strategies"]) == {
+            "td3", "ppo", "sac", "trend"
+        }
+        assert strategy.methodology["capacity_scale_mw"] == pytest.approx(99673.38)
+        assert strategy.methodology["settlement_price"] == "historical_rt_price"
+        assert strategy.daily["dates"] == [
+            f"2025-10-{day:02d}" for day in range(1, 31)
+        ]
+        assert strategy.daily["baseline_initialization"][:7] == [True] * 7
+        assert strategy.daily["baseline_initialization"][7:] == [False] * 23
+
+        summary = {row["strategy"]: row for row in strategy.summary}
+        assert summary["td3"]["simulated_spread_value"] == pytest.approx(3178504.01, abs=0.01)
+        assert summary["td3"]["profitable_days"] == 25
+        assert summary["td3"]["active_positive_contribution_rate"] == pytest.approx(
+            0.5344767238, abs=1e-10
+        )
+        assert summary["td3"]["max_drawdown"] == pytest.approx(257417.40, abs=0.01)
+        assert summary["td3"]["profit_factor"] == pytest.approx(1.37, abs=0.005)
+        assert summary["td3"]["trend_multiple"] == pytest.approx(5.59, abs=0.005)
+        assert summary["td3"]["oracle_capture_rate"] == pytest.approx(0.149, abs=0.0005)
+        assert summary["ppo"]["simulated_spread_value"] == pytest.approx(2344946.61, abs=0.01)
+        assert summary["sac"]["simulated_spread_value"] == pytest.approx(1691325.43, abs=0.01)
+        assert summary["trend"]["simulated_spread_value"] == pytest.approx(568534.36, abs=0.01)
+
+        assert len(strategy.oracle["cumulative_simulated_spread_value"]) == 2880
+        assert strategy.long_term_evidence["points"] == 10176
+        assert strategy.provenance["source_git_sha"] == "a68513326c13d765db6748a68e5dfd48816c55a4"
+        serialized = strategy.model_dump(mode="json")
+        expected_hash = serialized["provenance"].pop("content_hash")
+        actual_hash = hashlib.sha256(
+            json.dumps(
+                serialized,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        assert expected_hash == actual_hash
+        assert all(panel.id != "strategy" for panel in result.panels)
+
+    def test_missing_strategy_evidence_degrades_as_one_unit(self, monkeypatch, tmp_path):
+        from ellectric.service import dashboard
+
+        monkeypatch.setattr(dashboard, "_REPORTS_ROOT", tmp_path)
+        result = dashboard.build_rolling_demo()
+
+        assert result.meta.rows == 2880
+        assert result.strategy.status == "degraded"
+        assert "missing" in (result.strategy.degradation_reason or "")
+        assert result.strategy.summary == []
+        assert result.strategy.timeseries == {}
+        assert result.strategy.daily == {}
+        assert result.strategy.oracle == {}
+        assert result.strategy.long_term_evidence == {}
+        assert result.strategy.provenance == {}
+        assert any("30 天策略证据不可用" in warning for warning in result.warnings)
+
+    def test_prebake_cli_returns_nonzero_for_market_only_degradation(
+        self, monkeypatch, tmp_path
+    ):
+        from ellectric.scripts import prebake_demo
+        from ellectric.service import dashboard
+
+        monkeypatch.setattr(dashboard, "_REPORTS_ROOT", tmp_path / "missing-reports")
+        output = tmp_path / "rolling-demo.json"
+
+        exit_code = prebake_demo.main(["--output", str(output)])
+        artifact = json.loads(output.read_text(encoding="utf-8"))
+
+        assert exit_code == 1
+        assert artifact["meta"]["rows"] == 2880
+        assert artifact["strategy"]["status"] == "degraded"
+        assert artifact["strategy"]["summary"] == []
+        assert artifact["strategy"]["timeseries"] == {}
+
+    def test_prebake_cli_writes_validated_strategy_snapshot(self, tmp_path):
+        from ellectric.scripts import prebake_demo
+
+        output = tmp_path / "rolling-demo.json"
+        exit_code = prebake_demo.main(["--output", str(output)])
+        artifact = json.loads(output.read_text(encoding="utf-8"))
+
+        assert exit_code == 0
+        assert artifact["meta"]["rows"] == 2880
+        assert artifact["strategy"]["status"] == "ok"
+        assert len(artifact["strategy"]["timeseries"]["timestamps"]) == 2880
+        expected_hash = artifact["strategy"]["provenance"].pop("content_hash")
+        actual_hash = hashlib.sha256(
+            json.dumps(
+                artifact["strategy"],
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        assert expected_hash == actual_hash
+
     def test_default_payload_shape(self):
         from ellectric.service.dashboard import build_rolling_demo
 

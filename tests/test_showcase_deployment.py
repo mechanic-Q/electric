@@ -9,7 +9,6 @@ Covers issue #31 acceptance criteria.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -119,6 +118,109 @@ class TestRollingDemoArtifact:
     def test_artifact_has_enough_data_for_autoplay(self, artifact):
         assert artifact["meta"]["rows"] > 0
         assert len(artifact["series"]) > 0
+
+    def test_artifact_exposes_validated_strategy_snapshot(self, artifact):
+        strategy = artifact["strategy"]
+
+        assert strategy["status"] == "ok"
+        assert [row["strategy"] for row in strategy["summary"]] == [
+            "td3", "ppo", "sac", "trend"
+        ]
+        assert strategy["window"]["points"] == 2880
+        assert "ranking" not in strategy
+        assert "pnl_curves" not in strategy
+        assert all(panel["id"] != "strategy" for panel in artifact["panels"])
+
+
+class TestStrategyComparisonSource:
+    """Public strategy semantics remain separate from legacy report fields."""
+
+    @pytest.fixture(scope="class")
+    def sources(self):
+        root = Path(__file__).parent.parent / "ellectric" / "web" / "src"
+        return {
+            path.name: path.read_text(encoding="utf-8")
+            for path in (
+                root / "App.tsx",
+                root / "ReplayStage.tsx",
+                root / "StrategyComparison.tsx",
+                root / "StrategyPathEvidence.tsx",
+            )
+        }
+
+    def test_comparison_uses_all_approved_metrics(self, sources):
+        comparison = sources["StrategyComparison.tsx"]
+        for label in (
+            "30 天模拟价差值",
+            "盈利日",
+            "持仓时段正贡献率",
+            "最大回撤",
+            "盈利因子",
+            "趋势倍数",
+            "Oracle 捕获率",
+            "事实标签",
+        ):
+            assert label in comparison
+
+    def test_legacy_ranking_and_currency_semantics_are_absent(self, sources):
+        public_source = "\n".join(sources.values())
+
+        assert "strategy.ranking" not in public_source
+        assert "formatPnL" not in public_source
+        assert "收益 / P&L" not in public_source
+        assert "RL 全量评估 / Full Dataset RL Evaluation" not in public_source
+
+    def test_replay_uses_one_multi_granularity_playhead(self, sources):
+        replay = sources["ReplayStage.tsx"]
+
+        assert 'type ReplayMode = "day" | "hour" | "point"' in replay
+        assert "setTick" in replay
+        assert "setCurrentTick" not in replay
+        assert "setSpeed" not in replay
+        assert "setInterval" not in replay
+        assert "visibilitychange" in replay
+        assert "prefers-reduced-motion: reduce" in replay
+
+    def test_replay_preserves_market_source_semantics(self, sources):
+        replay = sources["ReplayStage.tsx"]
+
+        assert "山东市场时间（北京时间，UTC+8）" in replay
+        assert "30 天 × 24 小时实时价格均价" in replay
+        assert "历史发布负荷预测" in replay
+        assert "日前价仅作对照" in replay
+        assert "30×96" not in replay
+
+    def test_strategy_path_uses_native_accessible_visuals(self, sources):
+        path = sources["StrategyPathEvidence.tsx"]
+
+        assert "const HEAT_LIMIT = 300_000" in path
+        assert "<svg" in path
+        assert 'type="button"' in path
+        assert 'role="gridcell"' in path
+        assert "onSelectDay(day)" in path
+        assert "Oracle 理论价差上界" in path
+        assert "plotly" not in path.lower()
+        assert "recharts" not in path.lower()
+
+    def test_copilot_sends_compact_current_replay_context(self, sources):
+        app = sources["App.tsx"]
+        replay = sources["ReplayStage.tsx"]
+
+        assert "onContextChange={setReplayContext}" in app
+        assert "replayContext, ac.signal" in app
+        assert 'scene: "shandong-2025-10-30d"' in replay
+        assert "strategy.provenance.content_hash" in replay
+        assert "long_term_evidence" not in replay
+
+    def test_degraded_strategy_does_not_render_comparison_or_long_term_values(
+        self, sources
+    ):
+        comparison = sources["StrategyComparison.tsx"]
+
+        degraded_branch = comparison.split('if (strategy.status !== "ok")', 1)[1]
+        degraded_branch = degraded_branch.split("const { window", 1)[0]
+        assert "StrategyTable" not in degraded_branch
+        assert "strategy-long-term" not in degraded_branch
 
 
 # ═══════════════════════════════════════════════════════════════════

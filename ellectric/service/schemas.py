@@ -29,7 +29,7 @@ Schema 分组
 
 import logging
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -437,19 +437,26 @@ class RollingDemoPanel(BaseModel):
 
     id: str = Field(description="面板 ID")
     title: str = Field(description="面板标题")
-    chart_type: str = Field(description="图表类型: line/heatmap/area/bar")
+    chart_type: str = Field(description="图表类型: line/heatmap/area/evidence")
     summary: str = Field(default="", description="文字摘要")
     metrics: dict[str, float | int | str] = Field(default_factory=dict, description="关键指标")
     warning_ids: list[str] = Field(default_factory=list, description="关联警告 ID")
 
 
 class RollingDemoStrategy(BaseModel):
-    """滚动展示策略排名与 P&L 曲线。"""
+    """Versioned strategy evidence for the fixed 30-day historical replay."""
 
-    ranking: list[dict] = Field(default_factory=list, description="策略排名 [{name, score, ...}]")
-    pnl_curves: dict[str, list[float]] = Field(
-        default_factory=dict, description="策略 P&L 曲线 {name: [pnl_values]}"
-    )
+    status: Literal["ok", "degraded"] = Field(default="degraded")
+    degradation_reason: str | None = Field(default=None)
+    snapshot_version: int | None = Field(default=None)
+    window: dict[str, Any] = Field(default_factory=dict)
+    methodology: dict[str, Any] = Field(default_factory=dict)
+    summary: list[dict[str, Any]] = Field(default_factory=list)
+    timeseries: dict[str, Any] = Field(default_factory=dict)
+    daily: dict[str, Any] = Field(default_factory=dict)
+    oracle: dict[str, Any] = Field(default_factory=dict)
+    long_term_evidence: dict[str, Any] = Field(default_factory=dict)
+    provenance: dict[str, Any] = Field(default_factory=dict)
 
 
 class RollingDemoReportEvidence(BaseModel):
@@ -478,4 +485,3 @@ class RollingDemoResponse(BaseModel):
     strategy: RollingDemoStrategy = Field(default_factory=RollingDemoStrategy, description="策略信息")
     reports: list[RollingDemoReportEvidence] = Field(default_factory=list, description="报告证据列表")
     warnings: list[str] = Field(default_factory=list, description="降级/缺失警告")
-

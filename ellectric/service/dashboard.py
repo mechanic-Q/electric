@@ -5,7 +5,6 @@ Builds Shandong 15min rolling demo payload with degradation warnings.
 
 from __future__ import annotations
 
-import csv
 import json
 import logging
 from pathlib import Path
@@ -21,6 +20,13 @@ from ellectric.service.schemas import (
     RollingDemoResponse,
     RollingDemoSeries,
     RollingDemoStrategy,
+)
+from ellectric.service.strategy_evidence import (
+    REPLAY_END,
+    REPLAY_POINTS,
+    REPLAY_START,
+    TEST_POINTS,
+    build_strategy_evidence,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,11 +53,23 @@ def _load_window(start: str | None, days: int) -> pd.DataFrame:
     from ellectric.pipeline.shandong_loader import ShandongDataLoader
 
     loader = ShandongDataLoader(include_forecasts=True)
-    start_dt = pd.Timestamp(start or "2025-10-01", tz="UTC")
+    start_dt = pd.Timestamp(start or "2025-10-01")
+    if start_dt.tzinfo is None:
+        start_dt = start_dt.tz_localize("Asia/Shanghai")
+    else:
+        start_dt = start_dt.tz_convert("Asia/Shanghai")
     end_exclusive = start_dt + pd.Timedelta(days=days)
     # Loader uses inclusive ≤ filter — pass end_exclusive date, then re-filter
     df = loader.load_data(str(start_dt.date()), str(end_exclusive.date()))
-    df = df[df["timestamp"] < end_exclusive].sort_values("timestamp").reset_index(drop=True)
+    timestamps = pd.to_datetime(df["timestamp"])
+    # Source clocks are Shandong local time; the loader currently tags them UTC.
+    # Correct only the showcase boundary so historical training artifacts stay unchanged.
+    if timestamps.dt.tz is not None:
+        timestamps = timestamps.dt.tz_localize(None)
+    df["timestamp"] = timestamps.dt.tz_localize("Asia/Shanghai")
+    df = df[
+        (df["timestamp"] >= start_dt) & (df["timestamp"] < end_exclusive)
+    ].sort_values("timestamp").reset_index(drop=True)
     return df
 
 
@@ -60,7 +78,7 @@ def _build_series(df: pd.DataFrame, warnings: list[str]) -> RollingDemoSeries:
     arrays: dict[str, list[float | None]] = {k: [] for k in _COLUMN_SERIES_MAP}
 
     for _, row in df.iterrows():
-        ts.append(str(row["timestamp"]))
+        ts.append(pd.Timestamp(row["timestamp"]).isoformat())
         for series_key, (col, label) in _COLUMN_SERIES_MAP.items():
             val = row.get(col)
             if val is not None and not (isinstance(val, float) and pd.isna(val)):
@@ -84,7 +102,6 @@ def _build_panels(series: RollingDemoSeries) -> list[RollingDemoPanel]:
 
     # Load — line chart
     has_actual = any(x is not None for x in series.load_actual)
-    has_forecast = any(x is not None for x in series.load_forecast)
     load_metrics: dict[str, float | int | str] = {}
     if has_actual:
         actuals = [x for x in series.load_actual if x is not None]
@@ -136,11 +153,6 @@ def _build_panels(series: RollingDemoSeries) -> list[RollingDemoPanel]:
         metrics=re_metrics,
     ))
 
-    # Strategy — ranking (populated from artifact, empty if missing)
-    panels.append(RollingDemoPanel(
-        id="strategy", title="策略排名", chart_type="ranking",
-    ))
-
     # Evidence
     panels.append(RollingDemoPanel(
         id="evidence", title="解释性证据", chart_type="evidence",
@@ -149,31 +161,25 @@ def _build_panels(series: RollingDemoSeries) -> list[RollingDemoPanel]:
     return panels
 
 
-def _build_strategy(warnings: list[str]) -> RollingDemoStrategy:
-    csv_path = _REPORTS_ROOT / "rl_full_dataset" / "evaluation_metrics.csv"
-    if not csv_path.exists():
-        warnings.append("RL 策略评估 CSV 未找到，策略排名/PNL 为空")
-        return RollingDemoStrategy()
-
+def _build_strategy(df: pd.DataFrame, warnings: list[str]) -> RollingDemoStrategy:
     try:
-        rows: list[dict[str, Any]] = []
-        with csv_path.open("r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                rows.append({
-                    "strategy": row.get("strategy", ""),
-                    "total_pnl": _safe_float(row.get("total_pnl")),
-                    "sharpe": _safe_float(row.get("sharpe")),
-                    "win_rate": _safe_float(row.get("win_rate")),
-                    "max_drawdown": _safe_float(row.get("max_drawdown")),
-                    "rank": _safe_int(row.get("rank")),
-                    "status": row.get("status", ""),
-                })
-        rows.sort(key=lambda r: r.get("rank") or 999)
-        return RollingDemoStrategy(ranking=rows)
+        timestamps = [pd.Timestamp(value).isoformat() for value in df["timestamp"]]
+        if (
+            len(df) != REPLAY_POINTS
+            or not timestamps
+            or timestamps[0] != REPLAY_START
+            or timestamps[-1] != REPLAY_END
+        ):
+            raise ValueError("策略证据仅支持固定的山东 2025 年 10 月 30 天场景")
+        test_market = _load_window(
+            "2025-10-01", TEST_POINTS // TimeConfig.points_per_day
+        )
+        snapshot = build_strategy_evidence(df, test_market, _REPORTS_ROOT)
+        return RollingDemoStrategy(**snapshot)
     except Exception as exc:
-        warnings.append(f"读取策略评估数据失败: {exc}")
-        return RollingDemoStrategy()
+        reason = f"30 天策略证据不可用: {exc}"
+        warnings.append(reason)
+        return RollingDemoStrategy(status="degraded", degradation_reason=reason)
 
 
 def _build_reports(warnings: list[str]) -> list[RollingDemoReportEvidence]:
@@ -281,20 +287,6 @@ def _build_reports(warnings: list[str]) -> list[RollingDemoReportEvidence]:
     return reports
 
 
-def _safe_float(v: Any) -> float | None:
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return None
-
-
-def _safe_int(v: Any) -> int | None:
-    try:
-        return int(float(v))
-    except (TypeError, ValueError):
-        return None
-
-
 def _round_val(v: Any, digits: int = 2) -> float | int | str:
     try:
         return round(float(v), digits)
@@ -311,7 +303,7 @@ def build_rolling_demo(start: str | None = None, days: int = 30) -> RollingDemoR
     """Build read-only dashboard payload from Shandong historical data.
 
     Args:
-        start: UTC start date (YYYY-MM-DD). Default '2025-10-01'.
+        start: Shandong market date (YYYY-MM-DD). Default '2025-10-01'.
         days: Number of days to include, clamped to [1, 30].
 
     Returns:
@@ -324,10 +316,14 @@ def build_rolling_demo(start: str | None = None, days: int = 30) -> RollingDemoR
 
     start_str = start or "2025-10-01"
     try:
-        start_dt = pd.Timestamp(start_str, tz="UTC")
+        start_dt = pd.Timestamp(start_str)
+        if start_dt.tzinfo is None:
+            start_dt = start_dt.tz_localize("Asia/Shanghai")
+        else:
+            start_dt = start_dt.tz_convert("Asia/Shanghai")
     except Exception:
         warnings.append(f"start 参数 '{start_str}' 解析失败，回退到 2025-10-01")
-        start_dt = pd.Timestamp("2025-10-01", tz="UTC")
+        start_dt = pd.Timestamp("2025-10-01", tz="Asia/Shanghai")
         start_str = "2025-10-01"
 
     end_dt = start_dt + pd.Timedelta(days=clamped_days)
@@ -361,7 +357,7 @@ def build_rolling_demo(start: str | None = None, days: int = 30) -> RollingDemoR
 
     series = _build_series(df, warnings)
     panels = _build_panels(series)
-    strategy = _build_strategy(warnings)
+    strategy = _build_strategy(df, warnings)
     reports = _build_reports(warnings)
 
     # Wire warning ids into panels
@@ -374,8 +370,8 @@ def build_rolling_demo(start: str | None = None, days: int = 30) -> RollingDemoR
 
     meta = RollingDemoMeta(
         source="shandong",
-        start=str(df["timestamp"].min()),
-        end=str(df["timestamp"].max()),
+        start=pd.Timestamp(df["timestamp"].min()).isoformat(),
+        end=pd.Timestamp(df["timestamp"].max()).isoformat(),
         frequency=TimeConfig.freq,
         points_per_day=TimeConfig.points_per_day,
         rows=len(df),

@@ -17,3 +17,20 @@ def test_system_prompt_contains_thousands_separator_rule():
     from ellectric.llm.agent import _SYSTEM_PROMPT
 
     assert "编造" in _SYSTEM_PROMPT or "不编造" in _SYSTEM_PROMPT
+
+
+def test_system_prompt_prioritizes_replay_context_and_preserves_domain_boundary():
+    from ellectric.llm.agent import _SYSTEM_PROMPT
+
+    for term in (
+        "30天历史回放",
+        "模拟价差值",
+        "还原持仓",
+        "当日回测基准价",
+        "106天样本外稳定性评估",
+        "Showcase Explainer",
+    ):
+        assert term in _SYSTEM_PROMPT
+    assert "不得用离线报告替换" in _SYSTEM_PROMPT
+    assert "人民币利润" in _SYSTEM_PROMPT
+    assert "不提供投资或交易建议" in _SYSTEM_PROMPT

@@ -72,6 +72,18 @@ def _validate_history(history: list[dict[str, str]] | None) -> list[dict[str, st
     return valid
 
 
+def _contextual_query(query: str, replay_context: dict | None) -> str:
+    if not replay_context:
+        return query
+    facts = json.dumps(replay_context, ensure_ascii=False, separators=(",", ":"))
+    return (
+        "以下 <replay_context> 是服务器校验后的当前页面事实，只用于解释本轮问题；"
+        "不得把其中模拟单位解释为人民币、收益率或真实成交，也不得用106天报告替换这些可见数字。\n"
+        f"<replay_context>{facts}</replay_context>\n"
+        f"用户问题：{query}"
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════
 # 核心生成器
 # ═══════════════════════════════════════════════════════════════════
@@ -79,6 +91,7 @@ def _validate_history(history: list[dict[str, str]] | None) -> list[dict[str, st
 async def stream_chat(
     query: str,
     history: list[dict[str, str]] | None = None,
+    replay_context: dict | None = None,
 ) -> AsyncGenerator[str, None]:
     """SSE 流式对话生成器。
 
@@ -125,7 +138,7 @@ async def stream_chat(
                 messages.append(HumanMessage(content=msg["content"]))
             elif role == "assistant":
                 messages.append(AIMessage(content=msg["content"]))
-        messages.append(HumanMessage(content=query))
+        messages.append(HumanMessage(content=_contextual_query(query, replay_context)))
 
         # ── token 计数器: astream_events 结束后若 0 token 则触发 ainvoke 兜底 ──
         token_count = 0

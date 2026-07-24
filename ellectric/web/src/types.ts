@@ -77,10 +77,141 @@ export interface RollingDemoPanel {
   warning_ids: string[];
 }
 
-export interface RollingDemoStrategy {
-  ranking: Record<string, unknown>[];
-  pnl_curves: Record<string, number[]>;
+export interface StrategySummaryRow {
+  strategy: StrategyKey;
+  simulated_spread_value: number;
+  profitable_days: number;
+  active_positive_contribution_rate: number;
+  approximately_flat_period_rate: number;
+  max_drawdown: number;
+  profit_factor: number;
+  trend_multiple: number;
+  oracle_capture_rate: number;
+  facts: string[];
 }
+
+export type StrategyKey = "td3" | "ppo" | "sac" | "trend";
+export type PositionState = "long" | "short" | "approximately_flat" | "indeterminate";
+
+export interface StrategyPointSeries {
+  simulated_spread_value: number[];
+  cumulative_simulated_spread_value: number[];
+  reconstructed_position: (number | null)[];
+  position_state: PositionState[];
+}
+
+export interface StrategyTimeseries {
+  timestamps: string[];
+  daily_baseline_price: number[];
+  strategies: Record<StrategyKey, StrategyPointSeries>;
+}
+
+export interface StrategyDailySeries {
+  simulated_spread_value: number[];
+  cumulative_simulated_spread_value: number[];
+  long_periods: number[];
+  short_periods: number[];
+  approximately_flat_periods: number[];
+  indeterminate_periods: number[];
+  mean_absolute_position: (number | null)[];
+}
+
+export interface StrategyDailyEvidence {
+  dates: string[];
+  baseline_initialization: boolean[];
+  strategies: Record<StrategyKey, StrategyDailySeries>;
+}
+
+export interface StrategyOracleEvidence {
+  role: "theoretical_upper_bound";
+  simulated_spread_value: number[];
+  cumulative_simulated_spread_value: number[];
+  daily_simulated_spread_value: number[];
+  terminal_simulated_spread_value: number;
+  capture_rate: Record<StrategyKey, number>;
+}
+
+export interface StrategyEvidenceWindow {
+  start: string;
+  end: string;
+  timezone: string;
+  points: number;
+  points_per_day: number;
+  standardized_day: string;
+}
+
+export interface StrategyMethodology {
+  value_name: string;
+  unit: string;
+  settlement_price: string;
+  formula: string;
+  capacity_scale_mw: number;
+  capacity_scale_source: string;
+  baseline_initialization_days: number;
+  baseline_after_initialization: string;
+  approximate_flat_position_threshold: number;
+  indeterminate_spread_threshold_cny_per_mwh: number;
+  reconstructed_position_bound: number;
+  zero_reference: string;
+}
+
+export interface LongTermStrategyEvidence {
+  title: string;
+  window: { start: string; end: string; timezone: string };
+  training_window: { start: string; end: string };
+  points: number;
+  cumulative_leader: string;
+  terminal_simulated_spread_value: Record<string, number>;
+  source_report: string;
+  purpose: string;
+}
+
+export interface StrategyProvenance {
+  source_generated_at: string;
+  source_git_sha: string;
+  training_steps_per_algorithm: number;
+  seed: number;
+  feature_tier: string;
+  source_evaluation_window: {
+    start: string;
+    end_exclusive: string;
+    points: number;
+  };
+  source_artifacts: Record<string, string>;
+  source_hashes: Record<string, string>;
+  content_hash: string;
+}
+
+interface StrategyCommon {
+  degradation_reason?: string | null;
+  snapshot_version?: number | null;
+}
+
+export interface RollingDemoStrategyOk extends StrategyCommon {
+  status: "ok";
+  window: StrategyEvidenceWindow;
+  methodology: StrategyMethodology;
+  summary: StrategySummaryRow[];
+  timeseries: StrategyTimeseries;
+  daily: StrategyDailyEvidence;
+  oracle: StrategyOracleEvidence;
+  long_term_evidence: LongTermStrategyEvidence;
+  provenance: StrategyProvenance;
+}
+
+export interface RollingDemoStrategyDegraded extends StrategyCommon {
+  status: "degraded";
+  window?: StrategyEvidenceWindow;
+  methodology?: StrategyMethodology;
+  summary?: StrategySummaryRow[];
+  timeseries?: StrategyTimeseries;
+  daily?: StrategyDailyEvidence;
+  oracle?: Record<string, unknown>;
+  long_term_evidence?: LongTermStrategyEvidence;
+  provenance?: StrategyProvenance;
+}
+
+export type RollingDemoStrategy = RollingDemoStrategyOk | RollingDemoStrategyDegraded;
 
 export interface RollingDemoReportEvidence {
   id: string;
@@ -97,6 +228,53 @@ export interface RollingDemoResponse {
   strategy: RollingDemoStrategy;
   reports: RollingDemoReportEvidence[];
   warnings: string[];
+}
+
+export type ReplayGranularity = "daily" | "hourly" | "15-minute";
+export type ReplayContribution = "positive" | "negative" | "none";
+
+export interface ReplayStrategyContext {
+  simulated_spread_value: number;
+  contribution: ReplayContribution;
+  reconstructed_position_pct: number | null;
+  position_state: PositionState | null;
+  long_periods: number;
+  short_periods: number;
+  approximately_flat_periods: number;
+  indeterminate_periods: number;
+  mean_absolute_position_pct: number | null;
+}
+
+export interface ReplayContext {
+  scene: "shandong-2025-10-30d";
+  window_start: "2025-10-01T00:00:00+08:00";
+  window_end: "2025-10-30T23:45:00+08:00";
+  timezone: "Asia/Shanghai (UTC+8)";
+  granularity: ReplayGranularity;
+  period_start: string;
+  period_end: string;
+  period_points: number;
+  baseline_initialization: boolean;
+  market: {
+    realtime_settlement_price: number;
+    realtime_price_measure: "exact" | "mean";
+    realtime_price_min: number;
+    realtime_price_max: number;
+    daily_backtest_baseline_price: number;
+    spread: number;
+    day_ahead_hourly_price: number | null;
+    load_actual_mw: number;
+    historical_published_load_forecast_mw: number;
+    load_measure: "exact" | "mean" | "peak";
+    wind_mw: number;
+    solar_mw: number;
+    renewable_measure: "exact" | "mean";
+  };
+  strategies: Record<StrategyKey, ReplayStrategyContext>;
+  snapshot: {
+    generated_at: string;
+    content_hash: string;
+  };
 }
 
 export type ChatEvent =

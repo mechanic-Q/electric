@@ -57,6 +57,9 @@ class _PlainTextToolAgent:
             "data": {"output": "plain text report"},
         }
 
+    async def ainvoke(self, *_args, **_kwargs):
+        return {"messages": [_Chunk("报告读取完成")]}
+
 
 def test_stream_chat_emits_tool_result_payload(monkeypatch):
     from ellectric.chat import streaming

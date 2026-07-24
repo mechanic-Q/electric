@@ -121,7 +121,7 @@ _CAPABILITIES: list[dict[str, Any]] = [
         "id": "backtest_strategy",
         "title": "历史回测与策略对比",
         "category": "backtest",
-        "description": "在山东历史价格数据上回放 baseline/oracle/PPO/SAC/TD3 策略并对比 P&L。",
+        "description": "在声明窗口的山东历史价格上比较 baseline/oracle/PPO/SAC/TD3 模拟价差值；不是人民币利润。",
         "example_questions": [
             "回测 2025-10-01 到 2026-01-14 的 PPO 表现",
             "PPO 相比 baseline_persistence 好多少？",
@@ -156,7 +156,7 @@ _CAPABILITIES: list[dict[str, Any]] = [
         "id": "reports_offline",
         "title": "离线报告浏览",
         "category": "report",
-        "description": "浏览 Weather Tier4、可再生预测、价格模型对比、RL 全量评估、full_real_run 等离线报告。",
+        "description": "浏览 Weather Tier4、可再生预测、价格模型对比、106 天样本外稳定性评估等离线证据。",
         "example_questions": [
             "有哪些离线报告可以看？",
             "Weather Tier4 对负荷预测提升多少？",
@@ -401,7 +401,7 @@ def _rl_evaluation_summary() -> ReportSummary | None:
     if not json_path.exists():
         return ReportSummary(
             id="rl_full_dataset/evaluation",
-            title="RL 全量评估",
+            title="106 天样本外稳定性评估",
             report_type="rl_evaluation",
             status="missing",
             summary="报告文件不存在。",
@@ -410,7 +410,7 @@ def _rl_evaluation_summary() -> ReportSummary | None:
     if data is None:
         return ReportSummary(
             id="rl_full_dataset/evaluation",
-            title="RL 全量评估",
+            title="106 天样本外稳定性评估",
             report_type="rl_evaluation",
             status="error",
             summary="JSON 解析失败。",
@@ -422,7 +422,7 @@ def _rl_evaluation_summary() -> ReportSummary | None:
         strategy = row.get("strategy")
         pnl = row.get("total_pnl")
         if strategy and pnl is not None:
-            metrics[f"pnl_{strategy}"] = _round(pnl, 2)
+            metrics[f"simulated_spread_value_{strategy}"] = _round(pnl, 2)
     paths = {"json": _rel(json_path)}
     if md_path.exists():
         paths["md"] = _rel(md_path)
@@ -430,11 +430,11 @@ def _rl_evaluation_summary() -> ReportSummary | None:
         paths["html"] = _rel(html_path)
     return ReportSummary(
         id="rl_full_dataset/evaluation",
-        title="RL 全量评估（PPO/SAC/TD3 vs baseline/oracle）",
+        title="106 天样本外稳定性评估（PPO/SAC/TD3 vs baseline/oracle）",
         report_type="rl_evaluation",
         status="ok",
         generated_at=data.get("metadata", {}).get("generated_at"),
-        summary="山东全量数据上的 RL 策略评估与基线对比。",
+        summary="北京时间 2025-10-01 至 2026-01-14 的独立策略稳定性评估；模拟价差值不是人民币利润。",
         metrics=metrics,
         paths=paths,
     )
