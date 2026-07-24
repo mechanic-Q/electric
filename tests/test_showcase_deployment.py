@@ -140,7 +140,11 @@ class TestStrategyComparisonSource:
         root = Path(__file__).parent.parent / "ellectric" / "web" / "src"
         return {
             path.name: path.read_text(encoding="utf-8")
-            for path in (root / "App.tsx", root / "StrategyComparison.tsx")
+            for path in (
+                root / "App.tsx",
+                root / "ReplayStage.tsx",
+                root / "StrategyComparison.tsx",
+            )
         }
 
     def test_comparison_uses_all_approved_metrics(self, sources):
@@ -164,6 +168,26 @@ class TestStrategyComparisonSource:
         assert "formatPnL" not in public_source
         assert "收益 / P&L" not in public_source
         assert "RL 全量评估 / Full Dataset RL Evaluation" not in public_source
+
+    def test_replay_uses_one_multi_granularity_playhead(self, sources):
+        replay = sources["ReplayStage.tsx"]
+
+        assert 'type ReplayMode = "day" | "hour" | "point"' in replay
+        assert "setTick" in replay
+        assert "setCurrentTick" not in replay
+        assert "setSpeed" not in replay
+        assert "setInterval" not in replay
+        assert "visibilitychange" in replay
+        assert "prefers-reduced-motion: reduce" in replay
+
+    def test_replay_preserves_market_source_semantics(self, sources):
+        replay = sources["ReplayStage.tsx"]
+
+        assert "山东市场时间（北京时间，UTC+8）" in replay
+        assert "30 天 × 24 小时实时价格均价" in replay
+        assert "历史发布负荷预测" in replay
+        assert "日前价仅作对照" in replay
+        assert "30×96" not in replay
 
     def test_degraded_strategy_does_not_render_comparison_or_long_term_values(
         self, sources

@@ -9,7 +9,7 @@ The React SPA, served as static files from `ellectric/web/` built output, consum
 _Avoid_: VIVO UI, frontend, app
 
 **Rolling Playback Stage**:
-The playhead-driven panel that synchronizes all other panels (load chart, price heatmap, renewable chart, strategy replay, evidence). Advances through the dataset at configurable speed (1x/4x/16x) and auto-loops. The primary visual metaphor of the showcase.
+The single-playhead panel that synchronizes historical market state and four-strategy contribution at daily, hourly, or 15-minute granularity. Daily mode auto-plays the fixed October scene in about 30 seconds; a native scrubber and precise step controls support quarter-hour inspection. Offline evidence remains static and declares its own evaluation window.
 _Avoid_: Timeline, player, carousel
 
 **Copilot Panel**:

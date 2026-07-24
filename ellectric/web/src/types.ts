@@ -78,7 +78,7 @@ export interface RollingDemoPanel {
 }
 
 export interface StrategySummaryRow {
-  strategy: "td3" | "ppo" | "sac" | "trend";
+  strategy: StrategyKey;
   simulated_spread_value: number;
   profitable_days: number;
   active_positive_contribution_rate: number;
@@ -88,6 +88,38 @@ export interface StrategySummaryRow {
   trend_multiple: number;
   oracle_capture_rate: number;
   facts: string[];
+}
+
+export type StrategyKey = "td3" | "ppo" | "sac" | "trend";
+export type PositionState = "long" | "short" | "approximately_flat" | "indeterminate";
+
+export interface StrategyPointSeries {
+  simulated_spread_value: number[];
+  cumulative_simulated_spread_value: number[];
+  reconstructed_position: (number | null)[];
+  position_state: PositionState[];
+}
+
+export interface StrategyTimeseries {
+  timestamps: string[];
+  daily_baseline_price: number[];
+  strategies: Record<StrategyKey, StrategyPointSeries>;
+}
+
+export interface StrategyDailySeries {
+  simulated_spread_value: number[];
+  cumulative_simulated_spread_value: number[];
+  long_periods: number[];
+  short_periods: number[];
+  approximately_flat_periods: number[];
+  indeterminate_periods: number[];
+  mean_absolute_position: (number | null)[];
+}
+
+export interface StrategyDailyEvidence {
+  dates: string[];
+  baseline_initialization: boolean[];
+  strategies: Record<StrategyKey, StrategyDailySeries>;
 }
 
 export interface StrategyEvidenceWindow {
@@ -141,19 +173,36 @@ export interface StrategyProvenance {
   content_hash: string;
 }
 
-export interface RollingDemoStrategy {
-  status: "ok" | "degraded";
+interface StrategyCommon {
   degradation_reason?: string | null;
   snapshot_version?: number | null;
+}
+
+export interface RollingDemoStrategyOk extends StrategyCommon {
+  status: "ok";
   window: StrategyEvidenceWindow;
   methodology: StrategyMethodology;
   summary: StrategySummaryRow[];
-  timeseries: Record<string, unknown>;
-  daily: Record<string, unknown>;
+  timeseries: StrategyTimeseries;
+  daily: StrategyDailyEvidence;
   oracle: Record<string, unknown>;
   long_term_evidence: LongTermStrategyEvidence;
   provenance: StrategyProvenance;
 }
+
+export interface RollingDemoStrategyDegraded extends StrategyCommon {
+  status: "degraded";
+  window?: StrategyEvidenceWindow;
+  methodology?: StrategyMethodology;
+  summary?: StrategySummaryRow[];
+  timeseries?: StrategyTimeseries;
+  daily?: StrategyDailyEvidence;
+  oracle?: Record<string, unknown>;
+  long_term_evidence?: LongTermStrategyEvidence;
+  provenance?: StrategyProvenance;
+}
+
+export type RollingDemoStrategy = RollingDemoStrategyOk | RollingDemoStrategyDegraded;
 
 export interface RollingDemoReportEvidence {
   id: string;
