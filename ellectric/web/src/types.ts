@@ -187,8 +187,14 @@ interface StrategyCommon {
   snapshot_version?: number | null;
 }
 
+export interface InstanceStatus {
+  status: "ok" | "degraded";
+  degradation_reason: string | null;
+}
+
 export interface RollingDemoStrategyOk extends StrategyCommon {
   status: "ok";
+  instance_status: Record<StrategyKey, InstanceStatus>;
   window: StrategyEvidenceWindow;
   methodology: StrategyMethodology;
   summary: StrategySummaryRow[];
@@ -201,6 +207,7 @@ export interface RollingDemoStrategyOk extends StrategyCommon {
 
 export interface RollingDemoStrategyDegraded extends StrategyCommon {
   status: "degraded";
+  instance_status?: Record<string, InstanceStatus>;
   window?: StrategyEvidenceWindow;
   methodology?: StrategyMethodology;
   summary?: StrategySummaryRow[];

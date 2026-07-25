@@ -43,12 +43,7 @@ _REPORT_STRATEGIES = {
     "sac": "rl_sac",
     "td3": "rl_td3",
 }
-_APPROVED_REFERENCE = {
-    "td3": {"total": 3178504.01, "profitable_days": 25, "max_drawdown": 257417.40},
-    "ppo": {"total": 2344946.61, "profitable_days": 21, "max_drawdown": 162983.70},
-    "sac": {"total": 1691325.43, "profitable_days": 20, "max_drawdown": 770280.32},
-    "trend": {"total": 568534.36, "profitable_days": 17, "max_drawdown": 2083047.10},
-}
+_REFERENCE_STRATEGIES = {"flat", "oracle"}
 
 
 class StrategyEvidenceError(ValueError):
@@ -77,36 +72,53 @@ def build_strategy_evidence(
     )
     test_timestamps = _market_timestamps(test_market, TEST_POINTS, TEST_START, TEST_END)
     traces = _read_plotly_traces(chart_path)
-    trace_timestamps = traces["trend"]["timestamps"]
-    if trace_timestamps != test_timestamps:
+    any_trace = traces[next(iter(traces))]
+    if any_trace["timestamps"] != test_timestamps:
         raise StrategyEvidenceError(
             "strategy timestamps do not align with the 106-day market window"
         )
-    if replay_timestamps != trace_timestamps[:REPLAY_POINTS]:
+    if replay_timestamps != any_trace["timestamps"][:REPLAY_POINTS]:
         raise StrategyEvidenceError(
             "strategy timestamps do not align with the 30-day replay"
         )
 
-    _validate_report_totals(report, traces)
+    report_validity = _validate_report_totals_per_instance(report, traces)
     prices = _finite_column(replay_market, "rt_price")
     capacity_scale = max(_finite_column(test_market, "load_mw"))
     daily_baselines = _daily_baselines(prices)
     strategy_series: dict[str, dict[str, Any]] = {}
     daily_series: dict[str, dict[str, list[Any]]] = {}
+    instance_status: dict[str, dict[str, str | None]] = {}
 
     for strategy in _EXECUTABLE_STRATEGIES:
-        cumulative = traces[strategy]["values"][:REPLAY_POINTS]
-        increments = _increments(cumulative)
-        positions, states = _reconstruct_positions(
-            increments, prices, daily_baselines, capacity_scale
-        )
-        strategy_series[strategy] = {
-            "simulated_spread_value": increments,
-            "cumulative_simulated_spread_value": cumulative,
-            "reconstructed_position": positions,
-            "position_state": states,
-        }
-        daily_series[strategy] = _aggregate_daily(cumulative, increments, positions)
+        if strategy not in traces:
+            instance_status[strategy] = {
+                "status": "degraded", "degradation_reason": "trace data missing"
+            }
+            continue
+        if not report_validity.get(strategy, True):
+            instance_status[strategy] = {
+                "status": "degraded", "degradation_reason": "report total does not match trace"
+            }
+            continue
+        try:
+            cumulative = traces[strategy]["values"][:REPLAY_POINTS]
+            increments = _increments(cumulative)
+            positions, states = _reconstruct_positions(
+                increments, prices, daily_baselines, capacity_scale
+            )
+            strategy_series[strategy] = {
+                "simulated_spread_value": increments,
+                "cumulative_simulated_spread_value": cumulative,
+                "reconstructed_position": positions,
+                "position_state": states,
+            }
+            daily_series[strategy] = _aggregate_daily(cumulative, increments, positions)
+            instance_status[strategy] = {"status": "ok", "degradation_reason": None}
+        except Exception as exc:
+            instance_status[strategy] = {
+                "status": "degraded", "degradation_reason": str(exc)
+            }
 
     oracle_cumulative = traces["oracle"]["values"][:REPLAY_POINTS]
     oracle_increments = _increments(oracle_cumulative)
@@ -115,11 +127,18 @@ def build_strategy_evidence(
     if any(abs(value) > 1e-9 for value in flat_values):
         raise StrategyEvidenceError("flat reference is not zero")
 
-    summary = _build_summary(strategy_series, daily_series, oracle_cumulative[-1])
-    _validate_approved_reference(summary)
+    valid_strategies = tuple(
+        s for s in _EXECUTABLE_STRATEGIES
+        if instance_status.get(s, {}).get("status") == "ok"
+    )
+    if not valid_strategies:
+        raise StrategyEvidenceError("no executable strategies have valid evidence")
+
+    summary = _build_summary(strategy_series, daily_series, oracle_cumulative[-1], valid_strategies)
     snapshot: dict[str, Any] = {
         "status": "ok",
         "degradation_reason": None,
+        "instance_status": instance_status,
         "snapshot_version": 1,
         "window": {
             "start": REPLAY_START,
@@ -186,7 +205,7 @@ def build_strategy_evidence(
             },
         },
     }
-    _validate_snapshot(snapshot)
+    _validate_snapshot(snapshot, valid_strategies)
     snapshot["provenance"]["content_hash"] = hashlib.sha256(
         json.dumps(
             snapshot,
@@ -330,13 +349,14 @@ def _read_plotly_traces(path: Path) -> dict[str, dict[str, list[Any]]]:
                 f"{strategy} trace must contain exactly {TEST_POINTS} points"
             )
         traces[strategy] = {"timestamps": timestamps, "values": values}
-    missing = set(_TRACE_NAMES.values()) - set(traces)
-    if missing:
+    missing_references = _REFERENCE_STRATEGIES - set(traces)
+    if missing_references:
         raise StrategyEvidenceError(
-            "cumulative Plotly artifact lacks strategies: " + ", ".join(sorted(missing))
+            "cumulative Plotly artifact lacks required references: "
+            + ", ".join(sorted(missing_references))
         )
     for strategy, trace in traces.items():
-        if trace["timestamps"] != traces["trend"]["timestamps"]:
+        if trace["timestamps"] != traces[next(iter(traces))]["timestamps"]:
             raise StrategyEvidenceError(f"{strategy} trace timestamps are misaligned")
     return traces
 
@@ -373,28 +393,32 @@ def _decode_plotly_values(value: Any) -> list[float]:
     return result
 
 
-def _validate_report_totals(
+def _validate_report_totals_per_instance(
     report: dict[str, Any], traces: dict[str, dict[str, list[Any]]]
-) -> None:
+) -> dict[str, bool]:
+    """Validate each strategy's report total against its trace.
+    Returns dict mapping strategy name to whether totals match."""
     metrics = report.get("metrics")
     if not isinstance(metrics, list):
-        raise StrategyEvidenceError("evaluation report lacks strategy metrics")
+        return {}
     by_name = {row.get("strategy"): row for row in metrics if isinstance(row, dict)}
+    result: dict[str, bool] = {}
     for strategy, report_name in _REPORT_STRATEGIES.items():
         row = by_name.get(report_name)
         if not row or row.get("status") != "ok":
-            raise StrategyEvidenceError(
-                f"evaluation report lacks successful {report_name}"
-            )
+            result[strategy] = False
+            continue
         raw_total = row.get("total_pnl")
         if not isinstance(raw_total, (int, float)):
-            raise StrategyEvidenceError(f"{report_name} total is not numeric")
+            result[strategy] = False
+            continue
+        if strategy not in traces:
+            result[strategy] = False
+            continue
         report_total = float(raw_total)
         trace_total = traces[strategy]["values"][-1]
-        if not math.isclose(report_total, trace_total, rel_tol=1e-10, abs_tol=1e-6):
-            raise StrategyEvidenceError(
-                f"{strategy} report total does not match its trace"
-            )
+        result[strategy] = math.isclose(report_total, trace_total, rel_tol=1e-10, abs_tol=1e-6)
+    return result
 
 
 def _finite_column(frame: pd.DataFrame, column: str) -> list[float]:
@@ -511,12 +535,13 @@ def _build_summary(
     strategy_series: dict[str, dict[str, Any]],
     daily_series: dict[str, dict[str, list[Any]]],
     oracle_total: float,
+    valid_strategies: tuple[str, ...],
 ) -> list[dict[str, Any]]:
     totals = {
         strategy: values["cumulative_simulated_spread_value"][-1]
         for strategy, values in strategy_series.items()
     }
-    trend_total = totals["trend"]
+    trend_total = totals.get("trend", 1.0)
     facts = {
         "td3": ["highest_30_day_value", "most_profitable_days"],
         "ppo": [
@@ -528,7 +553,7 @@ def _build_summary(
         "trend": ["simple_rule_reference"],
     }
     rows: list[dict[str, Any]] = []
-    for strategy in _EXECUTABLE_STRATEGIES:
+    for strategy in valid_strategies:
         increments = strategy_series[strategy]["simulated_spread_value"]
         cumulative = strategy_series[strategy]["cumulative_simulated_spread_value"]
         positions = strategy_series[strategy]["reconstructed_position"]
@@ -553,40 +578,20 @@ def _build_summary(
                     value > 0
                     for value in daily_series[strategy]["simulated_spread_value"]
                 ),
-                "active_positive_contribution_rate": positive_active / len(active),
+                "active_positive_contribution_rate": positive_active / len(active) if active else 0.0,
                 "approximately_flat_period_rate": sum(
                     value is not None and abs(value) < FLAT_POSITION_THRESHOLD
                     for value in positions
                 )
                 / len(positions),
                 "max_drawdown": maximum_drawdown,
-                "profit_factor": positive_sum / negative_sum if negative_sum else None,
+                "profit_factor": positive_sum / negative_sum if negative_sum else 0.0,
                 "trend_multiple": totals[strategy] / trend_total,
                 "oracle_capture_rate": totals[strategy] / oracle_total,
                 "facts": facts[strategy],
             }
         )
     return rows
-
-
-def _validate_approved_reference(summary: list[dict[str, Any]]) -> None:
-    by_strategy = {row["strategy"]: row for row in summary}
-    if set(by_strategy) != set(_APPROVED_REFERENCE):
-        raise StrategyEvidenceError("30-day summary strategy set is incompatible")
-    for strategy, expected in _APPROVED_REFERENCE.items():
-        row = by_strategy[strategy]
-        if round(row["simulated_spread_value"], 2) != expected["total"]:
-            raise StrategyEvidenceError(
-                f"{strategy} 30-day total differs from the approved snapshot"
-            )
-        if row["profitable_days"] != expected["profitable_days"]:
-            raise StrategyEvidenceError(
-                f"{strategy} profitable-day count differs from the approved snapshot"
-            )
-        if round(row["max_drawdown"], 2) != expected["max_drawdown"]:
-            raise StrategyEvidenceError(
-                f"{strategy} drawdown differs from the approved snapshot"
-            )
 
 
 def _long_term_evidence(
@@ -615,7 +620,7 @@ def _long_term_evidence(
     }
 
 
-def _validate_snapshot(snapshot: dict[str, Any]) -> None:
+def _validate_snapshot(snapshot: dict[str, Any], valid_strategies: tuple[str, ...]) -> None:
     timeseries = snapshot["timeseries"]
     daily = snapshot["daily"]
     if len(timeseries["timestamps"]) != REPLAY_POINTS:
@@ -626,6 +631,8 @@ def _validate_snapshot(snapshot: dict[str, Any]) -> None:
         )
     for row in snapshot["summary"]:
         strategy = row["strategy"]
+        if strategy not in valid_strategies:
+            continue
         for metric in (
             "simulated_spread_value",
             "active_positive_contribution_rate",

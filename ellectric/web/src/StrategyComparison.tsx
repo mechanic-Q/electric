@@ -1,5 +1,5 @@
-import type { RollingDemoStrategy, StrategySummaryRow } from "./types";
-import { simulatedValueParts, strategyPresentation } from "./strategyPresentation";
+import type { RollingDemoStrategy, StrategyKey, StrategySummaryRow } from "./types";
+import { simulatedValueParts, strategyPresentation, strategyOrder } from "./strategyPresentation";
 
 const factLabels: Record<string, string> = {
   highest_30_day_value: "30 天累计值最高",
@@ -21,11 +21,11 @@ function MetricValue({ value, signed = true }: { value: number; signed?: boolean
   );
 }
 
-function StrategyTable({ rows }: { rows: StrategySummaryRow[] }) {
+function StrategyTable({ rows, showFacts }: { rows: StrategySummaryRow[]; showFacts: boolean }) {
   return (
     <div className="strategy-table-scroll" role="region" tabIndex={0} aria-label="策略比较表，可横向滚动">
       <table className="strategy-table">
-        <caption>四种策略在同一 30 天历史窗口中的固定比较</caption>
+        <caption>同一 30 天历史窗口中的固定比较</caption>
         <thead>
           <tr>
             <th scope="col">策略</th>
@@ -36,7 +36,7 @@ function StrategyTable({ rows }: { rows: StrategySummaryRow[] }) {
             <th scope="col"><abbr title="盈利因子 / Profit Factor">盈利因子</abbr></th>
             <th scope="col"><abbr title="相对趋势基线倍数">趋势倍数</abbr></th>
             <th scope="col"><abbr title="Oracle 理论价差捕获率">Oracle 捕获率</abbr></th>
-            <th scope="col">事实标签</th>
+            {showFacts && <th scope="col">事实标签</th>}
           </tr>
         </thead>
         <tbody>
@@ -53,17 +53,28 @@ function StrategyTable({ rows }: { rows: StrategySummaryRow[] }) {
               <td>{row.profit_factor.toFixed(2)}</td>
               <td>{row.trend_multiple.toFixed(2)}×</td>
               <td>{(row.oracle_capture_rate * 100).toFixed(1)}%</td>
-              <td>
-                <span className="strategy-facts">
-                  {row.facts.map((fact) => (
-                    <span key={fact}>{factLabels[fact] ?? fact}</span>
-                  ))}
-                </span>
-              </td>
+              {showFacts && (
+                <td>
+                  <span className="strategy-facts">
+                    {row.facts.map((fact) => (
+                      <span key={fact}>{factLabels[fact] ?? fact}</span>
+                    ))}
+                  </span>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function DegradedCard({ name, reason }: { name: string; reason: string | null }) {
+  return (
+    <div className="strategy-degraded-card" role="status">
+      <span className="badge badge-degraded">{name} 证据不可用</span>
+      <p>{reason || "校验失败"}</p>
     </div>
   );
 }
@@ -80,14 +91,18 @@ export function StrategyComparison({ strategy }: { strategy: RollingDemoStrategy
           <span className="badge badge-degraded">策略证据不可用 / unavailable</span>
         </div>
         <p role="status" className="strategy-degradation-message">
-          策略证据与市场回放窗口无法作为一个完整快照通过校验，当前仅展示市场数据。未使用 106 天结果替代 30 天指标。
-          <span>Strategy evidence failed whole-snapshot validation. Market data remains available; no 106-day values are substituted.</span>
+          所有策略实例的证据均未通过校验，当前仅展示市场数据。
+          <span>No strategy instances have valid evidence. Market data remains available.</span>
         </p>
       </section>
     );
   }
 
-  const { window, methodology, long_term_evidence: longTerm, provenance } = strategy;
+  const { instance_status, window, methodology, long_term_evidence: longTerm, provenance, summary } = strategy;
+  const okKeys = strategyOrder.filter((k) => instance_status[k]?.status === "ok");
+  const degradedKeys = strategyOrder.filter((k) => instance_status[k]?.status !== "ok");
+  const allValid = okKeys.length === strategyOrder.length;
+  const rows: StrategySummaryRow[] = allValid ? summary : summary.filter((r) => okKeys.includes(r.strategy));
 
   return (
     <section className="strategy-section" aria-labelledby="strategy-title">
@@ -95,10 +110,25 @@ export function StrategyComparison({ strategy }: { strategy: RollingDemoStrategy
         <div>
           <p className="strategy-kicker">OCTOBER EVIDENCE SNAPSHOT</p>
           <h2 id="strategy-title">30 天策略表现 / 30-day Strategy Performance</h2>
-          <p>固定完整窗口结论，不随播放指针变化。四种策略使用同一市场、容量尺度和结算口径。</p>
+          <p>固定完整窗口结论，不随播放指针变化。策略使用同一市场、容量尺度和结算口径。</p>
         </div>
-        <span className="badge badge-ok">证据快照已校验 / validated</span>
+        {allValid
+          ? <span className="badge badge-ok">证据快照已校验 / validated</span>
+          : <span className="badge badge-degraded">部分策略证据不可用 / partial</span>}
       </div>
+
+      {!allValid && (
+        <div className="strategy-partial-warning" role="status">
+          <p>以下策略实例证据未通过校验，已排除出对比表，相对排名暂停：</p>
+          {degradedKeys.map((k) => (
+            <DegradedCard
+              key={k}
+              name={strategyPresentation[k].label}
+              reason={instance_status[k]?.degradation_reason ?? null}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="strategy-boundary-grid" aria-label="测试边界">
         <div>
@@ -137,8 +167,10 @@ export function StrategyComparison({ strategy }: { strategy: RollingDemoStrategy
       <div className="strategy-interpretation" aria-label="如何理解策略水平">
         <div>
           <span>模拟相对表现</span>
-          <strong>较强 / Relatively strong</strong>
-          <p>TD3 的 30 天累计模拟价差值为趋势基线的 5.59×，捕获 Oracle 理论价差的 14.9%。</p>
+          <strong>{allValid ? "较强 / Relatively strong" : "排名暂停 / ranking suspended"}</strong>
+          {allValid
+            ? <p>TD3 的 30 天累计模拟价差值为趋势基线的 5.59×，捕获 Oracle 理论价差的 14.9%。</p>
+            : <p>因部分策略实例缺失，相对排名和跨实例优缺点已暂停。</p>}
         </div>
         <div>
           <span>现实盈利水平</span>
@@ -147,7 +179,8 @@ export function StrategyComparison({ strategy }: { strategy: RollingDemoStrategy
         </div>
       </div>
 
-      <StrategyTable rows={strategy.summary} />
+      <StrategyTable rows={rows} showFacts={allValid} />
+      {!allValid && <p className="strategy-table-hint">缺少的实例不参与比较。事实标签已暂停。</p>}
       <p className="strategy-table-hint">手机端可左右滑动查看全部指标 / Swipe horizontally for all metrics.</p>
 
       <div className="strategy-definitions">
