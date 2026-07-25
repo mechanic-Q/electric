@@ -3,6 +3,7 @@ import type { ReplayContext, RollingDemoResponse } from "./types";
 import { fetchRollingDemo, streamChat } from "./api";
 import { ReplayStage } from "./ReplayStage";
 import { StrategyComparison } from "./StrategyComparison";
+import { renderMarkdown } from "./MarkdownRenderer";
 import "./styles.css";
 
 type CopilotMessage =
@@ -159,12 +160,12 @@ function CopilotPanel({ replayContext }: { replayContext: ReplayContext | null }
         <div className="copilot-header">Copilot 助手 / Copilot</div>
       {configError && <div className="copilot-config-error">⚠️ {configError}</div>}
       <div className="copilot-messages" ref={msgsContainerRef}>
-        {messages.map((msg, i) => {
+          {messages.map((msg, i) => {
           switch (msg.role) {
             case "user":
               return <div key={i} className="message message-user">{msg.content}</div>;
             case "assistant":
-              return <div key={i} className="message message-assistant">{msg.content}</div>;
+              return <div key={i} className="message message-assistant">{renderMarkdown(msg.content)}</div>;
             case "tool_call":
               return (
                 <div key={i} className="message message-tool-call">
@@ -185,7 +186,7 @@ function CopilotPanel({ replayContext }: { replayContext: ReplayContext | null }
         })}
         {streaming && streamingText && (
           <div className="message message-assistant">
-            {streamingText}<span className="streaming-cursor" />
+            {renderMarkdown(streamingText)}<span className="streaming-cursor" />
           </div>
         )}
         <div ref={msgsEndRef} />
@@ -239,17 +240,12 @@ export default function App() {
   if (loading) return <div className="app"><p className="loading">加载数据剧场... / Loading data theater...</p></div>;
   if (error) return <div className="app"><p className="error">数据不可用 / Data unavailable: {error}</p></div>;
 
-  const s = {
-    pn: { border: "1px solid rgba(148,163,184,0.2)", background: "linear-gradient(145deg,rgba(15,23,42,0.92),rgba(13,26,46,0.9))", borderRadius: "20px", overflow: "hidden" },
-    ph: { display: "flex", justifyContent: "space-between", gap: "14px", alignItems: "center", padding: "16px 18px", borderBottom: "1px solid rgba(148,163,184,0.16)" },
-  };
-
   return (
     <div className="app">
       <header className="app-header">
         <div>
           <h1>山东 15min 数据剧场 / Shandong 15min Data Theater</h1>
-          <p style={{ color: "#8aa4c2", fontSize: "13px", marginTop: "4px" }}>
+          <p className="header-sub-info">
             {data?.meta.start} → {data?.meta.end} · {data?.meta.rows.toLocaleString()} 点 / points · 只读滚动演示端点 / rolling demo readonly endpoint
           </p>
         </div>
@@ -260,11 +256,11 @@ export default function App() {
         <main className="dashboard-main">
           <ReplayStage data={data!} onContextChange={setReplayContext} />
 
-          <section className="section panel-grid" style={{ marginTop: "18px" }}>
+          <section className="section panel-grid panel-grid-section">
             <StrategyComparison strategy={data!.strategy} />
-            <article style={{ ...s.pn, gridColumn: "1 / -1" }}>
-              <div style={s.ph}><h3 style={{ margin: 0, fontSize: "14px" }}>证据报告 / Evidence</h3><span className="badge badge-shandong" style={{ margin: 0 }}>报告 / reports</span></div>
-                <div style={{ padding: "12px 18px 18px" }}>
+            <article className="evidence-report-panel">
+              <div className="evidence-report-header"><h3 className="evidence-report-title">证据报告 / Evidence</h3><span className="badge badge-shandong" style={{ margin: 0 }}>报告 / reports</span></div>
+                <div className="evidence-report-body">
                   {data!.reports.filter((r) => r.id !== "rl_full_dataset/evaluation").map((r) => (
                     <div key={r.id} className="evidence-card">
                       <div className="evidence-header">
