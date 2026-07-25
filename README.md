@@ -16,21 +16,23 @@
 
 | 功能 | 技术实现 | 说明 |
 |------|----------|------|
-| **数据接入** | OWID 三级回退链路 + Ember + UCI | 自动获取中国电力公开数据，从年级 TWh 换算为逐时 MW |
-| **数据清洗** | IQR 异常值检测 + 缺失填充 + UTC 标准化 | 异常值仅报告不删除 — 电力尖峰是有效信号 |
-| **特征工程** | 三层渐进式特征 (Tier 1→2→3) | 从简单时间特征到循环编码+滚动统计，逐层递进 |
-| **负荷预测** | XGBoost + TimeSeriesSplit CV | 5 折时序交叉验证，防未来信息泄露 (gap=24h) |
-| **电价预测** | LEAR (Lasso L1 正则化) | Lasso 系数天然可解释，精度常超越复杂深度模型 |
-| **市场仿真** | ASSUME 0.6.0 多智能体框架 | 日前市场/实时市场/平衡市场三层仿真 |
-| **RL 交易智能体** | PPO / SAC / TD3 三种算法 | Gymnasium 环境，3 种奖励函数，Box 连续动作空间 |
-| **历史回测** | BacktestRunner + 3 种基线策略 | persistence/mean/oracle 基线对比，夏普比率评估 |
-| **模型可解释性** | SHAP TreeExplainer + LinearExplainer | waterfall 图 + 特征重要性排名 |
+| **数据接入** | ShandongDataLoader + WeatherFetcher (Open-Meteo) | 山东 15min 现货数据 745 天 × 96 点 + 气象 12 列 |
+| **数据清洗** | IQR 异常值检测 + 缺失填充 + UTC 标准化 | 异常值仅报告不删除 — 尖峰信号保留 |
+| **特征工程** | 渐进式特征 (Tier 1→2→3→4) | 时间 → 周期编码 → 滚动统计 → 气象增强 |
+| **负荷预测** | XGBoost + TimeSeriesSplit CV | 5 折时序交叉验证 (gap=24h) |
+| **电价预测** | LEAR (Lasso L1) | Lasso 系数天然可解释 |
+| **风光出力预测** | WindPowerForecaster + SolarPowerForecaster (XGBoost) | MAE/RMSE/nRMSE，气象可用时增强 |
+| **RL 交易智能体** | PPO / SAC / TD3 | ElectricityMarketEnv (speculator spread)，Box 连续动作空间 |
+| **历史回测** | BacktestRunner + 3 基线策略 | persistence/mean/oracle，夏普比率评估 |
+| **模型可解释性** | SHAP TreeExplainer + LinearExplainer | waterfall + 特征重要性排名 |
 | **统计检验** | Diebold-Mariano + Giacomini-White | 预测模型精度显著性检验 |
-| **REST API** | FastAPI + Pydantic v2 | 5 个端点: /predict, /simulate, /backtest, /explain, /chat/stream |
-| **CLI 工具** | Typer + Rich 表格 | 5 个子命令: forecast, simulate, backtest, explain, ask |
-| **LLM 对话助手** | LangChain + DeepSeek API + SSE 流式 | 自然语言查询电力数据，工具调用本地 API |
-| **Dashboard-first WebUI** | Vite + React + TypeScript | Dashboard-first layout, Copilot sidebar, SSE streaming, all API endpoints accessible |
-| **学习 Notebooks** | 11 个渐进式 Jupyter notebooks | 从数据获取到模型可解释性，逐步动手 |
+| **REST API** | FastAPI + Pydantic v2 | 5 端点 + SSE streaming |
+| **CLI 工具** | Typer + Rich | 5 子命令 |
+| **LLM 对话助手** | LangChain + DeepSeek API + SSE | 自然语言查询，工具调用 |
+| **Dashboard-first WebUI** | Vite + React + TypeScript | Dashboard + Copilot 侧栏 |
+| **学习 Notebooks** | 11 个渐进式 Jupyter notebooks | 零基础到 RL 智能体 |
+
+> *ASSUME 0.6.0 曾作为独立学习实验探索（`ellectric/assume/` 脚本 + config），未进入集成管道。集成管道的"市场"环节由 `ElectricityMarketEnv` + `BacktestRunner` 承担。*
 
 ---
 
@@ -45,11 +47,11 @@
             ├── XGBoost 预测 + 持续法基线
             └── 5 个 Jupyter notebooks
 
-2026-06-06  ████████████████████████████  Phase 2: 电价预测 + 市场仿真
-            ├── LEAR (Lasso) 日前电价预测
-            ├── ASSUME 多智能体电力市场仿真
-            ├── Diebold-Mariano/Giacomini-White 统计检验
-            └── 3 个 notebooks + Grafana 仪表板
+2026-06-06  ████████████████████████████  Phase 2: 电价预测 + 风光出力预测
+             ├── LEAR (Lasso) 日前电价预测
+             ├── WindPowerForecaster + SolarPowerForecaster (XGBoost)
+             ├── Diebold-Mariano/Giacomini-White 统计检验
+             └── 2 个 notebooks + Grafana 仪表板
 
 2026-06-07  ████████████████████████████  Phase 3: RL 交易智能体 + 回测
             ├── ElectricityMarketEnv (Gymnasium)
@@ -74,10 +76,10 @@
 ### 迭代统计
 
 - **40 次提交**，涵盖 5 个开发阶段
-- **约 2,400 行** Pipeline 核心代码（12 个模块）
+- **约 2,400 行** Pipeline 核心代码（15 个模块）
 - **约 1,200 行** 接口层代码（API + CLI + Service + LLM）
 - **11 个** Jupyter Notebooks，从零基础到 RL 智能体
-- **3 种** RL 算法 + **3 种** 基线策略 + **3 层** 市场仿真
+- **3 种** RL 算法 + **3 种** 基线策略 + **7 段** 集成管道
 - **多轮密集 Bug 修复**：Phase 3 经历 7 轮修复（P&L 公式、SHAP 惰性导入、MultiInputPolicy、scaler 转换等）
 
 ---
@@ -123,6 +125,32 @@
 - **可选依赖防护**：SHAP、epftoolbox、holidays 均 try/except 包裹，缺失时降级
 
 ---
+
+## Pipeline Stages / 管道阶段
+
+7-stage Integrated Pipeline:
+
+```mermaid
+graph LR
+  A[Data Ingestion<br/>ShandongDataLoader · WeatherFetcher] --> B[Load Forecast<br/>XGBoost + TimeSeriesSplit]
+  B --> C[Price Forecast<br/>LEAR Lasso]
+  C --> D[Renewable Forecast<br/>WindPower · SolarPower]
+  D --> E[RL Trading + Backtest<br/>ElectricityMarketEnv · PPO/SAC/TD3]
+  E --> F[Explainability<br/>SHAP Tree + Linear]
+  F --> G[Showcase + Copilot<br/>FastAPI · React · DeepSeek]
+```
+
+| # | Stage | Tools | What It Does |
+|---|-------|-------|-------------|
+| ① | Data Ingestion | ShandongDataLoader, WeatherFetcher | 71,520 rows × 96 pts/day, 21 columns + 12 weather columns |
+| ② | Load Forecasting | XGBoost, TimeSeriesSplit | 5-fold CV, gap=24h, MAE ~5,526 MW |
+| ③ | Price Forecasting | LEAR (Lasso L1) | Day-ahead + real-time price, L1-regularized linear |
+| ④ | Renewable Forecasting | WindPowerForecaster, SolarPowerForecaster (XGBoost) | Wind + solar MAE/RMSE/nRMSE |
+| ⑤ | RL Trading + Backtest | ElectricityMarketEnv, BacktestRunner, PPO/SAC/TD3 | 3 agents, 3 baselines, speculator spread model |
+| ⑥ | Explainability | SHAP (Tree + Linear) | Feature importance, waterfall charts |
+| ⑦ | Showcase + Copilot | FastAPI, React, DeepSeek | Dashboard-first WebUI, SSE streaming, plain-language Q&A |
+
+> ASSUME 0.6.0 仅作独立学习实验探索（`ellectric/assume/`），未接入集成管道。集成管道中"市场"由 ElectricityMarketEnv + BacktestRunner 实现。
 
 ## 🚀 快速开始
 
@@ -196,7 +224,7 @@ npm run dev            # 启动 Vite 开发服务器（热重载，独立端口�
 | 05 | `end_to_end_baseline.ipynb` | Phase 1 | 端到端管道 + P&L 模拟 |
 | 06 | `price_forecasting.ipynb` | Phase 2 | LEAR Lasso 电价预测 |
 | 07 | `model_comparison_dashboard.ipynb` | Phase 2 | 模型对比 + 统计检验 |
-| 08 | `assume_results.ipynb` | Phase 2 | ASSUME 市场仿真结果分析 |
+| 08 | `assume_results.ipynb` | Phase 2 | ASSUME 市场仿真分析（独立学习实验）|
 | 09 | `rl_trading_agent.ipynb` | Phase 3 | RL 智能体训练 (PPO/SAC/TD3) |
 | 10 | `multi_agent_backtest.ipynb` | Phase 3 | 多策略回测对比 |
 | 11 | `model_explainability.ipynb` | Phase 3 | SHAP 特征重要性 + waterfall |
@@ -245,14 +273,14 @@ ellectric/
 │   └── chat.py            #   终端对话入口
 ├── chat/
 │   └── streaming.py       #   SSE 流式 agent 封装
-├── assume/                #   ASSUME 仿真配置 + 脚本
+├── assume/                #   ASSUME 仿真配置 + 脚本（独立学习实验）
 ├── notebooks/             #   11 个渐进式 Jupyter notebooks
 ├── data/                  #   数据文件 (.parquet, .xlsx, .joblib)
 ├── models/                #   训练好的模型文件
 ├── scripts/               #   验证/演示脚本
 ├── setup.sh               #   一键环境安装
 ├── requirements.txt       #   Python 依赖
-└── docker-compose.yml     #   Grafana 仪表板 (ASSUME)
+└── docker-compose.yml     #   Grafana 仪表板 (ASSUME 独立学习实验用)
 ```
 
 ---
@@ -263,11 +291,13 @@ ellectric/
 |------|------|------|
 | 数据处理 | pandas 3.0.3 + pyarrow 22.0 | DataFrame 操作，Parquet 后端 |
 | 机器学习 | scikit-learn 1.8 + xgboost 3.2 | 时序分割、XGBoost 回归 |
-| 电价预测 | scikit-learn Lasso | LEAR 模型 (L1 正则化线性回归) |
+| 负荷预测 | XGBoost 3.2 + scikit-learn 1.8 | XGBoost 回归 + TimeSeriesSplit |
+| 电价预测 | scikit-learn Lasso | LEAR 模型 (L1) |
+| 风光出力预测 | XGBoost 3.2 | WindPowerForecaster + SolarPowerForecaster |
 | 强化学习 | stable-baselines3 2.8 + gymnasium 1.2 | PPO/SAC/TD3 交易智能体 |
-| 市场仿真 | ASSUME 0.6.0 | 多智能体电力市场仿真 |
 | 可解释性 | SHAP ≥0.46 | TreeExplainer + LinearExplainer |
 | 统计检验 | epftoolbox | Diebold-Mariano + Giacomini-White |
+| 气象特征 | Open-Meteo API | 济南/青岛 6 变量 × 2 城 = 12 列 |
 | API | FastAPI + Pydantic v2 + uvicorn | REST + SSE streaming |
 | CLI | Typer + Rich | 命令行工具 |
 | LLM | LangChain + DeepSeek API | 自然语言对话助手 + 工具调用 |
@@ -291,7 +321,7 @@ ellectric/
 
 - **非生产系统**：所有模型和策略仅供学习参考，不构成交易建议
 - **数据限制**：OWID 公开数据为年度级，需折算为日均值，精度有限
-- **仿真简化**：ASSUME 仿真为简化市场模型，与中国实际电力市场规则存在差异
+- **交易策略**：RL 交易智能体和 BacktestRunner 为简化市场场景（ElectricityMarketEnv），仅供学习参考，不构成交易建议
 - **仅支持 Python 3.11+**
 
 ---

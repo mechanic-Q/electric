@@ -6,7 +6,7 @@ created_at: 2026-06-27 19:12:11
 # Ellectric — AI + 电力交易技术学习平台
 
 > 🎯 以山东 15min 现货数据为 MVP 的 AI+电力交易学习原型。
-> 跑通"数据获取 → 负荷/电价预测 → 市场仿真 → 自动交易"的端到端技术闭环。
+> 跑通'数据获取 → 负荷/电价预测 → 风光出力预测 → RL交易+回测 → 展示'的端到端技术闭环。
 
 **当前 MVP：山东** — 745 天 × 96 点/日 15min 真实出清价 + 风光核水出力，2024-01 ~ 2026-01。
 
@@ -26,7 +26,7 @@ jupyter notebook notebooks/          # 启动 Jupyter
 5. `05_end_to_end_baseline.ipynb` — 端到端管道（数据→预测→盈亏→图表）
 6. `06_price_forecasting.ipynb` — 电价预测（LEAR Lasso）
 7. `07_model_comparison_dashboard.ipynb` — 模型对比仪表板（DM/GW 检验）
-8. `08_assume_results.ipynb` — ASSUME 电力市场仿真
+8. `08_assume_results.ipynb` — ASSUME 电力市场仿真（独立学习实验）
 9. `09_rl_trading_agent.ipynb` — RL 交易智能体（PPO/TD3/SAC）
 10. `10_multi_agent_backtest.ipynb` — 多策略回测对比
 11. `11_model_explainability.ipynb` — SHAP 可解释性
@@ -46,6 +46,7 @@ ellectric/
 │   ├── features.py           # 特征工程（渐进式，4 层）
 │   ├── forecaster.py         # XGBoost 负荷预测
 │   ├── price_forecaster.py   # LEAR 电价预测 (Lasso)
+│   ├── renewable_forecaster.py # WindPower/SolarPower 风光预测
 │   ├── price_loader.py       # PriceDataLoader — 电价数据
 │   ├── backtester.py         # BacktestRunner — 多策略回测
 │   ├── trading_env.py        # ElectricityMarketEnv — Gymnasium RL 环境
@@ -105,12 +106,12 @@ ellectric/
 | 机器学习 | scikit-learn | 1.8.0 | TimeSeriesSplit, StandardScaler |
 | 负荷预测 | XGBoost | 3.2.0 | 梯度提升树 |
 | 电价预测 | scikit-learn Lasso | 1.8.0 | LEAR 模型 |
+| 风光出力预测 | XGBoost | 3.2.0 | WindPower/SolarPower 双预测器 |
 | RL | stable-baselines3 | 2.x | PPO/TD3/SAC |
-| 可视化 | plotly | 6.7.0 | 交互式时序图表 |
-| 仿真 | ASSUME | 0.6.0 | 电力市场仿真框架 |
 | 可解释性 | SHAP | — | 模型解释 |
-| 环境 | Jupyter | 1.1.1 | 学习笔记本 |
+| 可视化 | plotly | 6.7.0 | 交互式时序图表 |
 | 气象 | Open-Meteo API | 免费 | 历史气象数据 |
+| 环境 | Jupyter | 1.1.1 | 学习笔记本 |
 
 ## 🎯 学习路径
 
@@ -121,10 +122,11 @@ ellectric/
 - [x] XGBoost 负荷预测 → MAE=5526MW (8.0%)
 - [x] LEAR 电价预测
 
-### Phase 2: 市场仿真与交易
-- [x] ASSUME 电力市场仿真
+### Phase 2: 风光出力预测与交易
+- [x] WindPowerForecaster + SolarPowerForecaster (XGBoost)
 - [x] RL 交易智能体 (PPO/SAC/TD3)
 - [x] 多策略回测对比
+- [~] ASSUME 电力市场仿真（独立学习实验，未入集成管道）
 
 ### Phase 3: 整合与可解释性
 - [x] FastAPI + CLI + LLM 三层接口
@@ -142,16 +144,11 @@ ellectric/
 - 多省/多节点市场覆盖 — MVP 保持单省山东
 - 真实交易/付费数据源 — 学习原型不涉及真实资金
 
-## 🔌 ASSUME 电力市场仿真
-
-```bash
-pip install "assume-framework[learning]==0.6.0"
-python scripts/verify_assume.py
-```
+> ASSUME 0.6.0 曾在学习阶段探索（`ellectric/assume/` 脚本 + config），但未接入集成管道。集成管道的"市场"由 `ElectricityMarketEnv` + `BacktestRunner` 实现。
 
 ## 📚 参考文献
 
 - [Zenodo: Hourly electric power load China (Wu & Kan, 2023)](https://zenodo.org/records/8322210) — 31省小时级负荷
 - [Open-Meteo Historical Weather API](https://open-meteo.com/) — 免费历史气象
 - [XGBoost 文档](https://xgboost.readthedocs.io/)
-- [ASSUME 框架](https://github.com/assume-framework/assume) — 电力市场仿真
+- [ASSUME 框架](https://github.com/assume-framework/assume) — 电力市场仿真（独立学习实验）
