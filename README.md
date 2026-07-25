@@ -3,10 +3,14 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Proprietary%20Source--Available-red.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Phase-4%20Complete-brightgreen.svg)]()
+[![Last Commit](https://img.shields.io/github/last-commit/mechanic-Q/electric)](https://github.com/mechanic-Q/electric)
+[![Repo Size](https://img.shields.io/github/repo-size/mechanic-Q/electric)](https://github.com/mechanic-Q/electric)
 
-**Ellectric** 是一个动手实践性质的 AI + 电力交易技术学习项目。跑通"公开电力数据接入 → 负荷/电价预测 → 电力市场仿真 → 自动交易策略"的端到端技术闭环。
+**Ellectric** 是一个动手实践性质的 AI + 电力交易技术学习项目。跑通"公开电力数据接入 → AI 预测 → 强化学习交易 → 可视化展示"的端到端技术闭环。
 
 > 🔬 教育/学习用途，非生产系统。基于北京图迹科技技术画像，使用纯开源替代方案搭建可运行技术原型。
+
+<img src="docs/assets/dashboard-desktop.png" alt="Ellectric Showcase WebUI 截图" width="100%"/>
 
 ---
 
@@ -149,6 +153,8 @@ graph LR
 | ⑤ | RL Trading + Backtest | ElectricityMarketEnv, BacktestRunner, PPO/SAC/TD3 | 3 agents, 3 baselines, speculator spread model |
 | ⑥ | Explainability | SHAP (Tree + Linear) | Feature importance, waterfall charts |
 | ⑦ | Showcase + Copilot | FastAPI, React, DeepSeek | Dashboard-first WebUI, SSE streaming, plain-language Q&A |
+
+<img src="docs/assets/dashboard-fullpage.png" alt="Ellectric Showcase Dashboard 全页截图" width="100%"/>
 
 > ASSUME 0.6.0 仅作独立学习实验探索（`ellectric/assume/`），未接入集成管道。集成管道中"市场"由 ElectricityMarketEnv + BacktestRunner 实现。
 
