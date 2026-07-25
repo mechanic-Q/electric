@@ -44,6 +44,15 @@ def main(argv: list[str] | None = None) -> int:
     if payload.strategy.status != "ok":
         print(payload.strategy.degradation_reason or "strategy evidence unavailable", file=sys.stderr)
         return 1
+    if payload.strategy.instance_status:
+        degraded = [
+            s for s, st in payload.strategy.instance_status.items()
+            if st.status == "degraded"
+        ]
+        if degraded:
+            for s in degraded:
+                reason = payload.strategy.instance_status[s].degradation_reason or "unknown"
+                print(f"degraded instance: {s} — {reason}", file=sys.stderr)
     return 0
 
 

@@ -443,11 +443,19 @@ class RollingDemoPanel(BaseModel):
     warning_ids: list[str] = Field(default_factory=list, description="关联警告 ID")
 
 
+class InstanceStatus(BaseModel):
+    """Per-instance evidence validation status."""
+
+    status: Literal["ok", "degraded"] = "degraded"
+    degradation_reason: str | None = None
+
+
 class RollingDemoStrategy(BaseModel):
     """Versioned strategy evidence for the fixed 30-day historical replay."""
 
     status: Literal["ok", "degraded"] = Field(default="degraded")
     degradation_reason: str | None = Field(default=None)
+    instance_status: dict[str, InstanceStatus] = Field(default_factory=dict)
     snapshot_version: int | None = Field(default=None)
     window: dict[str, Any] = Field(default_factory=dict)
     methodology: dict[str, Any] = Field(default_factory=dict)
