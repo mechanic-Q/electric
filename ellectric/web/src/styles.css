@@ -508,6 +508,14 @@ body {
 .technical-interface > div { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; color: var(--text-muted); font-size: 0.68rem; }
 .technical-interface code { color: #bfdbfe; }
 
+.tools-pipeline { grid-column: 1 / -1; padding: 12px 16px; border: 1px solid rgba(148,163,184,0.15); border-radius: 10px; background: rgba(15,23,42,0.42); }
+.tools-pipeline summary { color: #93c5fd; font-size: 0.72rem; cursor: pointer; }
+.tools-flow { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.tools-flow > li { display: flex; flex-direction: column; gap: 3px; padding: 8px 11px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); min-width: 0; }
+.tf-stage { color: #93c5fd; font-size: 0.74rem; font-weight: 600; }
+.tf-tool { color: var(--text-muted); font-size: 0.66rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-word; }
+.tools-footnote { margin: 10px 0 0; color: var(--text-muted); font-size: 0.66rem; }
+
 /* ── Responsive dashboard ── */
 
 /* 1024px — tablet landscape / small desktop */

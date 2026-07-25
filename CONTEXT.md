@@ -106,6 +106,18 @@ Any server-side operation that loads models, runs ASSUME, runs RL backtests, com
 
 The recommended hosting environment for the public demo: small Hong Kong VPS, Ubuntu LTS, FastAPI/uvicorn, static frontend, pre-baked JSON, and DeepSeek API key. Hong Kong avoids mainland ICP filing while keeping acceptable mainland access latency.
 
+### Integrated Pipeline
+
+The canonical 7-stage pipeline that produces the Showcase WebUI data. Consists of: Data Ingestion (ShandongDataLoader + WeatherFetcher) → Load Forecasting (XGBoost) → Price Forecasting (LEAR) → Renewable Output Forecasting (WindPowerForecaster / SolarPowerForecaster) → RL Trading + Backtest (ElectricityMarketEnv + BacktestRunner, PPO/SAC/TD3) → Explainability (SHAP) → Showcase + Copilot (FastAPI + React + DeepSeek).
+
+Use this term instead of "the whole pipeline" or "the flow" when referring specifically to the stages that feed the showcase data.
+
+### Standalone Learning Experiment
+
+An exploratory script or notebook that is not part of the Integrated Pipeline. ASSUME (`ellectric/assume/`) is the primary example — it was used for learning but never received `import assume` in any integrated pipeline module and is not served by the Showcase WebUI.
+
+Use this term instead of "failed experiment" or "not implemented" — the experiment was real, just not integrated.
+
 ## Current Deployment Boundary
 
 The public site should do these things:

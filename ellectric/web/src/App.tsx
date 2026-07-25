@@ -289,6 +289,19 @@ export default function App() {
                 <span>只读静态数据 · 返回 meta, series, panels, strategy, reports, warnings</span>
               </div>
             </details>
+            <details open className="tools-pipeline">
+              <summary>技术工具与流程 / Tools & Pipeline</summary>
+              <ol className="tools-flow">
+                <li><span className="tf-stage">① 数据接入 / Data</span><span className="tf-tool">ShandongDataLoader · WeatherFetcher</span></li>
+                <li><span className="tf-stage">② 负荷预测 / Load</span><span className="tf-tool">XGBoost + TimeSeriesSplit</span></li>
+                <li><span className="tf-stage">③ 电价预测 / Price</span><span className="tf-tool">LEAR (Lasso L1)</span></li>
+                <li><span className="tf-stage">④ 风光出力 / Renewable</span><span className="tf-tool">WindPowerForecaster · SolarPowerForecaster</span></li>
+                <li><span className="tf-stage">⑤ RL交易+回测 / RL Trading</span><span className="tf-tool">ElectricityMarketEnv · BacktestRunner (PPO/SAC/TD3)</span></li>
+                <li><span className="tf-stage">⑥ 可解释性 / Explainability</span><span className="tf-tool">SHAP (Tree + Linear)</span></li>
+                <li><span className="tf-stage">⑦ 展示+对话 / Showcase</span><span className="tf-tool">FastAPI · React WebUI · DeepSeek Copilot</span></li>
+              </ol>
+              <p className="tools-footnote">* ASSUME 仅为独立学习实验，未接入集成管道。 / ASSUME is a standalone learning experiment, not part of the integrated pipeline.</p>
+            </details>
           </section>
         </main>
         <CopilotPanel replayContext={replayContext} />
