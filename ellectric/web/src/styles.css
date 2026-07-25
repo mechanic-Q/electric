@@ -513,6 +513,7 @@ body {
 /* 1024px — tablet landscape / small desktop */
 @media (max-width: 1024px) {
   .panel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .copilot-panel { width: 280px; }
 }
 
 /* 980px — desktop breakpoint */
