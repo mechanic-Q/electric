@@ -157,7 +157,7 @@ function CopilotPanel({ replayContext }: { replayContext: ReplayContext | null }
     <>
       <div className={"copilot-backdrop" + (open ? " open" : "")} onClick={() => setOpen(false)} />
       <aside className={"copilot-panel" + (open ? " open" : "")}>
-        <div className="copilot-header">Copilot 助手 / Copilot</div>
+        <div className="copilot-header">AI智能体专职讲解员</div>
       {configError && <div className="copilot-config-error">⚠️ {configError}</div>}
       <div className="copilot-messages" ref={msgsContainerRef}>
           {messages.map((msg, i) => {
@@ -244,7 +244,8 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <div>
-          <h1>山东 15min 数据剧场 / Shandong 15min Data Theater</h1>
+          <h1>Ellectric — AI + 电力交易技术学习平台</h1>
+          <h2 className="header-subtitle">山东 15min 数据剧场 / Shandong 15min Data Theater</h2>
           <p className="header-sub-info">
             {data?.meta.start} → {data?.meta.end} · {data?.meta.rows.toLocaleString()} 点 / points · 只读滚动演示端点 / rolling demo readonly endpoint
           </p>
