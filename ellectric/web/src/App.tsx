@@ -157,7 +157,7 @@ function CopilotPanel({ replayContext }: { replayContext: ReplayContext | null }
     <>
       <div className={"copilot-backdrop" + (open ? " open" : "")} onClick={() => setOpen(false)} />
       <aside className={"copilot-panel" + (open ? " open" : "")}>
-        <div className="copilot-header">AI智能体专职讲解</div>
+        <div className="copilot-header">AI智能体专职讲解员</div>
       {configError && <div className="copilot-config-error">⚠️ {configError}</div>}
       <div className="copilot-messages" ref={msgsContainerRef}>
           {messages.map((msg, i) => {
