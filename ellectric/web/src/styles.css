@@ -186,6 +186,14 @@ body {
   margin: 0;
 }
 
+.app-header h2.header-subtitle {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin: 2px 0 0 0;
+  letter-spacing: 0.01em;
+}
+
 .copilot-panel {
   width: 100%; min-width: 0;
   background: var(--bg-secondary); border: 1px solid var(--border);
