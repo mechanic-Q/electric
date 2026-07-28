@@ -8,6 +8,8 @@
 
 **Ellectric** 是一个动手实践性质的 AI + 电力交易技术学习项目。跑通"公开电力数据接入 → AI 预测 → 强化学习交易 → 可视化展示"的端到端技术闭环。
 
+> 🌐 **[el-forecast.asia](https://el-forecast.asia)** → 公网在线演示（Showcase WebUI），基于山东 15min 真实出清数据（2024-01 ~ 2026-01）的滚动回放看板。
+
 > 🔬 教育/学习用途，非生产系统。基于北京图迹科技技术画像，使用纯开源替代方案搭建可运行技术原型。
 
 <img src="docs/assets/dashboard-desktop.png" alt="Ellectric Showcase WebUI 截图" width="100%"/>
@@ -75,12 +77,36 @@
             ├── Ember 碳排放数据探索
             ├── SSE 流式 Web Chat UI
             └── OWID 三级回退链路 (GitHub → GCS → 缓存)
+
+2026-06-28  ████████████████████████████  特征完善 + 风光预测
+            ├── Weather Tier4 全量验证 (71520 行, MAE -21%)
+            ├── WindPowerForecaster + SolarPowerForecaster (XGBoost)
+            ├── LEAR vs DNN 电价模型对比
+            └── 完整 96 维 RL full dataset 训练
+
+2026-07-03  ████████████████████████████  LLM 接口 + Dashboard 重构
+            ├── LLM /recommend 交易建议工具
+            ├── Dashboard-first WebUI 重构 (Vite + React + TypeScript)
+            ├── 山东 15min 滚动数据剧场 + 中英双语化
+            └── 山东 RL 统一对比评估框架
+
+2026-07-19  ████████████████████████████  RL + WebUI 全面改进
+            ├── RL reward 重设计 (speculator spread 模型)
+            ├── 全量 200k×3 训练，三智能体全部正收益
+            ├── WebUI 手机自适应 + Copilot 流式修复
+            └── 策略回放解释性 + per-instance evidence
+
+2026-07-26  ████████████████████████████  域名上线 + 文档规范化
+            ├── 公网域名 el-forecast.asia (Caddy + HTTPS)
+            ├── 香港展示服务器稳定运行
+            ├── ASSUME 重分类 + 集成管道规范化 (ADR 0002)
+            └── README + CONTEXT.md 领域术语表同步
 ```
 
 ### 迭代统计
 
-- **40 次提交**，涵盖 5 个开发阶段
-- **约 2,400 行** Pipeline 核心代码（15 个模块）
+- **130+ 次提交**，涵盖 9 个开发阶段
+- **约 6,100 行** Pipeline 核心代码（16 个模块）
 - **约 1,200 行** 接口层代码（API + CLI + Service + LLM）
 - **11 个** Jupyter Notebooks，从零基础到 RL 智能体
 - **3 种** RL 算法 + **3 种** 基线策略 + **7 段** 集成管道
@@ -241,16 +267,20 @@ npm run dev            # 启动 Vite 开发服务器（热重载，独立端口�
 
 ```
 ellectric/
-├── pipeline/              # 核心 ML 管道 (12 模块, ~2,400 行)
-│   ├── data_loader.py     #   DataLoader ABC + OWID/Chinese/Ember loaders
+├── pipeline/              # 核心 ML 管道 (16 模块, ~6,100 行)
+│   ├── data_loader.py     #   DataLoader ABC + OWID/Chinese/Ember/Shandong loaders
+│   ├── shandong_loader.py #   ShandongDataLoader (山东 15min, 21 列)
 │   ├── cleaner.py         #   数据清洗 + schema 验证
-│   ├── features.py        #   FeatureEngineer (Tier 1→2→3)
+│   ├── features.py        #   FeatureEngineer (Tier 1→2→3→4)
 │   ├── forecaster.py      #   XGBoost 负荷预测 + P&L 计算
-│   ├── price_loader.py    #   电价数据加载 (ZionLuo dataset)
+│   ├── price_loader.py    #   电价数据加载
 │   ├── price_forecaster.py #  LEAR Lasso 电价预测
+│   ├── price_forecaster_dnn.py # DNN 电价预测（对比实验）
+│   ├── renewable_forecaster.py # WindPower + SolarPower (XGBoost)
 │   ├── trading_env.py     #   Gymnasium 电力市场交易环境
-│   ├── rl_trainer.py      #   BaseRLAgent ABC + PPO/SAC/TD3
-│   ├── backtester.py      #   回测引擎 + 基线策略
+│   ├── rl_trainer.py      #   BaseRLAgent ABC + PPO/SAC/TD3 工厂
+│   ├── rl_evaluation.py   #   RL 策略统一对比评估框架
+│   ├── backtester.py      #   回测引擎 + 3 基线策略
 │   ├── shap_explainer.py  #   SHAP TreeExplainer + LinearExplainer
 │   ├── statistical_tests.py # Diebold-Mariano + Giacomini-White 检验
 │   └── ember_loader.py    #   Ember 碳排放数据加载
@@ -326,7 +356,7 @@ ellectric/
 ## ⚠️ 注意事项
 
 - **非生产系统**：所有模型和策略仅供学习参考，不构成交易建议
-- **数据限制**：OWID 公开数据为年度级，需折算为日均值，精度有限
+- **数据限制**：山东 15min 出清数据来自公开渠道（ZionLuo/Electricity-Price-Forecasting），仅为学习用途提供历史回顾，不保证实时性和完整性
 - **交易策略**：RL 交易智能体和 BacktestRunner 为简化市场场景（ElectricityMarketEnv），仅供学习参考，不构成交易建议
 - **仅支持 Python 3.11+**
 
