@@ -133,19 +133,22 @@
               run_backtest() / run_explain()
                                │
                                ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                       Pipeline Layer                              │
-│                                                                    │
-│  data_loader ──► cleaner ──► features ──► forecaster (XGBoost)   │
-│       │                                        │                  │
-│  price_loader ──► price_forecaster (LEAR)      │                  │
-│       │                                        │                  │
-│       └──────► backtester ◄── trading_env ◄────┘                  │
-│                    │            │                                  │
-│                    ▼            ▼                                  │
-│              rl_trainer   shap_explainer                          │
-│              (PPO/SAC/TD3) (Tree+Linear)                          │
-└──────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                       Pipeline Layer                                │
+│                                                                      │
+│  data_loader ──► cleaner ──► features ──► forecaster (XGBoost) ──┐ │
+│       │                   ▲            │                          │ │
+│       │           weather_fetcher      │                          │ │
+│  price_loader ──► price_forecaster ────┤                          │ │
+│       │                   │            │                          │ │
+│       │      renewable_forecaster ─────┤                          │ │
+│       │                                │                          │ │
+│       └──────────► backtester ◄──── trading_env ◄─────────────────┘ │
+│                        │              │                              │
+│                        ▼              ▼                              │
+│                  rl_trainer     shap_explainer                       │
+│                 (PPO/SAC/TD3)  (Tree+Linear)                        │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 **关键设计原则**：
@@ -226,7 +229,7 @@ uvicorn ellectric.api.server:app --host 0.0.0.0 --port 8000
 # CLI 命令
 python -m ellectric.cli.main forecast load 24          # 负荷预测
 python -m ellectric.cli.main simulate summer_peak --days 7  # 市场仿真
-python -m ellectric.cli.main backtest 2022-08-01 2022-08-31 ppo  # 回测
+python -m ellectric.cli.main backtest 2025-08-01 2025-08-31 ppo  # 回测
 python -m ellectric.cli.main explain xgboost 0           # SHAP 解释
 
 # LLM 对话（需设置 DEEPSEEK_API_KEY）
@@ -249,9 +252,9 @@ npm run dev            # 启动 Vite 开发服务器（热重载，独立端口�
 
 | # | Notebook | 阶段 | 内容 |
 |---|----------|------|------|
-| 01 | `data_ingestion.ipynb` | Phase 1 | 从 OWID 自动获取中国电力数据 |
+| 01 | `data_ingestion.ipynb` | Phase 1 | 从山东 15min CSV 加载电力数据 |
 | 02 | `data_cleaning.ipynb` | Phase 1 | 缺失填充、异常值检测、时区标准化 |
-| 03 | `feature_engineering.ipynb` | Phase 1 | 三层渐进式特征构建 |
+| 03 | `feature_engineering.ipynb` | Phase 1 | 四层渐进式特征构建 (Tier 1→4) |
 | 04 | `load_forecasting.ipynb` | Phase 1 | XGBoost 训练评估 + 持续法基线 |
 | 05 | `end_to_end_baseline.ipynb` | Phase 1 | 端到端管道 + P&L 模拟 |
 | 06 | `price_forecasting.ipynb` | Phase 2 | LEAR Lasso 电价预测 |
