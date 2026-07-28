@@ -12,10 +12,13 @@ venv/
 *.ipynb_checkpoints/
 
 # Data (本地数据不提交)
-ellectric/data/*.csv
-ellectric/data/*.parquet
-ellectric/data/*.xlsx
-ellectric/data/*.xls
+ellectric/data/**/*.csv
+ellectric/data/**/*.parquet
+ellectric/data/**/*.xlsx
+ellectric/data/**/*.xls
+
+# Knowledge graph (regenerable cache)
+graphify-out/cache/
 
 # IDE
 .vscode/
@@ -27,10 +30,14 @@ ellectric/data/*.xls
 .DS_Store
 Thumbs.db
 
-# Reports
-ellectric/reports/rl_full_dataset/*.html
-ellectric/reports/rl_full_dataset/*.log
-!ellectric/reports/rl_full_dataset/.gitkeep
+# Reports - track only .md and .json (human-readable evidence); ignore binary/large/regen
+ellectric/reports/**/*.html
+ellectric/reports/**/*.zip
+ellectric/reports/**/*.err
+ellectric/reports/**/*.log
+ellectric/reports/**/checkpoints/
+ellectric/reports/**/tb_logs/
+!ellectric/reports/**/.gitkeep
 
 # RL models / checkpoints
 models/rl_full_dataset/
@@ -41,10 +48,17 @@ tb_logs/rl_full_dataset_*/
 # Environment
 .env
 .env.*
+
+# Trace / debug logs
+trace.log
+
+# SillySpec runtime artifacts
 .sillyspec/.runtime/
 .sillyspec/.runtime/worktrees/
 .sillyspec/codebase/SCAN-RAW.md
 .sillyspec/local.yaml
+.sillyspec/**/doctor-report.md
 
 # Node.js
 node_modules/
+ellectric/web/tsconfig.tsbuildinfo
