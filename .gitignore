@@ -17,8 +17,10 @@ ellectric/data/**/*.parquet
 ellectric/data/**/*.xlsx
 ellectric/data/**/*.xls
 
-# Knowledge graph (regenerable cache)
+# Knowledge graph (regenerable cache + runtime temp files)
 graphify-out/cache/
+graphify-out/.graph.tmp.json
+graphify-out/.rebuild.lock
 
 # IDE
 .vscode/
@@ -30,7 +32,7 @@ graphify-out/cache/
 .DS_Store
 Thumbs.db
 
-# Reports - track only .md and .json (human-readable evidence); ignore binary/large/regen
+# Reports - track only .md and selected .json (human-readable evidence)
 ellectric/reports/**/*.html
 ellectric/reports/**/*.zip
 ellectric/reports/**/*.err
@@ -38,6 +40,9 @@ ellectric/reports/**/*.log
 ellectric/reports/**/checkpoints/
 ellectric/reports/**/tb_logs/
 !ellectric/reports/**/.gitkeep
+# Ignore .json under report dirs that have no tracked .json
+ellectric/reports/full_real_run/**/*.json
+ellectric/reports/renewable_forecaster/*.json
 
 # RL models / checkpoints
 models/rl_full_dataset/
