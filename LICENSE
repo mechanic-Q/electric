@@ -1,0 +1,76 @@
+ELLECTRIC PROPRIETARY SOURCE-AVAILABLE LICENSE
+Version 1.0 — 2026-07-14
+
+Copyright © 2026 mechanic-Q. All rights reserved.
+
+中文条款（具有约束力）
+====================
+
+1. 定义
+
+“本软件”指本仓库中由 mechanic-Q 拥有版权的源代码、文档及其他材料。
+“个人非商业学习”指自然人仅为本人学习、研究或评估而进行的活动，不涉及营利、受雇交付、组织内部业务、对外服务或其他商业利益。
+“未修改版本”指未经增加、删除、改写或组合衍生的本软件原始版本；仅为本机运行而进行的环境配置不视为修改本软件源代码。
+
+2. 有限授权
+
+在遵守本许可证全部条款的前提下，版权所有者授予个人用户一项可撤销、非独占、不可转让、不可再许可的有限许可：
+
+(a) 查看本软件的公开源代码；
+(b) 为个人非商业学习，下载并在本人拥有或控制的设备上运行未修改版本；
+(c) 使用 GitHub 公共仓库功能，但仅限 GitHub 服务条款所必需并允许的范围。
+
+除上述明确授权外，不授予任何其他权利。
+
+3. 禁止事项
+
+未经版权所有者事先书面许可，任何人不得：
+
+(a) 修改、改编、翻译本软件，或创作、发布其衍生作品；
+(b) 复制、分发、再发布、出售、出租、转让或再许可本软件，但第 2 条明确允许的个人本地副本和 GitHub 平台行为除外；
+(c) 将本软件用于任何商业目的、受雇交付、组织内部生产活动或营利活动；
+(d) 将本软件公开部署，或通过网络、托管服务、软件即服务（SaaS）、服务外包或共享环境向他人提供全部或部分功能；
+(e) 删除、隐藏或更改版权、许可证或归属声明；
+(f) 表示本软件采用 MIT、Apache、GPL 或其他开放源代码许可证。
+
+4. 第三方材料
+
+本许可证仅适用于 mechanic-Q 拥有版权的材料。本软件引用、调用或随附的第三方软件、数据、模型和其他材料，继续适用各自的许可证、条款和归属声明。本许可证不扩大或限制第三方权利。
+
+5. 终止
+
+一旦违反本许可证，所授予的权限自动终止。终止后，必须停止使用本软件，并删除依据第 2 条制作的本地副本；GitHub 服务条款另有强制规定的除外。
+
+6. 所有权
+
+本软件仅按本许可证提供有限使用权，不出售或转让所有权。未明确授予的全部权利均由 mechanic-Q 保留。
+
+7. 免责声明
+
+本软件按“现状”提供，不附带任何明示或默示保证，包括但不限于适销性、特定用途适用性、准确性和不侵权保证。在法律允许的最大范围内，版权所有者不对因使用或无法使用本软件而产生的任何损失或责任承担责任。
+
+本软件仅用于学习与技术评估，不是生产系统，也不构成电力、金融、投资或其他交易建议。
+
+8. 其他授权
+
+如需修改、分发、公开部署、提供服务或商业使用，请通过以下地址联系版权所有者并取得事先书面许可：
+https://github.com/mechanic-Q
+
+
+ENGLISH REFERENCE TRANSLATION
+=============================
+
+This English section is provided for reference. If it conflicts with the binding Chinese terms above, the Chinese terms control.
+
+Copyright © 2026 mechanic-Q. All rights reserved.
+
+Subject to all terms of this License, an individual may view the public source code and may download and run an unmodified version on devices owned or controlled by that individual solely for personal, non-commercial learning, research, or evaluation. GitHub public-repository functionality may be used only to the extent necessarily permitted by the GitHub Terms of Service.
+
+No permission is granted to modify, create or publish derivative works, distribute, sublicense, sell, rent, transfer, publicly deploy, provide as a hosted or network service, use for organizational production, or use for any commercial purpose without prior written permission from mechanic-Q.
+
+Third-party software, data, models, and other materials remain subject to their respective licenses and notices.
+
+The Software is provided “AS IS”, without warranties of any kind. It is a learning and technical-evaluation project, not a production system, and does not constitute electricity, financial, investment, or other trading advice.
+
+For additional permission, contact:
+https://github.com/mechanic-Q
