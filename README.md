@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/readme/hero.svg" width="100%" alt="Ellectric：AI 与电力交易技术学习平台——从公开电力数据接入，到负荷、电价、风光预测，再到强化学习交易与可视化展示的端到端闭环；右侧为山东 15 分钟出清价格曲线与次日预测区间示意">
+</p>
+
 # ⚡ Ellectric — AI + 电力交易技术学习平台
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
